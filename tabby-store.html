@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tabby Store</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1333;--card:#171c47;--card-hover:#1e2459;--border:rgba(255,243,212,.14);
+  --text:#e6e0f0;--text-dim:#a59fbf;--text-bright:#fff3d4;
+  --accent:#f0a35e;--green:#3fb950;--orange:#d29922;--purple:#bc8cff;--pink:#f778ba;--red:#f85149;
+  --radius:10px;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Nunito','Segoe UI',system-ui,sans-serif}
+body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18),transparent 60%),linear-gradient(#0a0e2a,#141a44 60%,#231d4a) fixed}
+
+/* HEADER */
+.header{padding:28px 24px 0;max-width:1320px;margin:0 auto}
+.header h1{font-family:'Fredoka','Trebuchet MS',system-ui,sans-serif;font-size:40px;font-weight:600;color:var(--text-bright);letter-spacing:-0.5px}
+.back{display:inline-block;margin-bottom:16px;text-decoration:none;font-size:14px;color:var(--text);border:1px solid var(--border);border-radius:999px;padding:8px 16px}
+.back:hover{border-color:rgba(255,243,212,.5)}
+.back:focus-visible,.pill:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.header h1 span{color:var(--accent)}
+.header p{color:var(--text-dim);font-size:14px;margin-top:6px;line-height:1.5;max-width:560px}
+
+/* TOOLBAR */
+.toolbar{max-width:1320px;margin:20px auto 0;padding:0 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search-box{flex:1;min-width:200px;position:relative}
+.search-box input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text-bright);padding:10px 14px 10px 38px;border-radius:var(--radius);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.search-box input:focus{border-color:var(--accent)}
+.search-box svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-dim)}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.pill:hover{border-color:var(--text-dim);color:var(--text)}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#000}
+.pill[data-cat="natura"].active{background:#3fb950;border-color:#3fb950}
+.pill[data-cat="budynek"].active{background:#d29922;border-color:#d29922}
+.pill[data-cat="dekoracja"].active{background:#bc8cff;border-color:#bc8cff}
+.pill[data-cat="interaktywny"].active{background:#f778ba;border-color:#f778ba}
+.pill[data-cat="pojazd"].active{background:#f85149;border-color:#f85149}
+.pill[data-cat="ruiny"].active{background:#8fa8c8;border-color:#8fa8c8}
+.stats{font-size:12px;color:var(--text-dim);padding:14px 24px 0;max-width:1320px;margin:0 auto}
+
+/* GRID */
+.grid{max-width:1320px;margin:14px auto 40px;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s,transform .15s}
+.card:hover{border-color:rgba(88,166,255,0.3);transform:translateY(-2px)}
+.card-preview{width:100%;aspect-ratio:4/3;background:#0a0c12;cursor:grab;position:relative;overflow:hidden}
+.card-preview:active{cursor:grabbing}
+.card-preview canvas{width:100%!important;height:100%!important;display:block}
+.card-body{padding:14px 16px 16px}
+.card-name{font-size:15px;font-weight:700;color:var(--text-bright);margin-bottom:6px}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.tag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px}
+.tag-natura{background:rgba(63,185,80,.12);color:#3fb950}
+.tag-budynek{background:rgba(210,153,34,.12);color:#d29922}
+.tag-dekoracja{background:rgba(188,140,255,.12);color:#bc8cff}
+.tag-interaktywny{background:rgba(247,120,186,.12);color:#f778ba}
+.tag-pojazd{background:rgba(248,81,73,.12);color:#f85149}
+.tag-ruiny{background:rgba(143,168,200,.14);color:#a9bfdc}
+.card-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:12px}
+.card-meta{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-dim);margin-bottom:12px}
+.meta-parts{display:flex;align-items:center;gap:3px}
+.card-actions{display:flex;gap:8px}
+.btn-copy{flex:1;padding:9px 0;background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:var(--accent);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-copy:hover{background:rgba(88,166,255,.2);border-color:var(--accent)}
+.btn-copy.copied{background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:var(--green)}
+.btn-preview{padding:9px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-dim);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-preview:hover{background:rgba(255,255,255,.08);color:var(--text)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:60px 24px;color:var(--text-dim);font-size:14px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#000;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:600;z-index:100;opacity:0;transition:all .3s;pointer-events:none;font-family:inherit}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* JSON MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-head h3{font-size:15px;font-weight:700;color:var(--text-bright)}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;padding:0 4px}
+.modal-close:hover{color:var(--text-bright)}
+.modal-body{padding:16px 20px;overflow-y:auto;flex:1}
+.modal-body pre{background:#0a0c12;border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.6;color:#9ecbff;overflow-x:auto;font-family:'Cascadia Code','Fira Code',monospace;white-space:pre-wrap;word-break:break-all}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+.modal-foot .btn-copy{flex:none;padding:9px 20px}
+
+@media(max-width:640px){
+  .header h1{font-size:22px}
+  .grid{grid-template-columns:1fr}
+  .toolbar{flex-direction:column}
+  .filter-pills{width:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .filter-pills::-webkit-scrollbar{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back" href="index.html">← Menu</a>
+  <h1>Tabby <span>Store</span></h1>
+  <p>Gotowe obiekty 3D do Tabby. Kliknij "Kopiuj JSON", wklej w Tabby Editor i stawiaj na mapie.</p>
+</div>
+
+<div class="toolbar">
+  <div class="search-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="Szukaj obiektów...">
+  </div>
+  <div class="filter-pills" id="filters">
+    <button class="pill active" data-cat="all">Wszystko</button>
+    <button class="pill" data-cat="natura">🌳 Natura</button>
+    <button class="pill" data-cat="budynek">🏠 Budynek</button>
+    <button class="pill" data-cat="dekoracja">🪑 Dekoracja</button>
+    <button class="pill" data-cat="interaktywny">⚡ Interaktywny</button>
+    <button class="pill" data-cat="pojazd">🚗 Pojazd</button>
+    <button class="pill" data-cat="ruiny">🏛 Ruiny</button>
+  </div>
+</div>
+<div class="stats" id="stats"></div>
+<div class="grid" id="grid"></div>
+<div class="empty" id="empty" style="display:none">Brak wyników dla wybranego filtra.</div>
+<div class="toast" id="toast">✓ JSON skopiowany do schowka!</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modal-title">JSON</h3><button class="modal-close" id="modal-close">&times;</button></div>
+    <div class="modal-body"><pre id="modal-code"></pre></div>
+    <div class="modal-foot"><button class="btn-copy" id="modal-copy">📋 Kopiuj JSON</button></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+
+// ==================== ASSET DATABASE ====================
+var ASSETS = [
+  {
+    name:"Drzewo liściaste",
+    category:["natura"],
+    desc:"Klasyczne drzewo z koroną z kuli. Idealne do parków i lasów.",
+    parts:[
+      {shape:"cylinder",size:[0.12,0.18,2.0,6],color:"#885533",position:[0,1.0,0]},
+      {shape:"sphere",size:[1.1,7,5],color:"#338833",position:[0,2.6,0]},
+      {shape:"sphere",size:[0.7,6,4],color:"#2d7d2d",position:[0.4,3.1,0.3]},
+      {shape:"sphere",size:[0.5,6,4],color:"#3a9a3a",position:[-0.3,2.9,-0.2]}
+    ]
+  },
+  {
+    name:"Sosna",
+    category:["natura"],
+    desc:"Iglaste drzewo ze stożkową koroną. Pasuje do górskich krajobrazów.",
+    parts:[
+      {shape:"cylinder",size:[0.1,0.14,2.5,6],color:"#664422",position:[0,1.25,0]},
+      {shape:"cone",size:[1.0,2.0,6],color:"#2a6b2a",position:[0,3.0,0]},
+      {shape:"cone",size:[0.75,1.5,6],color:"#338833",position:[0,3.8,0]},
+      {shape:"cone",size:[0.45,1.0,6],color:"#3a9a3a",position:[0,4.4,0]}
+    ]
+  },
+  {
+    name:"Krzak",
+    category:["natura"],
+    desc:"Niski krzew dekoracyjny. Dobre wypełnienie pustych miejsc.",
+    parts:[
+      {shape:"sphere",size:[0.5,6,5],color:"#338833",position:[0,0.4,0]},
+      {shape:"sphere",size:[0.35,5,4],color:"#2d7d2d",position:[0.3,0.35,0.2]},
+      {shape:"sphere",size:[0.3,5,4],color:"#3a9a3a",position:[-0.25,0.3,-0.15]}
+    ]
+  },
+  {
+    name:"Kamień",
+    category:["natura"],
+    desc:"Duży głaz. Można stawiać grupami jako formację skalną.",
+    parts:[
+      {shape:"sphere",size:[0.6,5,4],color:"#888888",position:[0,0.35,0]},
+      {shape:"sphere",size:[0.35,4,3],color:"#777777",position:[0.3,0.2,0.2]},
+      {shape:"sphere",size:[0.25,4,3],color:"#999999",position:[-0.2,0.15,-0.15]}
+    ]
+  },
+  {
+    name:"Dom prosty",
+    category:["budynek"],
+    desc:"Mały domek ze ścianami i dwuspadowym dachem.",
+    parts:[
+      {shape:"box",size:[3.5,2.5,3.0],color:"#ccbb99",position:[0,1.25,0]},
+      {shape:"box",size:[3.7,0.15,3.2],color:"#aa7744",position:[0,2.55,0]},
+      {shape:"box",size:[0.7,1.2,0.08],color:"#88bbdd",position:[-0.8,1.4,-1.51]},
+      {shape:"box",size:[0.7,1.2,0.08],color:"#88bbdd",position:[0.8,1.4,-1.51]},
+      {shape:"box",size:[0.8,1.8,0.1],color:"#664422",position:[0,0.9,1.51]},
+      {shape:"box",size:[0.08,0.08,0.06],color:"#ccaa44",position:[0.25,0.9,1.55]},
+      {shape:"cone",size:[2.8,1.6,4],color:"#aa5533",position:[0,3.3,0],rotation:[0,0.785,0]}
+    ]
+  },
+  {
+    name:"Wieża",
+    category:["budynek"],
+    desc:"Wysoka kamienna wieża z ceglanym dachem stożkowym.",
+    parts:[
+      {shape:"cylinder",size:[1.2,1.2,5.0,8],color:"#999999",position:[0,2.5,0]},
+      {shape:"cylinder",size:[1.3,1.3,0.3,8],color:"#777777",position:[0,5.15,0]},
+      {shape:"cone",size:[1.4,2.0,8],color:"#aa5533",position:[0,6.2,0]},
+      {shape:"box",size:[0.4,0.8,0.15],color:"#88bbdd",position:[0,3.5,1.21]},
+      {shape:"box",size:[0.4,0.8,0.15],color:"#88bbdd",position:[0,3.5,-1.21]},
+      {shape:"box",size:[0.15,0.8,0.4],color:"#88bbdd",position:[1.21,3.5,0]},
+      {shape:"box",size:[0.15,0.8,0.4],color:"#88bbdd",position:[-1.21,3.5,0]}
+    ]
+  },
+  {
+    name:"Drzwi",
+    category:["interaktywny","budynek"],
+    desc:"Drewniane drzwi z klamką. Naciśnij E aby otworzyć/zamknąć.",
+    parts:[
+      {shape:"box",size:[0.1,2.2,1.0],color:"#664422",position:[0,1.1,0]},
+      {shape:"box",size:[0.08,0.08,0.08],color:"#ccaa44",position:[0.04,1.1,0.35]},
+      {shape:"box",size:[0.12,2.3,0.08],color:"#553311",position:[0,1.15,-0.5]},
+      {shape:"box",size:[0.12,2.3,0.08],color:"#553311",position:[0,1.15,0.5]},
+      {shape:"box",size:[0.12,0.08,1.0],color:"#553311",position:[0,2.25,0]}
+    ],
+    action:{type:"open",angle:1.5708}
+  },
+  {
+    name:"Strażnik",
+    category:["interaktywny"],
+    desc:"NPC — po naciśnięciu E wyświetla tekst. Idealny do questów.",
+    parts:[
+      {shape:"box",size:[0.5,0.8,0.3],color:"#445566",position:[0,0.9,0]},
+      {shape:"cylinder",size:[0.18,0.18,0.9,6],color:"#445566",position:[-0.2,0.45,0]},
+      {shape:"cylinder",size:[0.18,0.18,0.9,6],color:"#445566",position:[0.2,0.45,0]},
+      {shape:"sphere",size:[0.28,6,5],color:"#ffcc88",position:[0,1.55,0]},
+      {shape:"cone",size:[0.32,0.35,6],color:"#cc3333",position:[0,1.9,0]},
+      {shape:"box",size:[0.22,0.55,0.22],color:"#445566",position:[-0.38,1.05,0]},
+      {shape:"box",size:[0.22,0.55,0.22],color:"#445566",position:[0.38,1.05,0]},
+      {shape:"cylinder",size:[0.04,0.04,1.4,6],color:"#888888",position:[0.55,0.9,0]}
+    ],
+    action:{type:"text",message:"Stój! Kto idzie? Tylko odważni mogą przejść dalej."}
+  },
+  {
+    name:"Latarnia",
+    category:["dekoracja","interaktywny"],
+    desc:"Latarnia uliczna z prawdziwym światłem. Naciśnij E aby zapalić/zgasić.",
+    parts:[
+      {shape:"cylinder",size:[0.15,0.2,0.1,8],color:"#555555",position:[0,0.05,0]},
+      {shape:"cylinder",size:[0.06,0.06,3.0,6],color:"#666666",position:[0,1.55,0]},
+      {shape:"box",size:[0.35,0.4,0.35],color:"#444444",position:[0,3.2,0]},
+      {shape:"box",size:[0.25,0.28,0.25],color:"#ffee88",position:[0,3.2,0]},
+      {shape:"box",size:[0.42,0.04,0.42],color:"#555555",position:[0,3.42,0]},
+      {shape:"cylinder",size:[0.04,0.04,0.4,4],color:"#666666",position:[0.15,2.9,0],rotation:[0,0,0.4]},
+      {shape:"pointlight",size:[0.12],color:"#ffee88",position:[0,3.15,0],intensity:1.5,distance:12}
+    ],
+    action:{type:"light",intensity:1.5,distance:12}
+  },
+  {
+    name:"Ławka parkowa",
+    category:["dekoracja"],
+    desc:"Drewniana ławka z metalowymi nogami.",
+    parts:[
+      {shape:"box",size:[1.6,0.06,0.4],color:"#aa7744",position:[0,0.45,0]},
+      {shape:"box",size:[1.6,0.06,0.4],color:"#996633",position:[0,0.52,0]},
+      {shape:"box",size:[1.6,0.5,0.06],color:"#aa7744",position:[0,0.85,-0.17]},
+      {shape:"box",size:[0.06,0.46,0.35],color:"#555555",position:[-0.6,0.22,0]},
+      {shape:"box",size:[0.06,0.46,0.35],color:"#555555",position:[0.6,0.22,0]},
+      {shape:"box",size:[0.06,0.35,0.06],color:"#555555",position:[-0.6,0.72,-0.2]},
+      {shape:"box",size:[0.06,0.35,0.06],color:"#555555",position:[0.6,0.72,-0.2]}
+    ]
+  },
+  {
+    name:"Płot drewniany",
+    category:["dekoracja"],
+    desc:"Sekcja drewnianego płotu. Szerokość idealnie 5 jednostek (1 kratka siatki).",
+    parts:[
+      {shape:"box",size:[0.12,1.1,0.12],color:"#885533",position:[-2.4,0.55,0]},
+      {shape:"box",size:[0.12,1.1,0.12],color:"#885533",position:[0,0.55,0]},
+      {shape:"box",size:[0.12,1.1,0.12],color:"#885533",position:[2.4,0.55,0]},
+      {shape:"box",size:[5.0,0.08,0.06],color:"#aa7744",position:[0,0.85,0]},
+      {shape:"box",size:[5.0,0.08,0.06],color:"#aa7744",position:[0,0.45,0]},
+      {shape:"box",size:[0.1,1.25,0.1],color:"#885533",position:[-2.4,0.62,0]},
+      {shape:"box",size:[0.1,1.25,0.1],color:"#885533",position:[2.4,0.62,0]}
+    ]
+  },
+  {
+    name:"Studnia",
+    category:["dekoracja"],
+    desc:"Kamienna studnia z drewnianym daszkiem i korbą.",
+    parts:[
+      {shape:"cylinder",size:[0.7,0.7,0.8,8],color:"#999999",position:[0,0.4,0]},
+      {shape:"cylinder",size:[0.6,0.6,0.1,8],color:"#88bbdd",position:[0,0.78,0]},
+      {shape:"cylinder",size:[0.06,0.06,1.6,6],color:"#885533",position:[0.5,1.2,0]},
+      {shape:"cylinder",size:[0.06,0.06,1.6,6],color:"#885533",position:[-0.5,1.2,0]},
+      {shape:"box",size:[1.3,0.08,0.8],color:"#aa7744",position:[0,2.05,0]},
+      {shape:"cone",size:[0.75,0.6,4],color:"#aa5533",position:[0,2.4,0],rotation:[0,0.785,0]},
+      {shape:"cylinder",size:[0.03,0.03,0.5,4],color:"#888888",position:[0.6,1.6,0],rotation:[0,0,1.5708]},
+      {shape:"box",size:[0.04,0.15,0.04],color:"#888888",position:[0.85,1.6,0]}
+    ]
+  },
+  {
+    name:"Portal",
+    category:["interaktywny"],
+    desc:"Magiczny portal teleportujący gracza. Naciśnij E aby się przenieść.",
+    parts:[
+      {shape:"cylinder",size:[0.06,0.06,2.8,6],color:"#333366",position:[-0.9,1.4,0]},
+      {shape:"cylinder",size:[0.06,0.06,2.8,6],color:"#333366",position:[0.9,1.4,0]},
+      {shape:"box",size:[1.9,0.12,0.12],color:"#333366",position:[0,2.8,0]},
+      {shape:"cylinder",size:[0.75,0.75,0.06,16],color:"#4444cc",position:[0,1.4,0]},
+      {shape:"cylinder",size:[0.6,0.6,0.08,16],color:"#8888ff",position:[0,1.4,0.01]},
+      {shape:"sphere",size:[0.1,6,4],color:"#aaaaff",position:[0,2.8,0]}
+    ],
+    action:{type:"teleport",tx:50,tz:-50}
+  },
+  {
+    name:"Samochód",
+    category:["pojazd","interaktywny"],
+    desc:"Osobowy samochód. Naciśnij E, aby wsiąść — WASD jazda, Tab kamera, E wysiądź.",
+    parts:[
+      {shape:"box",size:[1.5,0.5,3.2],color:"#cc3333",position:[0,0.5,0]},
+      {shape:"box",size:[1.3,0.55,1.6],color:"#cc3333",position:[0,1.02,0.1]},
+      {shape:"box",size:[1.2,0.45,1.4],color:"#88bbdd",position:[0,1.0,0.1]},
+      {shape:"cylinder",size:[0.3,0.3,0.2,14],color:"#222222",position:[-0.75,0.3,-0.95],rotation:[0,0,1.5708],role:"wheel_fl"},
+      {shape:"box",size:[0.04,0.36,0.06],color:"#aaaaaa",position:[-0.86,0.3,-0.95],role:"wheel_fl"},
+      {shape:"cylinder",size:[0.3,0.3,0.2,14],color:"#222222",position:[0.75,0.3,-0.95],rotation:[0,0,1.5708],role:"wheel_fr"},
+      {shape:"box",size:[0.04,0.36,0.06],color:"#aaaaaa",position:[0.86,0.3,-0.95],role:"wheel_fr"},
+      {shape:"cylinder",size:[0.3,0.3,0.2,14],color:"#222222",position:[-0.75,0.3,0.95],rotation:[0,0,1.5708],role:"wheel_rl"},
+      {shape:"box",size:[0.04,0.36,0.06],color:"#aaaaaa",position:[-0.86,0.3,0.95],role:"wheel_rl"},
+      {shape:"cylinder",size:[0.3,0.3,0.2,14],color:"#222222",position:[0.75,0.3,0.95],rotation:[0,0,1.5708],role:"wheel_rr"},
+      {shape:"box",size:[0.04,0.36,0.06],color:"#aaaaaa",position:[0.86,0.3,0.95],role:"wheel_rr"},
+      {shape:"box",size:[1.4,0.08,0.08],color:"#ffffcc",position:[0,0.55,-1.6]},
+      {shape:"box",size:[1.4,0.08,0.08],color:"#ff3333",position:[0,0.55,1.6]}
+    ],
+    action:{type: "drive",speed: 10,turnSpeed: 2.0,grip: 0.07,lean: 0.5}
+  },
+  {
+    name:"Quad",
+    category:["pojazd","interaktywny"],
+    desc:"Czterokołowy quad terenowy — szybki, zwrotny, lekko się przechyla w zakrętach.",
+    parts:[
+      {shape:"box",size:[1.8,0.16,3.2],color:"#555555",position:[0.0,0.6,0.0]},
+      {shape:"box",size:[1.0,0.12,1.0],color:"#444444",position:[0.0,0.52,-1.1]},
+      {shape:"box",size:[0.12,0.12,1.8],color:"#333333",position:[0.0,0.56,-1.2]},
+      {shape:"box",size:[0.12,0.12,1.8],color:"#333333",position:[0.0,0.56,1.1]},
+      {shape:"cylinder",size:[0.5,0.5,0.4,16.0],color:"#1a1a1a",position:[-1.0,0.56,-1.2],rotation:[0,0,1.5708],role:"wheel_fl"},
+      {shape:"cylinder",size:[0.5,0.5,0.4,16.0],color:"#1a1a1a",position:[1.0,0.56,-1.2],rotation:[0,0,1.5708],role:"wheel_fr"},
+      {shape:"cylinder",size:[0.56,0.56,0.44,16.0],color:"#1a1a1a",position:[-1.04,0.6,1.1],rotation:[0,0,1.5708],role:"wheel_rl"},
+      {shape:"cylinder",size:[0.56,0.56,0.44,16.0],color:"#1a1a1a",position:[1.04,0.6,1.1],rotation:[0,0,1.5708],role:"wheel_rr"},
+      {shape:"cylinder",size:[0.3,0.3,0.08,12.0],color:"#777777",position:[-1.22,0.56,-1.2],rotation:[0,0,1.5708],role:"wheel_fl"},
+      {shape:"cylinder",size:[0.3,0.3,0.08,12.0],color:"#777777",position:[1.22,0.56,-1.2],rotation:[0,0,1.5708],role:"wheel_fr"},
+      {shape:"cylinder",size:[0.34,0.34,0.08,12.0],color:"#777777",position:[-1.28,0.6,1.1],rotation:[0,0,1.5708],role:"wheel_rl"},
+      {shape:"cylinder",size:[0.34,0.34,0.08,12.0],color:"#777777",position:[1.28,0.6,1.1],rotation:[0,0,1.5708],role:"wheel_rr"},
+      {shape:"box",size:[0.1,0.54,0.07],color:"#aaaaaa",position:[-1.24,0.56,-1.2],role:"wheel_fl"},
+      {shape:"box",size:[0.1,0.07,0.54],color:"#aaaaaa",position:[-1.24,0.56,-1.2],role:"wheel_fl"},
+      {shape:"box",size:[0.1,0.54,0.07],color:"#aaaaaa",position:[1.24,0.56,-1.2],role:"wheel_fr"},
+      {shape:"box",size:[0.1,0.07,0.54],color:"#aaaaaa",position:[1.24,0.56,-1.2],role:"wheel_fr"},
+      {shape:"box",size:[0.1,0.612,0.07],color:"#aaaaaa",position:[-1.3,0.6,1.1],role:"wheel_rl"},
+      {shape:"box",size:[0.1,0.07,0.612],color:"#aaaaaa",position:[-1.3,0.6,1.1],role:"wheel_rl"},
+      {shape:"box",size:[0.1,0.612,0.07],color:"#aaaaaa",position:[1.3,0.6,1.1],role:"wheel_rr"},
+      {shape:"box",size:[0.1,0.07,0.612],color:"#aaaaaa",position:[1.3,0.6,1.1],role:"wheel_rr"},
+      {shape:"cylinder",size:[0.04,0.04,1.0,8.0],color:"#666666",position:[0.0,1.0,-1.2]},
+      {shape:"cylinder",size:[0.36,0.36,0.06,16.0],color:"#333333",position:[0.0,1.44,-1.3],rotation:[0.5,0,0]},
+      {shape:"box",size:[1.4,0.3,2.4],color:"#dd6600",position:[0.0,0.84,0.0]},
+      {shape:"box",size:[1.8,0.12,0.8],color:"#dd6600",position:[0.0,0.9,-1.2]},
+      {shape:"box",size:[1.9,0.12,1.0],color:"#dd6600",position:[0.0,0.9,1.1]},
+      {shape:"box",size:[0.7,0.24,1.0],color:"#222222",position:[0.0,1.1,0.1]},
+      {shape:"box",size:[0.6,0.12,1.2],color:"#222222",position:[0.0,1.1,-0.2]},
+      {shape:"box",size:[1.1,0.5,1.0],color:"#dd6600",position:[0.0,0.96,-1.7]},
+      {shape:"box",size:[0.24,0.16,0.12],color:"#ffee44",position:[-0.4,1.04,-2.2]},
+      {shape:"box",size:[0.24,0.16,0.12],color:"#ffee44",position:[0.4,1.04,-2.2]},
+      {shape:"box",size:[1.0,0.3,0.7],color:"#dd6600",position:[0.0,0.84,1.7]},
+      {shape:"box",size:[0.2,0.12,0.08],color:"#ff2222",position:[-0.36,0.9,2.06]},
+      {shape:"box",size:[0.2,0.12,0.08],color:"#ff2222",position:[0.36,0.9,2.06]},
+      {shape:"cylinder",size:[0.06,0.06,1.0,8.0],color:"#888888",position:[0.6,0.6,1.6],rotation:[0.3,0,0]},
+      {shape:"pointlight",size:[0.08],color:"#ffee88",position:[0.0,1.04,-2.3],intensity:0.6,distance:12.0}
+    ],
+    action:{type: "drive",speed: 20,turnSpeed: 0.2,grip: 0.1,steerSpeed: 3,lean: 0.3}
+  },
+  {
+    name:"Czołg",
+    category:["pojazd","interaktywny"],
+    desc:"Czołg gąsienicowy — wolny, ciężki, obraca się w miejscu (A/D na postoju).",
+    parts:[
+      {shape:"box",size:[5,0.8,8.5],color:"#4B5320",position:[0,0.6,0]},
+      {shape:"box",size:[4.6,0.5,3],color:"#3E451A",position:[0,1.15,-2.5]},
+      {shape:"box",size:[4.6,0.3,4.5],color:"#3E451A",position:[0,1.05,2.2]},
+      {shape:"box",size:[4,0.6,0.4],color:"#556028",position:[0,0.8,-4.3]},
+      {shape:"box",size:[1,1,8.8],color:"#1A1A1A",position:[-2.5,0.5,0]},
+      {shape:"box",size:[1,1,8.8],color:"#1A1A1A",position:[2.5,0.5,0]},
+      {shape:"box",size:[1.2,0.1,9],color:"#4B5320",position:[-2.5,1.05,0]},
+      {shape:"box",size:[1.2,0.1,9],color:"#4B5320",position:[2.5,1.05,0]},
+      {shape:"cylinder",size:[0.45,0.45,1.1,16],color:"#2E2E2E",position:[-2.5,0.45,-4],rotation:[0,0,1.5708],role:"wheel_fl"},
+      {shape:"cylinder",size:[0.45,0.45,1.1,16],color:"#2E2E2E",position:[2.5,0.45,-4],rotation:[0,0,1.5708],role:"wheel_fr"},
+      {shape:"cylinder",size:[0.5,0.5,1.1,16],color:"#2E2E2E",position:[-2.5,0.5,4],rotation:[0,0,1.5708],role:"wheel_rl"},
+      {shape:"cylinder",size:[0.5,0.5,1.1,16],color:"#2E2E2E",position:[2.5,0.5,4],rotation:[0,0,1.5708],role:"wheel_rr"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[-3.05,0.38,-2.4],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[-3.05,0.38,-1.2],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[-3.05,0.38,0],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[-3.05,0.38,1.2],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[-3.05,0.38,2.4],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[3.05,0.38,-2.4],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[3.05,0.38,-1.2],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[3.05,0.38,0],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[3.05,0.38,1.2],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"cylinder",size:[0.34,0.34,0.1,14],color:"#3A3A3A",position:[3.05,0.38,2.4],rotation:[0,0,1.5708],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[-3.11,0.38,-2.4],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[-3.11,0.38,-1.2],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[-3.11,0.38,0],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[-3.11,0.38,1.2],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[-3.11,0.38,2.4],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[3.11,0.38,-2.4],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[3.11,0.38,-1.2],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[3.11,0.38,0],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[3.11,0.38,1.2],role:"wheel"},
+      {shape:"box",size:[0.06,0.56,0.08],color:"#6A6A6A",position:[3.11,0.38,2.4],role:"wheel"},
+      {shape:"box",size:[0.06,0.765,0.12],color:"#6A6A6A",position:[-3.07,0.45,-4],role:"wheel_fl"},
+      {shape:"box",size:[0.06,0.765,0.12],color:"#6A6A6A",position:[3.07,0.45,-4],role:"wheel_fr"},
+      {shape:"box",size:[0.06,0.85,0.12],color:"#6A6A6A",position:[-3.07,0.5,4],role:"wheel_rl"},
+      {shape:"box",size:[0.06,0.85,0.12],color:"#6A6A6A",position:[3.07,0.5,4],role:"wheel_rr"},
+      {shape:"cylinder",size:[1.7,1.7,0.2,24],color:"#2A2A2A",position:[0,1.2,0.5]},
+      {shape:"box",size:[2.8,0.9,3.2],color:"#4B5320",position:[0,1.8,0.5]},
+      {shape:"box",size:[3,0.8,0.6],color:"#556028",position:[0,1.85,-1.2]},
+      {shape:"box",size:[0.3,0.7,2],color:"#3E451A",position:[-1.55,1.8,0.2]},
+      {shape:"box",size:[0.3,0.7,2],color:"#3E451A",position:[1.55,1.8,0.2]},
+      {shape:"box",size:[2.4,0.6,1],color:"#3E451A",position:[0,1.9,2.5]},
+      {shape:"cylinder",size:[0.4,0.4,0.4,16],color:"#3E451A",position:[0.8,2.45,0.8]},
+      {shape:"cylinder",size:[0.45,0.45,0.05,16],color:"#2A2A2A",position:[0.8,2.67,0.8]},
+      {shape:"box",size:[1.2,0.8,0.9],color:"#3E451A",position:[0,2,-1.4]},
+      {shape:"cylinder",size:[0.15,0.15,6,12],color:"#4A4A4A",position:[0,2,-4.5],rotation:[1.5708,0,0]},
+      {shape:"cylinder",size:[0.25,0.25,0.6,12],color:"#333333",position:[0,2,-7.8],rotation:[1.5708,0,0]},
+      {shape:"cylinder",size:[0.05,0.05,1.5,8],color:"#222222",position:[0.5,2,-2.2],rotation:[1.5708,0,0]},
+      {shape:"cylinder",size:[0.03,0.03,3.5,6],color:"#555555",position:[-1.2,3.8,1.5]},
+      {shape:"cylinder",size:[0.15,0.15,0.8,12],color:"#222222",position:[-1.5,1.2,4.6],rotation:[1.5708,0,0]},
+      {shape:"cylinder",size:[0.15,0.15,0.8,12],color:"#222222",position:[1.5,1.2,4.6],rotation:[1.5708,0,0]},
+      {shape:"cylinder",size:[0.3,0.3,1.6,12],color:"#4B5320",position:[-2.8,1,3],rotation:[1.5708,0,0]},
+      {shape:"cylinder",size:[0.3,0.3,1.6,12],color:"#4B5320",position:[2.8,1,3],rotation:[1.5708,0,0]},
+      {shape:"box",size:[0.2,0.4,1.2],color:"#3E451A",position:[-2.6,1.3,-1.5]},
+      {shape:"box",size:[0.2,0.4,1.2],color:"#3E451A",position:[2.6,1.3,-1.5]},
+      {shape:"box",size:[0.2,0.2,0.1],color:"#DDDDDD",position:[-1.8,1,-4.4]},
+      {shape:"box",size:[0.2,0.2,0.1],color:"#DDDDDD",position:[1.8,1,-4.4]},
+      {shape:"pointlight",size:[0.12],color:"#ffee88",position:[0,1.2,-4.6],intensity:0.8,distance:15}
+    ],
+    action:{type: "drive",speed: 5,turnSpeed: 0.6,grip: 0.15,pivot: true,steerSpeed: 2,lean: 0}
+  },
+  {
+    name:"Skrzynia skarbów",
+    category:["interaktywny","dekoracja"],
+    desc:"Drewniana skrzynia. Naciśnij E aby otworzyć — wieko unosi się.",
+    parts:[
+      {shape:"box",size:[0.8,0.5,0.5],color:"#885533",position:[0,0.25,0]},
+      {shape:"box",size:[0.82,0.06,0.52],color:"#aa7744",position:[0,0.52,0]},
+      {shape:"box",size:[0.84,0.08,0.08],color:"#ccaa44",position:[0,0.56,0]},
+      {shape:"box",size:[0.1,0.12,0.12],color:"#ccaa44",position:[0,0.3,-0.22]},
+      {shape:"box",size:[0.06,0.5,0.06],color:"#aa7744",position:[-0.37,0.25,-0.22]},
+      {shape:"box",size:[0.06,0.5,0.06],color:"#aa7744",position:[0.37,0.25,-0.22]},
+      {shape:"box",size:[0.06,0.5,0.06],color:"#aa7744",position:[-0.37,0.25,0.22]},
+      {shape:"box",size:[0.06,0.5,0.06],color:"#aa7744",position:[0.37,0.25,0.22]}
+    ],
+    action:{type:"open",angle:1.5708}
+  },
+  {
+    name:"Grzyb",
+    category:["natura"],
+    desc:"Duży stylizowany grzyb. Atmosfera bajki lub fantasy.",
+    parts:[
+      {shape:"cylinder",size:[0.12,0.15,0.8,6],color:"#eeddcc",position:[0,0.4,0]},
+      {shape:"sphere",size:[0.5,7,5],color:"#cc3333",position:[0,0.95,0]},
+      {shape:"sphere",size:[0.08,5,4],color:"#ffffff",position:[0.2,1.1,0.3]},
+      {shape:"sphere",size:[0.06,5,4],color:"#ffffff",position:[-0.15,1.2,0.25]},
+      {shape:"sphere",size:[0.07,5,4],color:"#ffffff",position:[0.1,1.25,-0.2]}
+    ]
+  },
+  {
+    name:"Most drewniany",
+    category:["budynek","dekoracja"],
+    desc:"Prosty most na rzekę lub wąwóz. Długość 5 jednostek.",
+    parts:[
+      {shape:"box",size:[2.0,0.12,5.0],color:"#aa7744",position:[0,0.5,0]},
+      {shape:"box",size:[0.12,0.6,5.0],color:"#885533",position:[-1.0,0.8,0]},
+      {shape:"box",size:[0.12,0.6,5.0],color:"#885533",position:[1.0,0.8,0]},
+      {shape:"cylinder",size:[0.15,0.15,1.0,6],color:"#664422",position:[-0.9,0.25,-2.3]},
+      {shape:"cylinder",size:[0.15,0.15,1.0,6],color:"#664422",position:[0.9,0.25,-2.3]},
+      {shape:"cylinder",size:[0.15,0.15,1.0,6],color:"#664422",position:[-0.9,0.25,2.3]},
+      {shape:"cylinder",size:[0.15,0.15,1.0,6],color:"#664422",position:[0.9,0.25,2.3]},
+      {shape:"box",size:[0.08,0.5,0.08],color:"#885533",position:[-1.0,0.85,-2.0]},
+      {shape:"box",size:[0.08,0.5,0.08],color:"#885533",position:[1.0,0.85,-2.0]},
+      {shape:"box",size:[0.08,0.5,0.08],color:"#885533",position:[-1.0,0.85,2.0]},
+      {shape:"box",size:[0.08,0.5,0.08],color:"#885533",position:[1.0,0.85,2.0]},
+      {shape:"box",size:[0.08,0.5,0.08],color:"#885533",position:[-1.0,0.85,0]},
+      {shape:"box",size:[0.08,0.5,0.08],color:"#885533",position:[1.0,0.85,0]}
+    ]
+  },
+  {
+    name:"Beczka",
+    category:["dekoracja"],
+    desc:"Drewniana beczka z metalowymi obręczami.",
+    parts:[
+      {shape:"cylinder",size:[0.3,0.25,0.8,8],color:"#885533",position:[0,0.4,0]},
+      {shape:"cylinder",size:[0.32,0.32,0.06,8],color:"#666666",position:[0,0.1,0]},
+      {shape:"cylinder",size:[0.32,0.32,0.06,8],color:"#666666",position:[0,0.7,0]},
+      {shape:"cylinder",size:[0.31,0.31,0.04,8],color:"#555555",position:[0,0.4,0]}
+    ]
+  },
+  {
+    name:"Tabliczka informacyjna",
+    category:["interaktywny","dekoracja"],
+    desc:"Drewniana tablica z napisem. Naciśnij E aby przeczytać.",
+    parts:[
+      {shape:"cylinder",size:[0.05,0.05,1.2,6],color:"#885533",position:[0,0.6,0]},
+      {shape:"box",size:[0.8,0.5,0.06],color:"#aa7744",position:[0,1.35,0]},
+      {shape:"box",size:[0.7,0.4,0.04],color:"#ccbb88",position:[0,1.35,0.02]}
+    ],
+    action:{type:"text",message:"Witaj w świecie Tabby! Odkrywaj, buduj, twórz."}
+  },
+  {
+    name:"Droga",
+    category:["budynek"],
+    desc:"Asfaltowa jezdnia 3×5 z liniami osiowymi. Stawiaj obok siebie wzdłuż trasy.",
+    parts:[
+      {shape:"box",size:[3,0.05,5],color:"#555555",position:[0,0.02,0]},
+      {shape:"box",size:[0.15,0.06,0.8],color:"#cccc88",position:[0,0.04,-1.5]},
+      {shape:"box",size:[0.15,0.06,0.8],color:"#cccc88",position:[0,0.04,0]},
+      {shape:"box",size:[0.15,0.06,0.8],color:"#cccc88",position:[0,0.04,1.5]}
+    ]
+  },
+  {
+    name:"Chodnik",
+    category:["budynek"],
+    desc:"Gładka płyta chodnikowa 2×5 z krawężnikiem. Postać wchodzi automatycznie.",
+    parts:[
+      {shape:"box",size:[2.0,0.12,5.0],color:"#bbbbaa",position:[0,0.06,0]},
+      {shape:"box",size:[0.15,0.18,5.0],color:"#999988",position:[-1.0,0.09,0]},
+      {shape:"box",size:[2.0,0.02,0.02],color:"#aaaaaa",position:[0,0.121,1.25]},
+      {shape:"box",size:[2.0,0.02,0.02],color:"#aaaaaa",position:[0,0.121,-1.25]}
+    ]
+  },
+  {
+    name:"Chodnik - płytki",
+    category:["budynek"],
+    desc:"Chodnik 2×5 w małe płytki szachownicowe z krawężnikiem. Wariant dekoracyjny.",
+    parts:[
+      {shape:"box",size:[0.95,0.12,0.95],color:"#ccccbb",position:[-0.5,0.06,2.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#bbbbaa",position:[0.5,0.06,2.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#bbbbaa",position:[-0.5,0.06,1.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#ccccbb",position:[0.5,0.06,1.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#ccccbb",position:[-0.5,0.06,0.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#bbbbaa",position:[0.5,0.06,0.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#bbbbaa",position:[-0.5,0.06,-1.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#ccccbb",position:[0.5,0.06,-1.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#ccccbb",position:[-0.5,0.06,-2.0]},
+      {shape:"box",size:[0.95,0.12,0.95],color:"#bbbbaa",position:[0.5,0.06,-2.0]},
+      {shape:"box",size:[0.15,0.18,5.0],color:"#999988",position:[-1.0,0.09,0]}
+    ]
+  },
+  {
+    name:"Basen",
+    category:["budynek","dekoracja"],
+    desc:"Prostokątny basen z niebieską wodą i betonowym obrzeżem. Rozmiar 5×3.",
+    parts:[
+      {shape:"box",size:[5.0,0.1,3.0],color:"#2288cc",position:[0,0.05,0]},
+      {shape:"box",size:[5.2,0.6,0.2],color:"#bbbbaa",position:[0,0.3,1.5]},
+      {shape:"box",size:[5.2,0.6,0.2],color:"#bbbbaa",position:[0,0.3,-1.5]},
+      {shape:"box",size:[0.2,0.6,3.0],color:"#bbbbaa",position:[2.5,0.3,0]},
+      {shape:"box",size:[0.2,0.6,3.0],color:"#bbbbaa",position:[-2.5,0.3,0]},
+      {shape:"box",size:[5.4,0.08,3.4],color:"#ccccbb",position:[0,0.62,0]},
+      {shape:"box",size:[4.8,0.02,2.8],color:"#44aadd",position:[0,0.58,0]},
+      {shape:"box",size:[0.08,0.9,0.08],color:"#888888",position:[2.3,0.45,1.2]},
+      {shape:"box",size:[0.08,0.9,0.08],color:"#888888",position:[2.3,0.45,-1.2]},
+      {shape:"box",size:[0.08,0.06,2.4],color:"#888888",position:[2.3,0.92,0]},
+      {shape:"cylinder",size:[0.12,0.12,0.5,6],color:"#666666",position:[-2.7,0.25,-1.7]},
+      {shape:"cylinder",size:[0.12,0.12,0.5,6],color:"#666666",position:[-2.7,0.25,1.7]},
+      {shape:"box",size:[0.06,0.5,3.6],color:"#666666",position:[-2.7,0.52,0]}
+    ]
+  },
+  {
+    name:"Fontanna",
+    category:["dekoracja"],
+    desc:"Okrągła kamienna fontanna z misą i tryskającą wodą na środku.",
+    parts:[
+      {shape:"cylinder",size:[1.5,1.6,0.15,12],color:"#999999",position:[0,0.07,0]},
+      {shape:"cylinder",size:[1.3,1.3,0.5,12],color:"#aaaaaa",position:[0,0.35,0]},
+      {shape:"cylinder",size:[1.4,1.4,0.08,12],color:"#888888",position:[0,0.62,0]},
+      {shape:"cylinder",size:[1.2,1.2,0.06,12],color:"#44aadd",position:[0,0.56,0]},
+      {shape:"cylinder",size:[0.15,0.2,0.8,8],color:"#999999",position:[0,0.95,0]},
+      {shape:"cylinder",size:[0.5,0.5,0.08,10],color:"#aaaaaa",position:[0,1.4,0]},
+      {shape:"cylinder",size:[0.4,0.4,0.04,10],color:"#44aadd",position:[0,1.38,0]},
+      {shape:"sphere",size:[0.12,6,4],color:"#88ccee",position:[0,1.55,0]},
+      {shape:"cylinder",size:[0.03,0.01,0.35,6],color:"#aaddee",position:[0.1,1.55,0.05],rotation:[0,0,0.3]},
+      {shape:"cylinder",size:[0.03,0.01,0.35,6],color:"#aaddee",position:[-0.08,1.55,0.08],rotation:[0,0.8,-0.3]},
+      {shape:"cylinder",size:[0.03,0.01,0.3,6],color:"#aaddee",position:[0.05,1.55,-0.1],rotation:[0,2.0,0.25]}
+    ]
+  },
+  {
+    name:"Huśtawka",
+    category:["dekoracja"],
+    desc:"Metalowa huśtawka z drewnianym siedziskiem. Idealna do placów zabaw.",
+    parts:[
+      {shape:"cylinder",size:[0.05,0.05,2.5,6],color:"#666666",position:[-0.8,1.25,0],rotation:[0,0,0.15]},
+      {shape:"cylinder",size:[0.05,0.05,2.5,6],color:"#666666",position:[0.8,1.25,0],rotation:[0,0,-0.15]},
+      {shape:"cylinder",size:[0.05,0.05,2.5,6],color:"#666666",position:[-0.8,1.25,1.5],rotation:[0,0,0.15]},
+      {shape:"cylinder",size:[0.05,0.05,2.5,6],color:"#666666",position:[0.8,1.25,1.5],rotation:[0,0,-0.15]},
+      {shape:"box",size:[1.8,0.06,0.06],color:"#555555",position:[0,2.4,0]},
+      {shape:"box",size:[1.8,0.06,0.06],color:"#555555",position:[0,2.4,1.5]},
+      {shape:"box",size:[0.06,0.06,1.6],color:"#555555",position:[0,2.4,0.75]},
+      {shape:"cylinder",size:[0.02,0.02,1.6,4],color:"#888888",position:[0,1.6,0.75]},
+      {shape:"box",size:[0.4,0.05,0.2],color:"#aa7744",position:[0,0.75,0.75]}
+    ]
+  },
+  {
+    name:"Wiatrak",
+    category:["budynek"],
+    desc:"Holenderski wiatrak z obracającymi się łopatami. Punkt orientacyjny na mapie.",
+    parts:[
+      {shape:"cylinder",size:[1.2,1.5,4.0,8],color:"#ccbb99",position:[0,2.0,0]},
+      {shape:"cylinder",size:[1.0,0.5,1.0,8],color:"#bbaa88",position:[0,4.3,0]},
+      {shape:"cone",size:[1.3,2.0,8],color:"#aa5533",position:[0,5.5,0]},
+      {shape:"box",size:[0.6,1.0,0.08],color:"#88bbdd",position:[0.3,2.0,1.21]},
+      {shape:"box",size:[0.6,1.0,0.08],color:"#88bbdd",position:[-0.3,2.0,1.21]},
+      {shape:"box",size:[0.7,1.5,0.1],color:"#885533",position:[0,1.0,1.22]},
+      {shape:"sphere",size:[0.2,6,4],color:"#555555",position:[0,4.5,-1.05]},
+      {shape:"box",size:[0.15,3.0,0.06],color:"#aa7744",position:[0,4.5,-1.2]},
+      {shape:"box",size:[3.0,0.15,0.06],color:"#aa7744",position:[0,4.5,-1.2]},
+      {shape:"box",size:[0.12,2.5,0.05],color:"#aa7744",position:[0,4.5,-1.2],rotation:[0,0,0.785]},
+      {shape:"box",size:[0.12,2.5,0.05],color:"#aa7744",position:[0,4.5,-1.2],rotation:[0,0,-0.785]}
+    ]
+  },
+  {
+    name:"Stoisko targowe",
+    category:["budynek","interaktywny"],
+    desc:"Drewniane stoisko z daszkiem i ladą. NPC sprzedawca w komplecie.",
+    parts:[
+      {shape:"box",size:[2.0,0.08,1.2],color:"#aa7744",position:[0,1.0,0]},
+      {shape:"box",size:[0.1,1.0,0.1],color:"#885533",position:[-0.9,0.5,-0.5]},
+      {shape:"box",size:[0.1,1.0,0.1],color:"#885533",position:[0.9,0.5,-0.5]},
+      {shape:"box",size:[0.1,1.0,0.1],color:"#885533",position:[-0.9,0.5,0.5]},
+      {shape:"box",size:[0.1,1.0,0.1],color:"#885533",position:[0.9,0.5,0.5]},
+      {shape:"box",size:[2.2,0.06,1.4],color:"#aa5533",position:[0,2.2,0],rotation:[0.2,0,0]},
+      {shape:"box",size:[0.1,1.3,0.1],color:"#885533",position:[-1.0,1.6,-0.6]},
+      {shape:"box",size:[0.1,1.3,0.1],color:"#885533",position:[1.0,1.6,-0.6]},
+      {shape:"box",size:[0.1,1.2,0.1],color:"#885533",position:[-1.0,1.55,0.6]},
+      {shape:"box",size:[0.1,1.2,0.1],color:"#885533",position:[1.0,1.55,0.6]},
+      {shape:"box",size:[2.0,0.5,0.06],color:"#aa7744",position:[0,1.25,-0.6]},
+      {shape:"box",size:[0.3,0.3,0.3],color:"#cc6644",position:[-0.5,1.2,0.1]},
+      {shape:"box",size:[0.25,0.35,0.25],color:"#ddaa33",position:[0.2,1.17,0.15]},
+      {shape:"sphere",size:[0.15,6,4],color:"#cc3333",position:[0.6,1.2,0.0]},
+      {shape:"sphere",size:[0.12,6,4],color:"#cc3333",position:[0.75,1.15,-0.1]}
+    ],
+    action:{type:"text",message:"Witaj! Mam najlepsze owoce w okolicy. Jabłka, gruszki — bierz co chcesz!"}
+  },
+  {
+    name:"Namiot",
+    category:["budynek"],
+    desc:"Turystyczny namiot trójkątny. Idealny do obozowisk i campingów.",
+    parts:[
+      {shape:"box",size:[2.0,0.04,2.5],color:"#556644",position:[0,0.02,0]},
+      {shape:"box",size:[1.5,0.04,2.6],color:"#448844",position:[0,0.9,-0.05],rotation:[0,0,0.75]},
+      {shape:"box",size:[1.5,0.04,2.6],color:"#448844",position:[0,0.9,-0.05],rotation:[0,0,-0.75]},
+      {shape:"box",size:[0.04,1.3,0.04],color:"#aa7744",position:[0,0.65,1.25]},
+      {shape:"box",size:[0.04,1.3,0.04],color:"#aa7744",position:[0,0.65,-1.25]},
+      {shape:"box",size:[0.8,1.0,0.04],color:"#336633",position:[0,0.5,1.27]},
+      {shape:"cylinder",size:[0.03,0.03,0.6,4],color:"#888888",position:[0.9,0.3,1.6],rotation:[0.6,0,0]}
+    ]
+  },
+  {
+    name:"Ognisko",
+    category:["dekoracja","interaktywny"],
+    desc:"Ognisko z kamiennym kręgiem i prawdziwym światłem. Naciśnij E aby zapalić/zgasić.",
+    parts:[
+      {shape:"cylinder",size:[0.6,0.65,0.12,10],color:"#777777",position:[0,0.06,0]},
+      {shape:"sphere",size:[0.15,4,3],color:"#888888",position:[0.5,0.12,0.2]},
+      {shape:"sphere",size:[0.13,4,3],color:"#888888",position:[-0.45,0.12,0.3]},
+      {shape:"sphere",size:[0.14,4,3],color:"#888888",position:[0.1,0.12,-0.5]},
+      {shape:"sphere",size:[0.12,4,3],color:"#888888",position:[-0.3,0.12,-0.35]},
+      {shape:"sphere",size:[0.13,4,3],color:"#888888",position:[0.4,0.12,-0.25]},
+      {shape:"cylinder",size:[0.04,0.03,0.5,4],color:"#664422",position:[0.1,0.3,0.05],rotation:[0,0,0.2]},
+      {shape:"cylinder",size:[0.04,0.03,0.45,4],color:"#553311",position:[-0.08,0.28,0.08],rotation:[0.15,0.5,-0.15]},
+      {shape:"cylinder",size:[0.03,0.03,0.4,4],color:"#664422",position:[0.0,0.25,-0.05],rotation:[-0.1,0.3,0.1]},
+      {shape:"cone",size:[0.2,0.5,6],color:"#ff6622",position:[0,0.45,0]},
+      {shape:"cone",size:[0.12,0.35,6],color:"#ffaa22",position:[0.05,0.5,0.03]},
+      {shape:"cone",size:[0.08,0.25,5],color:"#ffdd44",position:[-0.03,0.48,-0.02]},
+      {shape:"pointlight",size:[0.08],color:"#ff8833",position:[0,0.6,0],intensity:1.8,distance:10}
+    ],
+    action:{type:"light",intensity:1.8,distance:10}
+  },
+  {
+    name:"Zjeżdżalnia",
+    category:["dekoracja"],
+    desc:"Kolorowa zjeżdżalnia dla dzieci. Element placu zabaw.",
+    parts:[
+      {shape:"box",size:[0.06,2.0,0.06],color:"#555555",position:[-0.4,1.0,-0.8]},
+      {shape:"box",size:[0.06,2.0,0.06],color:"#555555",position:[0.4,1.0,-0.8]},
+      {shape:"box",size:[0.8,0.06,0.06],color:"#555555",position:[0,1.0,-0.8]},
+      {shape:"box",size:[0.8,0.06,0.06],color:"#555555",position:[0,0.5,-0.8]},
+      {shape:"box",size:[0.8,0.06,0.5],color:"#555555",position:[0,2.0,-0.8]},
+      {shape:"box",size:[0.7,0.04,2.5],color:"#cc3333",position:[0,1.15,0.5],rotation:[0.45,0,0]},
+      {shape:"box",size:[0.08,0.3,2.5],color:"#cc4444",position:[-0.38,1.3,0.5],rotation:[0.45,0,0]},
+      {shape:"box",size:[0.08,0.3,2.5],color:"#cc4444",position:[0.38,1.3,0.5],rotation:[0.45,0,0]},
+      {shape:"box",size:[0.06,0.5,0.06],color:"#555555",position:[-0.35,0.95,0]},
+      {shape:"box",size:[0.06,0.5,0.06],color:"#555555",position:[0.35,0.95,0]}
+    ]
+  },
+  {
+    name:"Komin fabryczny",
+    category:["budynek"],
+    desc:"Wysoki ceglany komin przemysłowy. Dominanta krajobrazu miejskiego.",
+    parts:[
+      {shape:"cylinder",size:[0.8,0.9,0.5,8],color:"#aa5533",position:[0,0.25,0]},
+      {shape:"cylinder",size:[0.7,0.7,6.0,8],color:"#cc6644",position:[0,3.25,0]},
+      {shape:"cylinder",size:[0.75,0.75,0.3,8],color:"#aa5533",position:[0,6.4,0]},
+      {shape:"cylinder",size:[0.65,0.65,0.1,8],color:"#333333",position:[0,6.55,0]},
+      {shape:"cylinder",size:[0.72,0.72,0.08,8],color:"#995533",position:[0,2.0,0]},
+      {shape:"cylinder",size:[0.72,0.72,0.08,8],color:"#995533",position:[0,4.0,0]}
+    ]
+  },
+  {
+    name:"Dąb",
+    category:["natura"],
+    desc:"Rozłożysty dąb z bujną, trójczęściową koroną.",
+    parts:[
+      {"shape":"cylinder","size":[0.2,0.25,3,6],"color":"#6b4226","position":[0,1.5,0]},
+      {"shape":"sphere","size":[1.8,7,5],"color":"#2d5a1e","position":[0,3.8,0]},
+      {"shape":"sphere","size":[1.3,6,4],"color":"#3a7a28","position":[0.6,4.2,0.4]},
+      {"shape":"sphere","size":[1,6,4],"color":"#245518","position":[-0.5,3.5,-0.3]}
+    ]
+  },
+  {
+    name:"Brzoza",
+    category:["natura"],
+    desc:"Smukła brzoza o jasnym pniu i jasnozielonych liściach.",
+    parts:[
+      {"shape":"cylinder","size":[0.1,0.12,4,6],"color":"#e8dcc8","position":[0,2,0]},
+      {"shape":"sphere","size":[0.9,6,5],"color":"#88cc44","position":[0,4.2,0]},
+      {"shape":"sphere","size":[0.6,5,4],"color":"#99dd55","position":[0.3,4.6,0.2]}
+    ]
+  },
+  {
+    name:"Sosna leśna",
+    category:["natura"],
+    desc:"Wysoka leśna sosna — dobra do gęstego boru.",
+    parts:[
+      {"shape":"cylinder","size":[0.1,0.14,3.5,6],"color":"#5a3a1a","position":[0,1.75,0]},
+      {"shape":"cone","size":[1.2,2.5,6],"color":"#1a5a1a","position":[0,4,0]},
+      {"shape":"cone","size":[0.9,2,6],"color":"#227722","position":[0,5,0]},
+      {"shape":"cone","size":[0.5,1.2,6],"color":"#2a8a2a","position":[0,5.8,0]}
+    ]
+  },
+  {
+    name:"Wierzba",
+    category:["natura"],
+    desc:"Wierzba o zwisających gałęziach, pasuje nad wodę.",
+    parts:[
+      {"shape":"cylinder","size":[0.3,0.35,2.5,6],"color":"#5a4020","position":[0,1.25,0]},
+      {"shape":"sphere","size":[2,7,5],"color":"#4a8a2a","position":[0,3.5,0]},
+      {"shape":"cylinder","size":[0.01,0.01,2.5,4],"color":"#6aaa3a","position":[0.8,2.5,0.3]},
+      {"shape":"cylinder","size":[0.01,0.01,2.5,4],"color":"#5a9a2a","position":[-0.6,2.5,-0.4]},
+      {"shape":"cylinder","size":[0.01,0.01,2.8,4],"color":"#6aaa3a","position":[0.3,2.5,0.7]},
+      {"shape":"cylinder","size":[0.01,0.01,2.3,4],"color":"#5a9a2a","position":[-0.4,2.5,0.5]}
+    ]
+  },
+  {
+    name:"Paproć",
+    category:["natura"],
+    desc:"Kępa paproci do runa leśnego.",
+    parts:[
+      {"shape":"cone","size":[0.6,0.8,5],"color":"#2a7a2a","position":[0,0.4,0]},
+      {"shape":"cone","size":[0.5,0.7,5],"color":"#338833","position":[0.2,0.35,0.15],"rotation":[0.2,0,0.3]},
+      {"shape":"cone","size":[0.4,0.6,5],"color":"#2a7a2a","position":[-0.15,0.3,-0.1],"rotation":[-0.15,0,-0.2]}
+    ]
+  },
+  {
+    name:"Grzyb leśny",
+    category:["natura"],
+    desc:"Leśny grzyb w kapeluszu — ozdoba ściółki.",
+    parts:[
+      {"shape":"cylinder","size":[0.08,0.1,0.5,6],"color":"#eeddcc","position":[0,0.25,0]},
+      {"shape":"sphere","size":[0.35,7,5],"color":"#cc2222","position":[0,0.6,0]},
+      {"shape":"sphere","size":[0.06,5,4],"color":"#ffffff","position":[0.15,0.7,0.2]},
+      {"shape":"sphere","size":[0.04,5,4],"color":"#ffffff","position":[-0.1,0.75,0.15]}
+    ]
+  },
+  {
+    name:"Świecący grzyb",
+    category:["natura","interaktywny"],
+    desc:"Magiczny grzyb z zieloną poświatą. E zapala i gasi światło.",
+    parts:[
+      {"shape":"cylinder","size":[0.06,0.08,0.6,6],"color":"#aaddcc","position":[0,0.3,0]},
+      {"shape":"sphere","size":[0.3,7,5],"color":"#44ffaa","position":[0,0.7,0]},
+      {"shape":"pointlight","size":[0.08],"color":"#44ffaa","position":[0,0.7,0],"intensity":0.8,"distance":5}
+    ],
+    action:{"type":"light","intensity":0.8,"distance":5}
+  },
+  {
+    name:"Kamyk",
+    category:["natura"],
+    desc:"Niewielki kamień na ścieżki i brzegi.",
+    parts:[
+      {"shape":"sphere","size":[0.7,4,3],"color":"#777777","position":[0,0.4,0]},
+      {"shape":"sphere","size":[0.4,4,3],"color":"#666666","position":[0.35,0.25,0.2]}
+    ]
+  },
+  {
+    name:"Głaz",
+    category:["natura"],
+    desc:"Duży głaz narzutowy.",
+    parts:[
+      {"shape":"sphere","size":[1.5,5,4],"color":"#888888","position":[0,0.8,0]},
+      {"shape":"sphere","size":[0.8,4,3],"color":"#777777","position":[0.7,0.5,0.5]}
+    ]
+  },
+  {
+    name:"Pniak",
+    category:["natura"],
+    desc:"Ścięty pień z korzeniami.",
+    parts:[
+      {"shape":"cylinder","size":[0.4,0.35,0.5,8],"color":"#6b4226","position":[0,0.25,0]},
+      {"shape":"cylinder","size":[0.42,0.38,0.06,8],"color":"#5a3a1a","position":[0,0.5,0]}
+    ]
+  },
+  {
+    name:"Kłoda",
+    category:["natura"],
+    desc:"Przewrócony pień leżący w lesie.",
+    parts:[
+      {"shape":"cylinder","size":[0.25,0.25,2.5,6],"color":"#6b4226","position":[0,0.25,0],"rotation":[0,0,1.5708]}
+    ]
+  },
+  {
+    name:"Sadzawka",
+    category:["natura","dekoracja"],
+    desc:"Mała leśna sadzawka.",
+    parts:[
+      {"shape":"cylinder","size":[2.5,2.5,0.08,16],"color":"#3388aa","position":[0,0.04,0]},
+      {"shape":"cylinder","size":[2.7,2.7,0.04,16],"color":"#556644","position":[0,0.01,0]}
+    ]
+  },
+  {
+    name:"Mostek leśny",
+    category:["budynek"],
+    desc:"Niewielki mostek nad strumieniem.",
+    parts:[
+      {"shape":"box","size":[3,0.15,1.8],"color":"#8a6a3a","position":[0,0.3,0]},
+      {"shape":"box","size":[0.12,0.8,1.8],"color":"#7a5a2a","position":[-1.4,0.65,0]},
+      {"shape":"box","size":[0.12,0.8,1.8],"color":"#7a5a2a","position":[1.4,0.65,0]},
+      {"shape":"cylinder","size":[0.06,0.06,0.8,6],"color":"#6a4a2a","position":[-1.4,0.3,-0.7]},
+      {"shape":"cylinder","size":[0.06,0.06,0.8,6],"color":"#6a4a2a","position":[1.4,0.3,-0.7]},
+      {"shape":"cylinder","size":[0.06,0.06,0.8,6],"color":"#6a4a2a","position":[-1.4,0.3,0.7]},
+      {"shape":"cylinder","size":[0.06,0.06,0.8,6],"color":"#6a4a2a","position":[1.4,0.3,0.7]}
+    ]
+  },
+  {
+    name:"Mur ruin",
+    category:["ruiny","budynek"],
+    desc:"Fragment starego, pokruszonego muru.",
+    parts:[
+      {"shape":"box","size":[4,3,0.6],"color":"#8a8070","position":[0,1.5,0]},
+      {"shape":"box","size":[1.2,1,0.62],"color":"#7a7060","position":[1.2,3,0]},
+      {"shape":"box","size":[0.8,0.6,0.62],"color":"#8a8070","position":[-0.5,3.3,0]}
+    ]
+  },
+  {
+    name:"Filar ruin",
+    category:["ruiny","budynek"],
+    desc:"Samotny kamienny filar dawnej budowli.",
+    parts:[
+      {"shape":"cylinder","size":[0.35,0.35,3.5,8],"color":"#9a9080","position":[0,1.75,0]},
+      {"shape":"cylinder","size":[0.45,0.45,0.2,8],"color":"#8a8070","position":[0,0.1,0]},
+      {"shape":"cylinder","size":[0.45,0.45,0.2,8],"color":"#8a8070","position":[0,3.5,0]}
+    ]
+  },
+  {
+    name:"Łuk ruin",
+    category:["ruiny","interaktywny"],
+    desc:"Starożytna brama z runami. E pokazuje napis.",
+    parts:[
+      {"shape":"cylinder","size":[0.3,0.3,4,8],"color":"#9a9080","position":[-1.5,2,0]},
+      {"shape":"cylinder","size":[0.3,0.3,4,8],"color":"#9a9080","position":[1.5,2,0]},
+      {"shape":"box","size":[3.6,0.4,0.5],"color":"#8a8070","position":[0,4.1,0]},
+      {"shape":"box","size":[3,0.25,0.45],"color":"#7a7060","position":[0,3.8,0]}
+    ],
+    action:{"type":"text","message":"Starożytna brama... Runy na kamieniach migoczą słabym światłem."}
+  },
+  {
+    name:"Ołtarz",
+    category:["ruiny","interaktywny"],
+    desc:"Kamienny ołtarz z niebieską poświatą. E pokazuje napis.",
+    parts:[
+      {"shape":"box","size":[1.5,0.8,1],"color":"#999088","position":[0,0.4,0]},
+      {"shape":"box","size":[1.7,0.12,1.2],"color":"#aaa098","position":[0,0.82,0]},
+      {"shape":"sphere","size":[0.15,6,5],"color":"#aaaaff","position":[0,1.1,0]},
+      {"shape":"pointlight","size":[0.1],"color":"#8888ff","position":[0,1.3,0],"intensity":1,"distance":8}
+    ],
+    action:{"type":"text","message":"Ołtarz promieniuje tajemniczą energią. Czujesz mrowienie w palcach..."}
+  },
+  {
+    name:"Kamień wróżek",
+    category:["ruiny","interaktywny"],
+    desc:"Kamień z fioletowym blaskiem — świetny na zagadki. E pokazuje napis.",
+    parts:[
+      {"shape":"sphere","size":[0.5,6,5],"color":"#aaaaaa","position":[0,0.3,0]},
+      {"shape":"sphere","size":[0.2,6,5],"color":"#ccccff","position":[0,0.75,0]},
+      {"shape":"pointlight","size":[0.08],"color":"#cc88ff","position":[0,0.9,0],"intensity":0.6,"distance":4}
+    ],
+    action:{"type":"text","message":"Kamień wróżek... Legenda mówi, że trzy takie kamienie wskazują drogę do skarbu."}
+  },
+  {
+    name:"Pochodnia",
+    category:["dekoracja","interaktywny"],
+    desc:"Pochodnia z ciepłym płomieniem. E zapala i gasi.",
+    parts:[
+      {"shape":"cylinder","size":[0.04,0.04,1.2,6],"color":"#6b4226","position":[0,0.6,0]},
+      {"shape":"cone","size":[0.08,0.25,6],"color":"#ff8833","position":[0,1.3,0]},
+      {"shape":"pointlight","size":[0.06],"color":"#ff8833","position":[0,1.3,0],"intensity":1.2,"distance":8}
+    ],
+    action:{"type":"light","intensity":1.2,"distance":8}
+  },
+  {
+    name:"Skrzynka z sekretem",
+    category:["interaktywny","dekoracja"],
+    desc:"Mała skrzynka z ukrytym znaleziskiem. E pokazuje napis.",
+    parts:[
+      {"shape":"box","size":[0.8,0.5,0.5],"color":"#885533","position":[0,0.25,0]},
+      {"shape":"box","size":[0.82,0.06,0.52],"color":"#aa7744","position":[0,0.52,0]},
+      {"shape":"box","size":[0.1,0.12,0.12],"color":"#ccaa44","position":[0,0.3,-0.22]}
+    ],
+    action:{"type":"text","message":"Znalazłeś elficki amulet! Podobno otwiera ukryte przejście w ruinach..."}
+  },
+  {
+    name:"Drogowskaz",
+    category:["dekoracja","interaktywny"],
+    desc:"Drewniany drogowskaz z dwiema strzałkami. E pokazuje napis.",
+    parts:[
+      {"shape":"cylinder","size":[0.06,0.06,2,6],"color":"#6b4226","position":[0,1,0]},
+      {"shape":"box","size":[1,0.3,0.06],"color":"#8a6a3a","position":[0.3,1.8,0],"rotation":[0,0,0.1]},
+      {"shape":"box","size":[0.8,0.25,0.06],"color":"#8a6a3a","position":[-0.2,1.5,0],"rotation":[0,0,-0.08]}
+    ],
+    action:{"type":"text","message":"← Ruiny | Sadzawka → | ↑ Głęboki las"}
+  }
+];
+
+// ==================== 3D PREVIEW ENGINE ====================
+var previews = [];
+
+function buildPreviewMesh(parts){
+  var group = new THREE.Group();
+  parts.forEach(function(p){
+    if(p.shape === 'pointlight'){
+      var li = new THREE.PointLight(new THREE.Color(p.color), p.intensity||1.5, p.distance||12);
+      if(p.position) li.position.set(p.position[0], p.position[1], p.position[2]);
+      group.add(li);
+      var glGeo = new THREE.SphereGeometry(p.size ? p.size[0] : 0.1, 8, 6);
+      var glMat = new THREE.MeshBasicMaterial({color: p.color, transparent: true, opacity: 0.85});
+      var gl = new THREE.Mesh(glGeo, glMat);
+      if(p.position) gl.position.set(p.position[0], p.position[1], p.position[2]);
+      group.add(gl);
+      return;
+    }
+    var geo, s = p.size;
+    var mat = new THREE.MeshStandardMaterial({color: p.color, roughness: 0.65, metalness: 0.05});
+    switch(p.shape){
+      case 'box': geo = new THREE.BoxGeometry(s[0],s[1],s[2]); break;
+      case 'sphere': geo = new THREE.SphereGeometry(s[0], s[1]||8, s[2]||6); break;
+      case 'cylinder': geo = new THREE.CylinderGeometry(s[0],s[1],s[2],s[3]||8); break;
+      case 'cone': geo = new THREE.ConeGeometry(s[0],s[1],s[2]||8); break;
+      case 'plane': geo = new THREE.PlaneGeometry(s[0],s[1]); break;
+      default: geo = new THREE.BoxGeometry(1,1,1);
+    }
+    var m = new THREE.Mesh(geo, mat);
+    if(p.position) m.position.set(p.position[0], p.position[1], p.position[2]);
+    if(p.rotation) m.rotation.set(p.rotation[0], p.rotation[1], p.rotation[2]);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    group.add(m);
+  });
+  return group;
+}
+
+// Jeden wspólny renderer WebGL dla wszystkich podglądów.
+// Przeglądarka pozwala na ok. 16 kontekstów WebGL naraz — przy 50+ kartach każdy
+// z własnym rendererem część podglądów znikała. Teraz rysujemy wszystko jednym
+// rendererem i kopiujemy obraz do zwykłego canvasa 2D karty.
+var SR = null, dragS = null;
+function sharedRenderer(){
+  if(!SR){
+    SR = new THREE.WebGLRenderer({antialias: true, alpha: false});
+    SR.shadowMap.enabled = true;
+    SR.setClearColor(0x141942);
+  }
+  return SR;
+}
+window.addEventListener('mouseup', function(){ dragS = null; });
+window.addEventListener('touchend', function(){ dragS = null; });
+function dragMove(x, y){
+  if(!dragS) return;
+  dragS.rotY += (x - dragS.lastDragX) * 0.01;
+  dragS.rotX = Math.max(0.05, Math.min(1.2, dragS.rotX + (y - dragS.lastDragY) * 0.01));
+  dragS.lastDragX = x; dragS.lastDragY = y; dragS.needsRender = true;
+}
+window.addEventListener('mousemove', function(e){ dragMove(e.clientX, e.clientY); });
+window.addEventListener('touchmove', function(e){ if(e.touches.length===1) dragMove(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+var visObs = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
+  entries.forEach(function(en){ var st = en.target._pv; if(st){ st.visible = en.isIntersecting; if(st.visible) st.needsRender = true; } });
+}, {rootMargin: '150px'}) : null;
+
+function initPreview(canvas, asset, idx){
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.1, 100);
+
+  scene.add(new THREE.AmbientLight(0x8899bb, 0.5));
+  var sun = new THREE.DirectionalLight(0xfff5e0, 0.9);
+  sun.position.set(5, 8, 6);
+  sun.castShadow = true;
+  scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0x88bbff, 0x445533, 0.3));
+
+  var ground = new THREE.Mesh(
+    new THREE.CircleGeometry(3, 32),
+    new THREE.MeshStandardMaterial({color: 0x1f2552, roughness: 0.95})
+  );
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = -0.01;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  var mesh = buildPreviewMesh(asset.parts);
+  scene.add(mesh);
+
+  var box = new THREE.Box3().setFromObject(mesh);
+  var center = new THREE.Vector3(); box.getCenter(center);
+  var size = new THREE.Vector3(); box.getSize(size);
+  var maxDim = Math.max(size.x, size.y, size.z);
+  var dist = maxDim * 2.0 + 1.5;
+
+  var state = {
+    canvas: canvas, ctx: canvas.getContext('2d'),
+    scene: scene, camera: camera, mesh: mesh, center: center, dist: dist,
+    rotY: 0.5, rotX: 0.35, autoRotate: true, needsRender: true, visible: !visObs,
+    lastDragX: 0, lastDragY: 0
+  };
+  canvas._pv = state;
+  if(visObs) visObs.observe(canvas);
+
+  canvas.addEventListener('mousedown', function(e){ dragS = state; state.autoRotate = false; state.lastDragX = e.clientX; state.lastDragY = e.clientY; });
+  canvas.addEventListener('touchstart', function(e){ if(e.touches.length===1){ dragS = state; state.autoRotate = false; state.lastDragX = e.touches[0].clientX; state.lastDragY = e.touches[0].clientY; } }, {passive:true});
+
+  previews.push(state);
+  return state;
+}
+function drawPreview(s){
+  var r = sharedRenderer(), c = s.canvas;
+  var sz = r.getSize(new THREE.Vector2());
+  if(sz.x !== c.width || sz.y !== c.height){ r.setPixelRatio(1); r.setSize(c.width, c.height, false); }
+  updateCamera(s);
+  r.render(s.scene, s.camera);
+  s.ctx.drawImage(r.domElement, 0, 0, c.width, c.height);
+}
+function disposePreview(s){
+  if(visObs) visObs.unobserve(s.canvas);
+  s.scene.traverse(function(o){ if(o.geometry) o.geometry.dispose(); if(o.material) o.material.dispose(); });
+}
+
+function updateCamera(s){
+  s.camera.position.set(
+    s.center.x + Math.sin(s.rotY) * Math.cos(s.rotX) * s.dist,
+    s.center.y + Math.sin(s.rotX) * s.dist,
+    s.center.z + Math.cos(s.rotY) * Math.cos(s.rotX) * s.dist
+  );
+  s.camera.lookAt(s.center);
+}
+
+// ==================== RENDER LOOP ====================
+var lastTime = 0;
+function animate(now){
+  requestAnimationFrame(animate);
+  // throttle to ~30fps
+  if(now - lastTime < 33) return;
+  lastTime = now;
+  for(var i = 0; i < previews.length; i++){
+    var s = previews[i];
+    if(!s.visible) continue;
+    if(s.autoRotate){
+      s.rotY += 0.008;
+      s.needsRender = true;
+    }
+    if(s.needsRender){
+      drawPreview(s);
+      s.needsRender = false;
+    }
+  }
+}
+requestAnimationFrame(animate);
+
+// ==================== UI ====================
+var activeCategory = 'all';
+var searchQuery = '';
+var visibleCards = [];
+
+function getAssetJSON(asset){
+  var obj = {name: asset.name, parts: asset.parts};
+  if(asset.action) obj.action = asset.action;
+  return JSON.stringify(obj, null, 2);
+}
+
+function showToast(text){
+  var t = document.getElementById('toast');
+  t.textContent = '✓ ' + text;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+function copyJSON(asset, btn){
+  var json = getAssetJSON(asset);
+  navigator.clipboard.writeText(json).then(function(){
+    btn.textContent = '✓ Skopiowano!';
+    btn.classList.add('copied');
+    showToast('JSON skopiowany — wklej w edytorze silnika');
+    setTimeout(function(){ btn.textContent = '📋 Kopiuj JSON'; btn.classList.remove('copied'); }, 2000);
+  }).catch(function(){
+    // fallback
+    var ta = document.createElement('textarea');
+    ta.value = json; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Skopiowano!';
+    btn.classList.add('copied');
+    showToast('JSON skopiowany — wklej w edytorze silnika');
+    setTimeout(function(){ btn.textContent = '📋 Kopiuj JSON'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function showModal(asset){
+  var json = getAssetJSON(asset);
+  document.getElementById('modal-title').textContent = asset.name + ' — JSON';
+  document.getElementById('modal-code').textContent = json;
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('modal-copy').onclick = function(){
+    navigator.clipboard.writeText(json).then(function(){
+      showToast('JSON skopiowany!');
+    });
+  };
+}
+
+document.getElementById('modal-close').addEventListener('click', function(){
+  document.getElementById('modal').classList.remove('show');
+});
+document.getElementById('modal').addEventListener('click', function(e){
+  if(e.target === this) this.classList.remove('show');
+});
+
+function renderCards(){
+  var grid = document.getElementById('grid');
+  // cleanup old previews
+  previews.forEach(disposePreview); dragS = null;
+  previews = [];
+  grid.innerHTML = '';
+
+  var filtered = ASSETS.filter(function(a){
+    var catMatch = activeCategory === 'all' || a.category.indexOf(activeCategory) !== -1;
+    var searchMatch = !searchQuery || a.name.toLowerCase().indexOf(searchQuery) !== -1 || a.desc.toLowerCase().indexOf(searchQuery) !== -1;
+    return catMatch && searchMatch;
+  });
+
+  document.getElementById('stats').textContent = filtered.length + ' z ' + ASSETS.length + ' obiektów';
+  document.getElementById('empty').style.display = filtered.length === 0 ? 'block' : 'none';
+
+  filtered.forEach(function(asset, idx){
+    var card = document.createElement('div');
+    card.className = 'card';
+
+    var preview = document.createElement('div');
+    preview.className = 'card-preview';
+    var canvas = document.createElement('canvas');
+    preview.appendChild(canvas);
+    card.appendChild(preview);
+
+    var body = document.createElement('div');
+    body.className = 'card-body';
+
+    var name = document.createElement('div');
+    name.className = 'card-name';
+    name.textContent = asset.name;
+    body.appendChild(name);
+
+    var tags = document.createElement('div');
+    tags.className = 'card-tags';
+    asset.category.forEach(function(cat){
+      var tag = document.createElement('span');
+      tag.className = 'tag tag-' + cat;
+      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny'};
+      tag.textContent = labels[cat] || cat;
+      tags.appendChild(tag);
+    });
+    body.appendChild(tags);
+
+    var desc = document.createElement('div');
+    desc.className = 'card-desc';
+    desc.textContent = asset.desc;
+    body.appendChild(desc);
+
+    var meta = document.createElement('div');
+    meta.className = 'card-meta';
+    meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
+    if(asset.action){
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda'};
+      meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
+    }
+    body.appendChild(meta);
+
+    var actions = document.createElement('div');
+    actions.className = 'card-actions';
+    var btnCopy = document.createElement('button');
+    btnCopy.className = 'btn-copy';
+    btnCopy.textContent = '📋 Kopiuj JSON';
+    (function(a, b){ btnCopy.addEventListener('click', function(){ copyJSON(a, b); }); })(asset, btnCopy);
+    actions.appendChild(btnCopy);
+
+    var btnView = document.createElement('button');
+    btnView.className = 'btn-preview';
+    btnView.textContent = '{ }';
+    btnView.title = 'Podgląd JSON';
+    (function(a){ btnView.addEventListener('click', function(){ showModal(a); }); })(asset);
+    actions.appendChild(btnView);
+
+    body.appendChild(actions);
+    card.appendChild(body);
+    grid.appendChild(card);
+
+    // init 3D after DOM attach
+    requestAnimationFrame(function(){
+      var w = canvas.parentElement.clientWidth;
+      var h = canvas.parentElement.clientHeight;
+      canvas.width = w * Math.min(devicePixelRatio, 2);
+      canvas.height = h * Math.min(devicePixelRatio, 2);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      initPreview(canvas, asset, idx);
+    });
+  });
+}
+
+// FILTERS
+document.getElementById('filters').addEventListener('click', function(e){
+  var pill = e.target.closest('.pill');
+  if(!pill) return;
+  document.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('active'); });
+  pill.classList.add('active');
+  activeCategory = pill.dataset.cat;
+  renderCards();
+});
+
+// SEARCH
+var searchTimer;
+document.getElementById('search').addEventListener('input', function(e){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function(){
+    searchQuery = e.target.value.trim().toLowerCase();
+    renderCards();
+  }, 200);
+});
+
+// RESIZE
+var resizeTimer;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){
+    previews.forEach(function(s){
+      var c = s.renderer.domElement;
+      var p = c.parentElement;
+      if(!p) return;
+      var w = p.clientWidth;
+      var h = p.clientHeight;
+      c.width = w * Math.min(devicePixelRatio, 2);
+      c.height = h * Math.min(devicePixelRatio, 2);
+      s.renderer.setSize(w, h);
+      s.camera.aspect = w / h;
+      s.camera.updateProjectionMatrix();
+      s.needsRender = true;
+    });
+  }, 150);
+});
+
+// INIT
+renderCards();
+
+})();
+</script>
+</body>
+</html>

@@ -32,6 +32,27 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
 .choice b{display:block;font-family:var(--display);font-weight:500;font-size:23px;line-height:1.15}
 .choice span{display:block;margin-top:3px;font-size:14.5px;color:var(--muted)}
 
+
+/* ---------- okno "O programie" ---------- */
+#about{position:fixed;inset:0;z-index:5;display:none;overflow-y:auto;
+  background:rgba(9,11,32,.8);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  padding:max(28px,env(safe-area-inset-top)) clamp(18px,5vw,64px) max(56px,env(safe-area-inset-bottom));font-size:17px;line-height:1.65}
+#about.show{display:block}
+#about .wrap{max-width:720px;margin:0 auto}
+#about .back{font:inherit;font-size:15px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:9px 18px;margin-bottom:34px;cursor:pointer}
+#about .back:hover{border-color:var(--line-hi)}
+#about .back:focus-visible{outline:3px solid var(--glow);outline-offset:3px}
+#about h1{margin:0 0 8px;font-family:var(--display);font-weight:600;font-size:clamp(48px,8vw,76px);line-height:1;color:var(--moon)}
+#about .lead{margin:0 0 44px;font-size:20px;color:var(--muted);max-width:34em}
+#about h2{margin:44px 0 14px;font-family:var(--display);font-weight:500;font-size:28px;color:var(--moon)}
+#about p{margin:0 0 16px}
+#about dl{margin:0;display:grid;gap:18px}
+#about .item{padding:16px 20px;border:1px solid var(--line);border-radius:16px;background:rgba(18,22,62,.6)}
+#about dt{font-family:var(--display);font-weight:500;font-size:20px;color:var(--glow);margin-bottom:4px}
+#about dd{margin:0;color:var(--ink)}
+#about code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:rgba(255,243,212,.08);border-radius:5px;padding:1px 6px;color:var(--moon)}
+#about .sum{margin-top:44px;padding:20px 22px;border-left:3px solid var(--glow);background:rgba(240,163,94,.08);border-radius:0 14px 14px 0}
+#about .sum p{margin:0}
 /* ---------- telefon / pion ---------- */
 @media (max-aspect-ratio:1/1),(max-width:720px){
   .home{top:auto;bottom:max(24px,env(safe-area-inset-bottom));transform:none;left:20px;right:20px;width:auto}
@@ -57,11 +78,40 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
       <svg viewBox="0 0 48 48" fill="none" stroke="#f0a35e" stroke-width="2.2" stroke-linejoin="round"><rect x="7" y="9" width="15" height="13" rx="3"/><rect x="26" y="9" width="15" height="13" rx="3"/><rect x="7" y="26" width="15" height="13" rx="3"/><rect x="26" y="26" width="15" height="13" rx="3" fill="#f0a35e" fill-opacity=".25"/></svg>
       <div><b>Wybierz scenę</b><span>Gotowe światy do dalszej pracy</span></div>
     </button>
+    <button class="choice" id="btn-about">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#b8b2cf" stroke-width="2.2" stroke-linecap="round"><circle cx="24" cy="24" r="16"/><path d="M24 22v10"/><circle cx="24" cy="16.5" r="1.2" fill="#b8b2cf"/></svg>
+      <div><b>O programie</b><span>Czym jest Tabby i jak działa</span></div>
+    </button>
   </div>
 </main>
 
 
 
+
+<section id="about" aria-label="O programie" aria-hidden="true">
+  <div class="wrap">
+    <button class="back" id="btn-about-back">← Menu</button>
+    <h1>Tabby</h1>
+  <p class="lead">Program do budowania gier 3D w przeglądarce, zbudowany na silniku Tabby. Bez instalacji: cała gra i edytor mieszczą się w jednej karcie przeglądarki.</p>
+
+  <h2>Z czego jest zbudowany</h2>
+  <p>Tabby korzysta z kilku technologii naraz — każda robi coś innego.</p>
+  <dl>
+    <div class="item"><dt>HTML</dt><dd>Szkielet strony. Mówi, co w niej jest: okno gry, przyciski, panele edytora. Sam nic nie robi, tylko układa elementy.</dd></div>
+    <div class="item"><dt>CSS</dt><dd>Wygląd interfejsu: kolory, czcionki, zaokrąglone przyciski, panel inspektora. Zwykle siedzi w tym samym pliku, w znaczniku <code>&lt;style&gt;</code>.</dd></div>
+    <div class="item"><dt>JavaScript</dt><dd>Właściwy kod gry i najważniejsza część. W nim jest wszystko, co się dzieje: ruch postaci, jazda pojazdami, kolizje, kamera, edytor, zapis gry. Kiedy mówimy, że „piszemy grę”, piszemy ją w JavaScript.</dd></div>
+    <div class="item"><dt>Three.js</dt><dd>Biblioteka napisana w JavaScript — gotowy silnik grafiki 3D, ładowany z internetu jedną linijką. Dzięki niej nie trzeba samemu liczyć, jak narysować sześcian w perspektywie. Mówimy „zrób box, postaw tu, ustaw światło”, a ona tłumaczy to na polecenia dla karty graficznej.</dd></div>
+    <div class="item"><dt>WebGL</dt><dd>Najniższa warstwa: sposób, w jaki przeglądarka rozmawia z kartą graficzną. Three.js używa go za nas.</dd></div>
+    <div class="item"><dt>JSON</dt><dd>Nie kod, tylko format danych. Niczego nie wykonuje, tylko opisuje: „box, rozmiar 1×1×1, kolor czerwony, pozycja 0,0,0”. W nim zapisujemy obiekty, sceny i pojazdy.</dd></div>
+  </dl>
+
+  <h2>Format Tabby</h2>
+  <p>Obiekty w Tabby opisujemy własnym formatem: lista <code>parts</code> z kształtami, <code>role</code> dla kół pojazdów i <code>action</code> dla interakcji (napis, światło, drzwi, jazda).</p>
+  <p>Fachowo taki sposób budowania nazywa się <b>modelowaniem z prymitywów</b>: obiekty składa się z prostych brył — pudełek, walców, kul, stożków — zamiast rzeźbić je jak w Blenderze. Format Tabby to mały, specjalistyczny język opisu kształtów. Właśnie dlatego sztuczna inteligencja tak łatwo tworzy dla Tabby nowe obiekty: tekst to jej naturalne środowisko.</p>
+
+  <div class="sum"><p><b>W skrócie:</b> gry piszemy w JavaScript, rysujemy przez Three.js, a obiekty opisujemy w JSON według reguł formatu Tabby. HTML i CSS to opakowanie.</p></div>
+  </div>
+</section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
@@ -75,6 +125,12 @@ function openEditor(data){
 }
 document.getElementById('btn-blank').onclick=function(){openEditor(null);};
 document.getElementById('btn-scenes').onclick=function(){location.href=SCENES_PAGE;};
+var about=document.getElementById('about'),home=document.getElementById('home');
+function openAbout(){about.classList.add('show');about.removeAttribute('aria-hidden');home.setAttribute('aria-hidden','true');about.scrollTop=0;document.getElementById('btn-about-back').focus();}
+function closeAbout(){about.classList.remove('show');about.setAttribute('aria-hidden','true');home.removeAttribute('aria-hidden');document.getElementById('btn-about').focus();}
+document.getElementById('btn-about').onclick=openAbout;
+document.getElementById('btn-about-back').onclick=closeAbout;
+addEventListener('keydown',function(e){if(e.key==='Escape'&&about.classList.contains('show'))closeAbout();});
 
 if(!window.THREE)return; // bez Three.js menu działa, tylko bez nocnej sceny
 
@@ -233,11 +289,11 @@ function layout(){
   var w=innerWidth,h=innerHeight;R.setSize(w,h,false);CAM.aspect=w/h;CAM.updateProjectionMatrix();
   var portrait=w/h<1||w<720;
   var cx=portrait?0.3:3.9;
-  CAM_BASE.set(portrait?0:0.6,portrait?2.7:2.9,portrait?14:11);LOOK.set(portrait?0:0.6,portrait?2.5:3.7,0);
+  CAM_BASE.set(portrait?0:0.6,portrait?2.7:2.9,portrait?14:11);LOOK.set(portrait?0:0.6,portrait?1.7:3.7,0);
   cat.position.set(cx,2.1,0);cat.rotation.y=0.35;
   // księżyc dokładnie za kotem, daleko
   var target=new THREE.Vector3(cx,3.9,0),dir=target.clone().sub(CAM_BASE).normalize();
-  var mp=CAM_BASE.clone().add(dir.multiplyScalar(170));mp.y+=portrait?2:5;
+  var mp=CAM_BASE.clone().add(dir.multiplyScalar(170));mp.y+=portrait?1:5;
   var rad=170*Math.tan(THREE.MathUtils.degToRad(portrait?7.8:8.2));
   moon.position.copy(mp);moon.scale.setScalar(rad);moon.lookAt(CAM_BASE);
   halo.position.copy(mp);halo.scale.setScalar(rad*5.2);

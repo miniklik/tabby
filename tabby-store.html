@@ -41,6 +41,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
 .pill[data-cat="interaktywny"].active{background:#f778ba;border-color:#f778ba}
 .pill[data-cat="pojazd"].active{background:#f85149;border-color:#f85149}
 .pill[data-cat="ruiny"].active{background:#8fa8c8;border-color:#8fa8c8}
+.pill[data-cat="militaria"].active{background:#7d8a3c;border-color:#7d8a3c}
 .stats{font-size:12px;color:var(--text-dim);padding:14px 24px 0;max-width:1320px;margin:0 auto}
 
 /* GRID */
@@ -60,6 +61,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
 .tag-interaktywny{background:rgba(247,120,186,.12);color:#f778ba}
 .tag-pojazd{background:rgba(248,81,73,.12);color:#f85149}
 .tag-ruiny{background:rgba(143,168,200,.14);color:#a9bfdc}
+.tag-militaria{background:rgba(125,138,60,.18);color:#b7c46a}
 .card-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:12px}
 .card-meta{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-dim);margin-bottom:12px}
 .meta-parts{display:flex;align-items:center;gap:3px}
@@ -120,6 +122,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
     <button class="pill" data-cat="interaktywny">⚡ Interaktywny</button>
     <button class="pill" data-cat="pojazd">🚗 Pojazd</button>
     <button class="pill" data-cat="ruiny">🏛 Ruiny</button>
+    <button class="pill" data-cat="militaria">🪖 Militaria</button>
   </div>
 </div>
 <div class="stats" id="stats"></div>
@@ -441,6 +444,200 @@ var ASSETS = [
       {shape:"pointlight",size:[0.12],color:"#ffee88",position:[0,1.2,-4.6],intensity:0.8,distance:15}
     ],
     action:{type: "drive",speed: 5,turnSpeed: 0.6,grip: 0.15,pivot: true,steerSpeed: 2,lean: 0}
+  },
+  {
+    name:"Beczka wybuchowa",
+    category:["dekoracja","interaktywny"],
+    desc:"Czerwona beczka z paliwem. Najedź pojazdem — wybucha, rozrzuca otoczenie i odpala inne beczki w pobliżu.",
+    parts:[
+      {"shape":"cylinder","size":[0.35,0.35,0.95,14],"color":"#c62828","position":[0,0.475,0]},
+      {"shape":"cylinder","size":[0.36,0.36,0.07,14],"color":"#f2c200","position":[0,0.22,0]},
+      {"shape":"cylinder","size":[0.36,0.36,0.07,14],"color":"#f2c200","position":[0,0.73,0]},
+      {"shape":"cylinder","size":[0.33,0.33,0.03,14],"color":"#2b2b2b","position":[0,0.965,0]},
+      {"shape":"cylinder","size":[0.05,0.05,0.04,8],"color":"#555555","position":[0.16,0.99,0.05]},
+      {"shape":"box","size":[0.3,0.28,0.02],"color":"#f2c200","position":[0,0.475,0.352]},
+      {"shape":"box","size":[0.08,0.16,0.022],"color":"#111111","position":[0,0.5,0.354]},
+      {"shape":"box","size":[0.06,0.04,0.022],"color":"#111111","position":[0,0.39,0.354]}
+    ],
+    veh:{"explode":1}
+  },
+  {
+    name:"Stolik pokojowy",
+    category:["dekoracja"],
+    desc:"Niski drewniany stolik z książką i kubkiem.",
+    parts:[
+      {"shape":"box","size":[1.4,0.06,0.8],"color":"#885533","position":[0,0.45,0]},
+      {"shape":"cylinder","size":[0.04,0.04,0.42,6],"color":"#664422","position":[0.6,0.21,0.3]},
+      {"shape":"cylinder","size":[0.04,0.04,0.42,6],"color":"#664422","position":[-0.6,0.21,0.3]},
+      {"shape":"cylinder","size":[0.04,0.04,0.42,6],"color":"#664422","position":[0.6,0.21,-0.3]},
+      {"shape":"cylinder","size":[0.04,0.04,0.42,6],"color":"#664422","position":[-0.6,0.21,-0.3]},
+      {"shape":"box","size":[0.22,0.03,0.28],"color":"#883333","position":[-0.3,0.48,-0.15],"rotation":[0,0.3,0]},
+      {"shape":"cylinder","size":[0.05,0.05,0.1,6],"color":"#eeeeee","position":[0.4,0.52,0.25]}
+    ]
+  },
+  {
+    name:"Płot z drutem kolczastym",
+    category:["militaria"],
+    desc:"Drewniane słupki i trzy rzędy drutu z kolcami. Czołg go rozjeżdża.",
+    parts:[
+      {"shape":"cylinder","size":[0.06,0.07,1.3,8],"color":"#6b5134","position":[-2,0.65,0]},
+      {"shape":"cylinder","size":[0.06,0.07,1.3,8],"color":"#6b5134","position":[0,0.65,0]},
+      {"shape":"cylinder","size":[0.06,0.07,1.3,8],"color":"#6b5134","position":[2,0.65,0]},
+      {"shape":"cylinder","size":[0.012,0.012,4.1,4],"color":"#8a8f94","position":[0,0.35,0],"rotation":[0,0,1.5708]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.8,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.4,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.0,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-0.6,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-0.2,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.2,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.6,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.0,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.4,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.8,0.35,0],"rotation":[0,0.785,0.785]},
+      {"shape":"cylinder","size":[0.012,0.012,4.1,4],"color":"#8a8f94","position":[0,0.7,0],"rotation":[0,0,1.5708]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.6,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.2,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-0.8,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-0.4,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.0,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.4,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.8,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.2,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.6,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[2.0,0.7,0],"rotation":[0,0.785,0.785]},
+      {"shape":"cylinder","size":[0.012,0.012,4.1,4],"color":"#8a8f94","position":[0,1.05,0],"rotation":[0,0,1.5708]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.8,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.4,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-1.0,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-0.6,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[-0.2,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.2,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[0.6,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.0,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.4,1.05,0],"rotation":[0,0.785,0.785]},
+      {"shape":"box","size":[0.1,0.012,0.012],"color":"#9aa0a6","position":[1.8,1.05,0],"rotation":[0,0.785,0.785]}
+    ],
+    veh:{"destroy":1,"sound":1}
+  },
+  {
+    name:"Jeż przeciwczołgowy",
+    category:["militaria"],
+    desc:"Trzy skrzyżowane stalowe belki. Zatrzymuje pojazdy — uderzenie trzęsie kamerą.",
+    parts:[
+      {"shape":"box","size":[0.16,1.9,0.16],"color":"#4a4d50","position":[0,0.56,0],"rotation":[0,0,0.9553]},
+      {"shape":"box","size":[0.16,1.9,0.16],"color":"#4a4d50","position":[0,0.56,0],"rotation":[0,2.0944,0.9553]},
+      {"shape":"box","size":[0.16,1.9,0.16],"color":"#4a4d50","position":[0,0.56,0],"rotation":[0,4.1888,0.9553]},
+      {"shape":"box","size":[0.2,0.2,0.2],"color":"#3a3c3e","position":[0,0.56,0]}
+    ],
+    veh:{"shake":1,"sound":1}
+  },
+  {
+    name:"Zapora betonowa",
+    category:["militaria"],
+    desc:"Betonowy blok drogowy. Blokuje przejazd.",
+    parts:[
+      {"shape":"box","size":[0.7,0.3,2.4],"color":"#9a9a92","position":[0,0.15,0]},
+      {"shape":"box","size":[0.45,0.36,2.4],"color":"#a3a39b","position":[0,0.48,0]},
+      {"shape":"box","size":[0.26,0.24,2.4],"color":"#aaaaa2","position":[0,0.78,0]},
+      {"shape":"box","size":[0.46,0.06,0.5],"color":"#dd3322","position":[0,0.5,0.8]},
+      {"shape":"box","size":[0.46,0.06,0.5],"color":"#dd3322","position":[0,0.5,-0.8]}
+    ],
+    veh:{"shake":1,"sound":1}
+  },
+  {
+    name:"Szlaban",
+    category:["militaria"],
+    desc:"Biało-czerwona zapora na posterunek. Pojazd ją odrzuca.",
+    parts:[
+      {"shape":"box","size":[0.14,0.95,0.14],"color":"#555555","position":[-1.6,0.475,0]},
+      {"shape":"box","size":[0.14,0.95,0.14],"color":"#555555","position":[1.6,0.475,0]},
+      {"shape":"box","size":[3.3,0.12,0.09],"color":"#f2f2f2","position":[0,0.85,0]},
+      {"shape":"box","size":[0.45,0.125,0.095],"color":"#d62828","position":[-1.1,0.85,0]},
+      {"shape":"box","size":[0.45,0.125,0.095],"color":"#d62828","position":[-0.2,0.85,0]},
+      {"shape":"box","size":[0.45,0.125,0.095],"color":"#d62828","position":[0.7,0.85,0]},
+      {"shape":"box","size":[0.3,0.2,0.3],"color":"#333333","position":[-1.6,1.0,0]}
+    ],
+    veh:{"knock":1,"sound":1}
+  },
+  {
+    name:"Worki z piaskiem",
+    category:["militaria"],
+    desc:"Trzy worki ułożone w piramidkę. Osłona na posterunku.",
+    parts:[
+      {"shape":"cylinder","size":[0.17,0.17,0.7,10],"color":"#b5a47a","position":[-0.18,0.17,0],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.12,0.12,0.04,8],"color":"#9c8c63","position":[-0.18,0.17,-0.33],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.12,0.12,0.04,8],"color":"#9c8c63","position":[-0.18,0.17,0.33],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.17,0.17,0.7,10],"color":"#b5a47a","position":[0.18,0.17,0],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.12,0.12,0.04,8],"color":"#9c8c63","position":[0.18,0.17,-0.33],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.12,0.12,0.04,8],"color":"#9c8c63","position":[0.18,0.17,0.33],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.17,0.17,0.7,10],"color":"#b5a47a","position":[0,0.46,0],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.12,0.12,0.04,8],"color":"#9c8c63","position":[0,0.46,-0.33],"rotation":[1.5708,0,0]},
+      {"shape":"cylinder","size":[0.12,0.12,0.04,8],"color":"#9c8c63","position":[0,0.46,0.33],"rotation":[1.5708,0,0]}
+    ],
+    veh:{"shake":1,"sound":1}
+  },
+  {
+    name:"Murek z worków",
+    category:["militaria"],
+    desc:"Dziewięć worków z piaskiem w trzech rzędach — umocnienie okopu.",
+    parts:[
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[-1.08,0.17,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[-0.36,0.17,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[0.36,0.17,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[1.08,0.17,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[-0.72,0.47,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[0.0,0.47,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[0.72,0.47,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[-0.36,0.77,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.17,0.17,0.68,10],"color":"#b5a47a","position":[0.36,0.77,0],"rotation":[0,0,1.5708]}
+    ],
+    veh:{"shake":1,"sound":1}
+  },
+  {
+    name:"Dynamit",
+    category:["militaria","interaktywny"],
+    desc:"Wiązka lasek dynamitu z lontem. Najedź — wybucha i odpala inne ładunki obok.",
+    parts:[
+      {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.065,-0.13],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.065,0],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.065,0.13],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.185,-0.065],"rotation":[0,0,1.5708]},
+      {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.185,0.065],"rotation":[0,0,1.5708]},
+      {"shape":"box","size":[0.06,0.28,0.4],"color":"#1e1e1e","position":[-0.15,0.125,0]},
+      {"shape":"box","size":[0.06,0.28,0.4],"color":"#1e1e1e","position":[0.15,0.125,0]},
+      {"shape":"cylinder","size":[0.012,0.012,0.35,5],"color":"#d8c89a","position":[0.42,0.2,0],"rotation":[0,0,1.2]},
+      {"shape":"box","size":[0.14,0.1,0.1],"color":"#333333","position":[0.6,0.08,0]},
+      {"shape":"sphere","size":[0.03,8,6],"color":"#ff3322","position":[0.6,0.15,0]}
+    ],
+    veh:{"explode":1}
+  },
+  {
+    name:"Skrzynia z amunicją",
+    category:["militaria","interaktywny"],
+    desc:"Wojskowa skrzynia z pociskami. Najechana wybucha.",
+    parts:[
+      {"shape":"box","size":[0.95,0.45,0.5],"color":"#4f5a2b","position":[0,0.225,0]},
+      {"shape":"box","size":[0.99,0.07,0.54],"color":"#3e4722","position":[0,0.47,0]},
+      {"shape":"box","size":[0.05,0.1,0.2],"color":"#2b2b2b","position":[-0.5,0.3,0]},
+      {"shape":"box","size":[0.05,0.1,0.2],"color":"#2b2b2b","position":[0.5,0.3,0]},
+      {"shape":"box","size":[0.4,0.1,0.01],"color":"#e8c64a","position":[0,0.26,0.255]},
+      {"shape":"box","size":[0.06,0.3,0.52],"color":"#3e4722","position":[-0.3,0.225,0]},
+      {"shape":"box","size":[0.06,0.3,0.52],"color":"#3e4722","position":[0.3,0.225,0]}
+    ],
+    veh:{"explode":1}
+  },
+  {
+    name:"Kanister",
+    category:["militaria","interaktywny"],
+    desc:"Czerwony kanister z paliwem. Najechany wybucha.",
+    parts:[
+      {"shape":"box","size":[0.34,0.46,0.2],"color":"#b71c1c","position":[0,0.23,0]},
+      {"shape":"box","size":[0.3,0.06,0.02],"color":"#8e1515","position":[0,0.3,0.105]},
+      {"shape":"box","size":[0.3,0.06,0.02],"color":"#8e1515","position":[0,0.16,0.105]},
+      {"shape":"box","size":[0.2,0.05,0.06],"color":"#8e1515","position":[-0.05,0.5,0]},
+      {"shape":"cylinder","size":[0.04,0.04,0.08,8],"color":"#333333","position":[0.12,0.49,0]}
+    ],
+    veh:{"explode":1}
   },
   {
     name:"Skrzynia skarbów",
@@ -1097,6 +1294,7 @@ var visibleCards = [];
 function getAssetJSON(asset){
   var obj = {name: asset.name, parts: asset.parts};
   if(asset.action) obj.action = asset.action;
+  if(asset.veh) obj.veh = asset.veh;
   return JSON.stringify(obj, null, 2);
 }
 
@@ -1186,7 +1384,7 @@ function renderCards(){
     asset.category.forEach(function(cat){
       var tag = document.createElement('span');
       tag.className = 'tag tag-' + cat;
-      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny'};
+      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria'};
       tag.textContent = labels[cat] || cat;
       tags.appendChild(tag);
     });
@@ -1204,6 +1402,7 @@ function renderCards(){
       var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
+    if(asset.veh){var vl={explode:'💥 Wybuch',destroy:'🧱 Rozpada się',knock:'↗ Odlatuje',shake:'〰 Wstrząs'};var shown=['explode','destroy','knock','shake'].filter(function(k){return asset.veh[k];})[0];if(shown)meta.innerHTML+='<span>'+vl[shown]+'</span>';}
     body.appendChild(meta);
 
     var actions = document.createElement('div');

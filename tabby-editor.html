@@ -221,6 +221,48 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
       </div>
 </div>
 <button id="rebuild-btn" style="display:none;position:fixed;bottom:44px;left:50%;transform:translateX(-50%);z-index:35;background:rgba(63,185,80,0.95);color:#06200d;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;font-family:sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.35)">♻ Odbuduj zniszczone</button>
+<style>
+.tb-modal{position:fixed;inset:0;z-index:210;display:none;align-items:center;justify-content:center;background:rgba(8,10,30,0.6);font-family:sans-serif}
+.tb-modal.show{display:flex}
+.tb-modal .box{width:min(440px,calc(100vw - 32px));max-height:80vh;overflow:auto;background:#171c47;color:#e6e0f0;border:1px solid rgba(255,243,212,.18);border-radius:16px;padding:22px 22px 18px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.tb-modal h3{margin:0 0 8px;font-size:20px;color:#fff3d4}
+.tb-modal p{margin:0 0 14px;font-size:13.5px;line-height:1.5;color:#b8b2cf}
+.tb-modal input[type=text]{width:100%;box-sizing:border-box;padding:10px 12px;font-size:15px;border-radius:8px;border:1px solid rgba(255,243,212,.25);background:#0f1333;color:#fff3d4;outline:none;margin-bottom:14px}
+.tb-modal input[type=text]:focus{border-color:#58a6ff}
+.tb-modal .row{display:flex;gap:8px;flex-wrap:wrap}
+.tb-modal button{flex:1;min-width:110px;padding:10px 14px;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
+.tb-modal button:focus-visible{outline:3px solid #f0a35e;outline-offset:2px}
+.tb-modal .pri{background:#1f6feb;color:#fff}
+.tb-modal .sec{background:rgba(255,255,255,.1);color:#e6e0f0}
+.tb-plist{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.tb-plist button{display:flex;justify-content:space-between;align-items:center;text-align:left;background:rgba(88,166,255,.1);color:#e6edf3;font-weight:600;border:1px solid rgba(88,166,255,.25)}
+.tb-plist button:hover{background:rgba(88,166,255,.2)}
+.tb-plist small{color:#9aa;font-weight:400;font-size:11.5px}
+</style>
+<div class="tb-modal" id="tb-pname" role="dialog" aria-modal="true" aria-labelledby="tb-pname-t">
+  <div class="box">
+    <h3 id="tb-pname-t">Zapisz projekt</h3>
+    <p>Nadaj nazwę swojemu projektowi. Pod tą nazwą znajdziesz go w „Otwórz projekt”.</p>
+    <input type="text" id="tb-pname-in" maxlength="60" autocomplete="off" value="moj-projekt">
+    <div class="row"><button class="pri" id="tb-pname-ok">💾 Zapisz</button><button class="sec" id="tb-pname-no">Anuluj</button></div>
+  </div>
+</div>
+<div class="tb-modal" id="tb-plist" role="dialog" aria-modal="true" aria-labelledby="tb-plist-t">
+  <div class="box">
+    <h3 id="tb-plist-t">Otwórz projekt</h3>
+    <p id="tb-plist-info">Projekty z folderu „Tabby – moje projekty”:</p>
+    <div class="tb-plist" id="tb-plist-items"></div>
+    <div class="row"><button class="sec" id="tb-plist-file">📁 Inny plik z dysku…</button><button class="sec" id="tb-plist-no">Anuluj</button></div>
+    <input type="file" id="tb-plist-input" accept=".tabby,.json" style="display:none">
+  </div>
+</div>
+<div class="tb-modal" id="tb-restore" role="dialog" aria-modal="true" aria-labelledby="tb-restore-t">
+  <div class="box">
+    <h3 id="tb-restore-t">Niezapisana praca</h3>
+    <p id="tb-restore-info">Znaleziono autozapis.</p>
+    <div class="row"><button class="pri" id="tb-restore-ok">↺ Przywróć</button><button class="sec" id="tb-restore-no">Zacznij od nowa</button></div>
+  </div>
+</div>
 <button id="scenes-btn" title="Wróć do strony scen" style="position:fixed;top:12px;right:792px;z-index:30;background:rgba(107,91,214,0.92);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🗂 Tabby Sceny</button>
 <button id="store-btn" title="Otwiera Tabby Store w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:654px;z-index:30;background:rgba(240,163,94,0.92);color:#1a1230;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🐱 Tabby Store</button>
 <button id="wall-btn" style="position:fixed;top:12px;right:514px;z-index:30;background:rgba(210,153,34,0.85);color:#000;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🧱 Maluj kolizje</button>
@@ -496,6 +538,14 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
   </div>
 </div>
     <div id="sec-options">
+      <div class="ep-lbl">Projekt</div>
+      <div style="border:2px solid rgba(88,166,255,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(88,166,255,0.04)">
+        <div style="font-size:12px;color:#aaa;margin-bottom:10px">Projekt: <b id="proj-name" style="color:#e6edf3">bez nazwy</b> <a href="#" id="proj-rename" style="color:#58a6ff;font-size:11px;margin-left:6px">zmień nazwę</a></div>
+        <button class="ep-exp" id="proj-save" style="background:#1f6feb;margin-bottom:8px">💾 Zapisz projekt <span style="opacity:.6;font-weight:400">(Ctrl+S)</span></button>
+        <button class="ep-exp" id="proj-open" style="background:rgba(88,166,255,0.15);color:#58a6ff;border:1px solid rgba(88,166,255,0.4)">📂 Otwórz projekt</button>
+        <div id="proj-msg" style="font-size:11px;font-weight:bold;text-align:center;margin-top:8px;display:none"></div>
+        <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Projekt to Twoja praca w edytorze (plik <b>.tabby</b>). Chrome i Edge zapisują go prosto do folderu <b>„Tabby – moje projekty”</b>. Inne przeglądarki pobierają plik do „Pobranych”. Edytor robi też autozapis co 30 s.</div>
+      </div>
       <div class="ep-lbl">Wczytaj scenę</div>
       <div style="border:2px solid rgba(210,153,34,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(210,153,34,0.04)">
         <div style="color:#888;font-size:11px;line-height:1.6;margin-bottom:10px">Wczytaj gotową grę/scenę z pliku <b style="color:#d29922">.html</b> — obiekty i ich rozmieszczenie zostaną zaimportowane do edytora.</div>
@@ -2588,20 +2638,7 @@ function doExportHTML(opts){
   if(opts.spawn){var sp=opts.spawn;inject+='setTimeout(function(){charX='+sp.x.toFixed(2)+';charZ='+sp.z.toFixed(2)+';charY=0;camYaw='+sp.yaw.toFixed(3)+';charAng='+sp.ang.toFixed(3)+';if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=charAng;}},0); // start z miejsca postaci (▶ Graj)\n';}
   inject+='// === KONIEC ===\n\n';
   // Embed editor data for re-import
-  var editorData={objects:[],placed:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused}};
-  loadedObjs.forEach(function(ob,idx){
-    if(ob.type==='glb')return;
-    var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;editorData.objects.push(eo);
-  });
-  placedObjs.forEach(function(po){
-    var ob=loadedObjs[po.oi];
-    if(ob.type==='glb')return;
-    var pd={oi:po.oi,x:po.x,z:po.z,rotY:po.rotY||po.gr.rotation.y||0,col:!!po._col};
-    if(po.veh&&Object.keys(po.veh).length)pd.veh=po.veh;
-    if(po._partCols&&Object.keys(po._partCols).length){pd.pc={};Object.keys(po._partCols).forEach(function(k){var c=po._partCols[k];pd.pc[k]=c&&c.veh?c.veh:1;});}
-    if(po.action)pd.action=po.action;
-    editorData.placed.push(pd);
-  });
+  var editorData=tabbyCollectProject();
   var editorJson=JSON.stringify(editorData);
   var base=document.getElementById('clean-base').value.replace('/*@@DRIVE_'+'CORE@@*/',function(){return getDriveCore();});
   // Insert editor-data script tag before </body> in the base
@@ -3125,6 +3162,154 @@ function tabbyWallExtra(w){
     var sh=loadedObjs[w._po.oi].parts[w._pi].shape;if(sh)out+=',ms:"'+sh+'"';}}
   return out;
 }
+// === PROJEKT: zbieranie danych (wspólne dla zapisu projektu, autozapisu i zapisu gry) ===
+function tabbyCollectProject(){
+  var d={objects:[],placed:[],walls:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused}};
+  loadedObjs.forEach(function(ob){
+    if(ob.type==='glb'){d.objects.push({name:ob.name,parts:[]});return;}
+    var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;d.objects.push(eo);
+  });
+  placedObjs.forEach(function(po){
+    var ob=loadedObjs[po.oi];if(!ob||ob.type==='glb')return;
+    var pd={oi:po.oi,x:po.x,z:po.z,rotY:po.rotY||po.gr.rotation.y||0,col:!!po._col};
+    if(po.veh&&Object.keys(po.veh).length)pd.veh=po.veh;
+    if(po._partCols&&Object.keys(po._partCols).length){pd.pc={};Object.keys(po._partCols).forEach(function(k){var c=po._partCols[k];pd.pc[k]=c&&c.veh?c.veh:1;});}
+    if(po.action)pd.action=po.action;
+    d.placed.push(pd);
+  });
+  (typeof wallBuilderWalls!=='undefined'?wallBuilderWalls:[]).forEach(function(w){d.walls.push({x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y,h:w.h});});
+  return d;
+}
+// ściany z „Maluj kolizje” — odtworzenie po wczytaniu
+function tabbyClearPaintedWalls(){
+  if(typeof wallBuilderWalls==='undefined')return;
+  wallBuilderWalls.forEach(function(w){if(w.mesh)scene.remove(w.mesh);var i=wCols.indexOf(w._col);if(i>=0)wCols.splice(i,1);});
+  wallBuilderWalls.length=0;
+}
+function tabbyAddPaintedWall(w){
+  var c={x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y||0,h:w.h||2};wCols.push(c);
+  var geo=new THREE.BoxGeometry(c.hw*2,c.h,c.hd*2);
+  var mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xd29922,transparent:true,opacity:0.3}));mesh.position.set(c.x,c.y+c.h/2,c.z);
+  mesh.add(new THREE.Mesh(geo.clone(),new THREE.MeshBasicMaterial({color:0xd29922,wireframe:true,transparent:true,opacity:0.6})));
+  scene.add(mesh);
+  wallBuilderWalls.push({x:c.x,z:c.z,hw:c.hw,hd:c.hd,y:c.y,h:c.h,mesh:mesh,_col:c});
+}
+// === PROJEKT: zapis / otwieranie / autozapis ===
+function tbPl(n){var d=n%10,h=n%100;return n+' '+(n===1?'obiekt':(d>=2&&d<=4&&(h<12||h>14))?'obiekty':'obiektów');}
+var tabbyProjName='',TB_FOLDER='Tabby – moje projekty',tbLastAutoJson='';
+function tbIdb(){return new Promise(function(res,rej){var r=indexedDB.open('tabby',1);r.onupgradeneeded=function(){r.result.createObjectStore('kv');};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+function tbKvGet(k){return tbIdb().then(function(db){return new Promise(function(res){var q=db.transaction('kv').objectStore('kv').get(k);q.onsuccess=function(){res(q.result||null);};q.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function tbKvSet(k,v){return tbIdb().then(function(db){return new Promise(function(res){var t=db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=function(){res(true);};t.onerror=function(){res(false);};});}).catch(function(){return false;});}
+function tbFsOk(){return typeof window.showDirectoryPicker==='function';}
+async function tbProjDir(ask){
+  if(!tbFsOk())return null;
+  var h=await tbKvGet('projDir');
+  if(h){
+    var p=await h.queryPermission({mode:'readwrite'});
+    if(p!=='granted'&&ask)p=await h.requestPermission({mode:'readwrite'});
+    if(p==='granted')return h;
+    if(!ask)return null;
+  }
+  if(!ask)return null;
+  var root=await window.showDirectoryPicker({id:'tabby-projekty',mode:'readwrite',startIn:'documents'});
+  var dir=root.name===TB_FOLDER?root:await root.getDirectoryHandle(TB_FOLDER,{create:true});
+  await tbKvSet('projDir',dir);
+  return dir;
+}
+function tbProjMsg(t,ok){var m=document.getElementById('proj-msg');if(!m)return;m.textContent=t;m.style.color=ok===false?'#f85149':'#3fb950';m.style.display='block';clearTimeout(m._t);m._t=setTimeout(function(){m.style.display='none';},6000);}
+function tbProjLabel(){var el=document.getElementById('proj-name');if(el)el.textContent=tabbyProjName||'bez nazwy';document.title=(tabbyProjName?tabbyProjName+' — ':'')+'Tabby Editor';}
+function tbProjJson(){var d=tabbyCollectProject();d.format='tabby-project';d.version=1;d.name=tabbyProjName;return d;}
+function tbAutosave(clean){
+  try{var d=tbProjJson(),j=JSON.stringify(d.placed.length||d.walls.length?d:{});
+    if(!clean&&j===tbLastAutoJson)return;
+    tbLastAutoJson=j;
+    localStorage.setItem('tabby-autosave',JSON.stringify({t:Date.now(),name:tabbyProjName,clean:!!clean,data:j}));
+  }catch(e){}
+}
+async function tbSaveProject(askName){
+  if(!tabbyProjName||askName){tbAskName();return;}
+  var d=tbProjJson();d.saved=new Date().toISOString();
+  var json=JSON.stringify(d,null,1),fname=tabbyFileName(tabbyProjName)+'.tabby';
+  var done=false;
+  if(tbFsOk()){
+    try{var dir=await tbProjDir(true);var fh=await dir.getFileHandle(fname,{create:true});var w=await fh.createWritable();await w.write(json);await w.close();
+      done=true;tbProjMsg('✓ Zapisano „'+tabbyProjName+'” w folderze '+TB_FOLDER);}
+    catch(e){if(e&&e.name==='AbortError'){tbProjMsg('Zapis anulowany',false);return;}console.warn('Tabby: zapis do folderu nieudany, pobieram plik',e);}
+  }
+  if(!done){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=fname;a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
+    tbProjMsg('✓ Pobrano '+fname+' — przenieś go do swojego folderu z projektami');}
+  tbAutosave(true);
+}
+function tbAskName(){
+  var m=document.getElementById('tb-pname'),i=document.getElementById('tb-pname-in');
+  i.value=tabbyProjName||'moj-projekt';m.classList.add('show');if(document.pointerLockElement)document.exitPointerLock();setTimeout(function(){i.focus();i.select();},30);
+}
+function tbLoadProjectText(txt,fallbackName){
+  var d;try{d=JSON.parse(txt);}catch(e){tbProjMsg('To nie jest plik projektu Tabby',false);return false;}
+  if(!d||!d.objects||!d.placed){tbProjMsg('To nie jest plik projektu Tabby',false);return false;}
+  if(edDriveTarget){tbProjMsg('Najpierw wysiądź z pojazdu (E)',false);return false;}
+  drvRestoreAll();tabbyLoadEditorData(d);
+  tabbyProjName=d.name||fallbackName||'';tbProjLabel();tbAutosave(true);
+  tbProjMsg('✓ Otwarto „'+(tabbyProjName||'projekt')+'” — '+tbPl(d.placed.length));
+  return true;
+}
+async function tbOpenProject(){
+  var list=document.getElementById('tb-plist'),items=document.getElementById('tb-plist-items'),info=document.getElementById('tb-plist-info');
+  if(document.pointerLockElement)document.exitPointerLock();
+  items.innerHTML='';
+  if(!tbFsOk()){document.getElementById('tb-plist-input').click();return;}
+  var dir=null;try{dir=await tbProjDir(true);}catch(e){if(e&&e.name==='AbortError')return;}
+  if(!dir){document.getElementById('tb-plist-input').click();return;}
+  var rows=[];
+  for await (var ent of dir.values()){if(ent.kind==='file'&&/\.tabby$/i.test(ent.name)){var f=await ent.getFile();rows.push({h:ent,name:ent.name.replace(/\.tabby$/i,''),t:f.lastModified});}}
+  rows.sort(function(a,b){return b.t-a.t;});
+  info.textContent=rows.length?'Projekty z folderu „'+TB_FOLDER+'”:':'Folder „'+TB_FOLDER+'” jest jeszcze pusty.';
+  rows.forEach(function(r){
+    var b=document.createElement('button');var d=new Date(r.t);
+    b.innerHTML='<span></span><small>'+d.toLocaleDateString('pl-PL')+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+'</small>';
+    b.firstChild.textContent=r.name;
+    b.onclick=async function(){var f=await r.h.getFile();var t=await f.text();if(tbLoadProjectText(t,r.name))list.classList.remove('show');};
+    items.appendChild(b);
+  });
+  list.classList.add('show');
+}
+function tbInitProject(fromMenu){
+  var $=function(id){return document.getElementById(id);};
+  $('proj-save').addEventListener('click',function(e){e.stopPropagation();tbSaveProject();});
+  $('proj-open').addEventListener('click',function(e){e.stopPropagation();tbOpenProject();});
+  $('proj-rename').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();tbAskName();});
+  $('tb-pname-ok').addEventListener('click',function(){var v=$('tb-pname-in').value.trim();if(!v){$('tb-pname-in').focus();return;}tabbyProjName=v;tbProjLabel();$('tb-pname').classList.remove('show');tbSaveProject();});
+  $('tb-pname-no').addEventListener('click',function(){$('tb-pname').classList.remove('show');});
+  $('tb-plist-no').addEventListener('click',function(){$('tb-plist').classList.remove('show');});
+  $('tb-plist-file').addEventListener('click',function(){$('tb-plist-input').click();});
+  $('tb-plist-input').addEventListener('change',function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){if(tbLoadProjectText(r.result,f.name.replace(/\.(tabby|json)$/i,'')))$('tb-plist').classList.remove('show');};r.readAsText(f);e.target.value='';});
+  // okna nie przekazują klawiszy do gry/edytora
+  ['tb-pname','tb-plist','tb-restore'].forEach(function(id){var m=$(id);
+    m.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Escape')m.classList.remove('show');if(e.key==='Enter'&&id==='tb-pname')$('tb-pname-ok').click();});
+    m.addEventListener('keyup',function(e){e.stopPropagation();});
+    m.addEventListener('mousedown',function(e){e.stopPropagation();if(e.target===m)m.classList.remove('show');});
+    m.addEventListener('click',function(e){e.stopPropagation();});});
+  // Ctrl+S = zapisz projekt
+  document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.code==='KeyS'){e.preventDefault();e.stopPropagation();tbSaveProject();}},true);
+  // autozapis co 30 s i przy zamykaniu karty
+  setInterval(function(){tbAutosave(false);},30000);
+  window.addEventListener('pagehide',function(){tbAutosave(false);});
+  tbProjLabel();
+  // przywracanie po zamknięciu karty / zawieszeniu
+  var raw=null;try{raw=localStorage.getItem('tabby-autosave');}catch(e){}
+  if(raw&&!fromMenu){
+    try{var a=JSON.parse(raw),d=JSON.parse(a.data||'{}');
+      if(!a.clean&&d.placed&&(d.placed.length||(d.walls&&d.walls.length))){
+        var t=new Date(a.t);
+        $('tb-restore-info').textContent='Znaleziono niezapisaną pracę z '+t.toLocaleDateString('pl-PL')+' '+t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+(a.name?' (projekt „'+a.name+'”)':'')+' — '+tbPl(d.placed.length)+'. Przywrócić?';
+        $('tb-restore').classList.add('show');
+        $('tb-restore-ok').onclick=function(){$('tb-restore').classList.remove('show');tbLoadProjectText(a.data,a.name);tabbyProjName=a.name||'';tbProjLabel();};
+        $('tb-restore-no').onclick=function(){$('tb-restore').classList.remove('show');try{localStorage.removeItem('tabby-autosave');}catch(e){}};
+      }
+    }catch(e){}
+  }
+  tbLastAutoJson=JSON.stringify(tbProjJson().placed.length?tbProjJson():{});
+}
 // === WCZYTYWANIE SCENY (editor-data) — wspólne dla "Wczytaj scenę" i menu Tabby ===
 function tabbyLoadEditorData(ed){
   placedObjs.forEach(function(po){
@@ -3150,6 +3335,8 @@ function tabbyLoadEditorData(ed){
     if(pd.pc){po._partCols={};Object.keys(pd.pc).forEach(function(k){var c=tabbyMakePartCol(po,parseInt(k));if(!c)return;if(typeof pd.pc[k]==='object')c.veh=pd.pc[k];po._partCols[k]=c;wCols.push(c);});}
     placedObjs.push(po);placed++;
   });
+  tabbyClearPaintedWalls();
+  (ed.walls||[]).forEach(tabbyAddPaintedWall);
   if(ed.dn)tabbyApplyDn(ed.dn);
   refreshUI();
   return placed;
@@ -4048,10 +4235,12 @@ function init(){
   document.getElementById('store-btn').addEventListener('click',function(e){e.stopPropagation();window.open('tabby-store.html','tabby-store');});
   if('ontouchstart' in window){isMobile=true;initTouch();}
   // Scena wybrana w menu Tabby (przekazana przez window.name — działa też z plików na dysku)
+  var tbFromMenu=false;
   if(typeof window.name==='string'&&window.name.indexOf('TABBY_SCENE:')===0){
-    var pend=window.name.slice(12);window.name='';
+    var pend=window.name.slice(12);window.name='';tbFromMenu=true;
     try{tabbyLoadEditorData(JSON.parse(pend));}catch(ex){console.warn('Tabby: nie udało się wczytać sceny z menu',ex);}
   }
+  tbInitProject(tbFromMenu);
   animate();
 }
 init();

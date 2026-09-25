@@ -113,7 +113,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 <body>
 <div id="start-info">Click to start</div>
 <div id="cam-flash"></div>
-<div id="cam-adjust-hud" style="position:fixed;top:10px;right:10px;color:#ffcc44;font-size:12px;font-weight:bold;z-index:15;display:none;background:rgba(0,0,0,0.6);padding:6px 12px;border-radius:8px;border:1px solid rgba(255,200,50,0.3)">📷 ↑↓←→ Shift+↑↓ Q=OK</div>
+
 <div id="info">WASD = move | Shift = run | Space = jump | Tab = camera | E = akcja | 1 = edytor | 2 = obiekty</div>
 <div id="touch-controls">
   <div class="tc-btn" id="tc-l-fwd">&#9650;</div>
@@ -162,6 +162,33 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
   </div>
 </div>
 <style>
+#cam-btn{position:fixed;top:12px;right:888px;z-index:30;width:40px;height:34px;padding:0;border:none;border-radius:8px;font-size:17px;line-height:34px;cursor:pointer;background:rgba(88,166,255,0.9)}
+#cam-btn.on{outline:3px solid #ffcc44;outline-offset:1px}
+#cam-btn:focus-visible{outline:3px solid #f0a35e;outline-offset:2px}
+#cam-pop{position:fixed;top:12px;right:min(934px,calc(100vw - 308px));z-index:40;width:300px;display:none;background:rgba(14,17,23,0.97);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:12px 14px 14px;font-family:sans-serif;color:#e6edf3;box-shadow:0 12px 36px rgba(0,0,0,.45)}
+#cam-pop.show{display:block}
+#cam-pop .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px;font-weight:bold;color:#ccc}
+#cam-pop .x{background:none;border:none;color:#aaa;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+#cam-pop .x:hover{color:#fff}
+#cam-pop .mode{font-size:11px;color:#ffcc44;margin-bottom:10px}
+#cam-pop .row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+#cam-pop .row span{flex:1;font-size:12px;color:#bbb}
+#cam-pop .row button{min-width:62px;padding:6px 8px;border:none;border-radius:6px;background:rgba(88,166,255,0.18);color:#9ecbff;font-size:12px;font-weight:bold;cursor:pointer}
+#cam-pop .row button:hover{background:rgba(88,166,255,0.32)}
+#cam-pop .reset{width:100%;margin-top:4px;padding:7px;border:none;border-radius:6px;background:rgba(255,255,255,0.08);color:#ddd;font-size:12px;cursor:pointer}
+#cam-pop .tip{font-size:10px;color:#777;margin-top:8px;line-height:1.4}
+</style>
+<button id="cam-btn" title="Kamera (Q)" aria-label="Ustawienia kamery (Q)" aria-expanded="false">📷</button>
+<div id="cam-pop" role="dialog" aria-label="Kamera">
+  <div class="hd"><span>📷 Kamera <span style="color:#777;font-weight:400">(Q)</span></span><button class="x" id="cam-pop-x" aria-label="Zamknij">&times;</button></div>
+  <div class="mode" id="cam-mode">Tryb: pieszo</div>
+  <div class="row"><span>Wysokość</span><button data-c="y+">▲ Wyżej</button><button data-c="y-">▼ Niżej</button></div>
+  <div class="row"><span>Obrót</span><button data-c="a+">◀ W lewo</button><button data-c="a-">W prawo ▶</button></div>
+  <div class="row"><span>Odległość</span><button data-c="d-">Bliżej</button><button data-c="d+">Dalej</button></div>
+  <button class="reset" id="cam-reset">↺ Przywróć domyślne</button>
+  <div class="tip">Strzałki też działają: ↑↓ wysokość, ←→ obrót, Shift+↑↓ odległość. Każdy tryb (pieszo, pościg, kabina) pamięta swoje ustawienie.</div>
+</div>
+<style>
 #dn-btn{position:fixed;top:12px;right:842px;z-index:30;width:40px;height:34px;padding:0;border:none;border-radius:8px;font-size:18px;line-height:34px;cursor:pointer;background:rgba(240,200,80,0.92)}
 #dn-btn.night{background:rgba(70,80,160,0.92)}
 #dn-btn:focus-visible{outline:3px solid #f0a35e;outline-offset:2px}
@@ -195,7 +222,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 <button id="store-btn" title="Otwiera Tabby Store w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:558px;z-index:30;background:rgba(240,163,94,0.92);color:#1a1230;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🐱 Tabby Store</button>
 <button id="wall-btn" style="position:fixed;top:12px;right:418px;z-index:30;background:rgba(210,153,34,0.85);color:#000;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🧱 Maluj kolizje</button>
 <div id="dn-time" style="position:fixed;top:50px;right:12px;z-index:25;background:rgba(0,0,0,0.7);color:#ffcc44;padding:6px 14px;border-radius:8px;font-size:18px;font-weight:bold;font-family:monospace;display:none">12:00</div>
-<button id="scalpel-btn" style="position:fixed;top:12px;right:894px;z-index:30;background:rgba(248,81,73,0.85);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif;display:none">🔪 Skalpel</button>
+<button id="scalpel-btn" style="position:fixed;top:12px;right:940px;z-index:30;background:rgba(248,81,73,0.85);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif;display:none">🔪 Skalpel</button>
 <div id="wall-hint" style="position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(210,153,34,0.95);color:#000;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:bold;display:none;font-family:sans-serif">🧱 Klikaj na ściany • Esc = koniec</div>
 <div id="scalpel-hint" style="position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(248,81,73,0.95);color:#fff;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:bold;display:none;font-family:sans-serif">🔪 2×klik = tnij • Prawy = usuń kawałek • Z = cofnij • Esc = koniec</div>
 <div id="snap-bar">
@@ -601,7 +628,7 @@ function getDriveCore(){
 function drvNum(v,d){return(v===undefined||v===null||v===''||isNaN(v))?d:+v;}
 var DRV={t:null,yaw:0,steer:0,speed:0,vx:0,vz:0,wheels:[],own:[],smoke:[],
   hw:1,hl:2,cx:0,cz:0,top:2,bodyTop:1.5,cabinY:2.5,camDist:7,camH:4,lookY:1,floor:0,groundOff:0,y0:0,yaw0:0,
-  fx:[],broken:[],hidden:[],moved:[],vehWalls:[],air:false,vy:0,shake:0,hitCd:0,lastBlock:null,restore:false};
+  fx:[],broken:[],hidden:[],moved:[],wallMoves:[],others:[],otherWalls:[],vehWalls:[],air:false,vy:0,shake:0,hitCd:0,lastBlock:null,restore:false};
 function drvWheelRadius(m){var p=m.geometry&&m.geometry.parameters;return(p&&(p.radiusTop||p.radius))||0.4;}
 // Czy prostokąt pojazdu (obrócony) nachodzi na ścianę AABB — test SAT
 function drvHit(x,z,yaw,w){
@@ -619,6 +646,7 @@ function drvBlocked(x,z,yaw){
   var vTop=DRV.t.gr.position.y+DRV.top;
   for(var i=0;i<wCols.length;i++){
     var w=wCols[i];if(DRV.own.indexOf(w)>=0||w._gone)continue;
+    if(DRV.otherWalls&&DRV.otherWalls.indexOf(w)>=0)continue; // inny pojazd — przepychanie
     if(w.veh&&drvVehPass(w.veh)&&!w._noFx)continue; // część przepuszcza pojazd (efekt zadziała przy wjechaniu)
     var base=w.y||0,top=base+(w.h||2);
     if(top-DRV.floor<=DRV_STEP)continue; // niski — da się wjechać
@@ -626,6 +654,95 @@ function drvBlocked(x,z,yaw){
     if(drvHit(x,z,yaw,w)){DRV.lastBlock=w;return true;}
   }
   return false;
+}
+// ----- ZDERZENIA POJAZDÓW: przepychanie (toczy się przód/tył, ślizga bokiem) -----
+var DRV_TANK_SPEED=5/60; // prędkość czołgu — do niej zwalnia pojazd, który pcha inny
+function drvHitD(x,z,yaw,d,w){
+  var c=Math.cos(yaw),s=Math.sin(yaw);
+  var bx=x+d.cx*c+d.cz*s,bz=z-d.cx*s+d.cz*c;
+  var dx=w.x-bx,dz=w.z-bz,ac=Math.abs(c),as=Math.abs(s);
+  if(Math.abs(dx)>w.hw+d.hw*ac+d.hl*as)return false;
+  if(Math.abs(dz)>w.hd+d.hw*as+d.hl*ac)return false;
+  if(Math.abs(dx*c-dz*s)>d.hw+w.hw*ac+w.hd*as)return false;
+  if(Math.abs(dx*s+dz*c)>d.hl+w.hw*as+w.hd*ac)return false;
+  return true;
+}
+function drvMeasureBody(g){
+  var sp=g.position.clone(),sr=g.rotation.clone();
+  g.position.set(0,0,0);g.rotation.set(0,0,0);g.updateMatrixWorld(true);
+  var full=new THREE.Box3().setFromObject(g),body=new THREE.Box3(),mb=new THREE.Box3(),ms=new THREE.Vector3();
+  g.traverse(function(m){if(!m.isMesh||(m.userData&&m.userData._isGlow))return;mb.setFromObject(m);mb.getSize(ms);if(ms.x>=0.6&&ms.z>=0.6)body.union(mb);});
+  if(body.isEmpty())body.copy(full);
+  g.position.copy(sp);g.rotation.copy(sr);g.updateMatrixWorld(true);
+  return {hw:(body.max.x-body.min.x)/2,hl:(body.max.z-body.min.z)/2,cx:(body.max.x+body.min.x)/2,cz:(body.max.z+body.min.z)/2,full:full,top:full.max.y};
+}
+function drvSetupOthers(obj,others){
+  DRV.others=[];DRV.otherWalls=[];
+  (others||[]).forEach(function(o){
+    if(!o||!o.gr||o===obj)return;
+    var d=drvMeasureBody(o.gr);d.ref=o;d.gr=o.gr;d.walls=[];d.wheels=[];
+    var yaw=o.gr.rotation.y,c=Math.cos(yaw),s=Math.sin(yaw),f=d.full;
+    var fx=f.max.x-f.min.x,fz=f.max.z-f.min.z,R=Math.sqrt(fx*fx+fz*fz)/2+0.2;
+    for(var i=0;i<wCols.length;i++){var w=wCols[i];if(DRV.own.indexOf(w)>=0)continue;
+      var dx=w.x-o.gr.position.x,dz=w.z-o.gr.position.z,lx=dx*c-dz*s,lz=dx*s+dz*c;
+      if(lx>=f.min.x-0.2&&lx<=f.max.x+0.2&&lz>=f.min.z-0.2&&lz<=f.max.z+0.2&&Math.max(w.hw,w.hd)<=R){d.walls.push(w);DRV.otherWalls.push(w);}}
+    o.gr.traverse(function(m){if(m.userData&&typeof m.userData._role==='string'&&m.userData._role.indexOf('wheel')===0)d.wheels.push({m:m,r:Math.max(0.05,drvWheelRadius(m))});});
+    DRV.others.push(d);
+  });
+}
+// SAT dla dwóch obróconych prostokątów; zwraca głębokość i kierunek od A do B
+function drvObb(x,z,yaw,d){var c=Math.cos(yaw),s=Math.sin(yaw);return {x:x+d.cx*c+d.cz*s,z:z-d.cx*s+d.cz*c,u:{x:c,z:-s},v:{x:s,z:c},hw:d.hw,hl:d.hl};}
+function drvSat(A,B){
+  var ax=[A.u,A.v,B.u,B.v],best=null,dx=B.x-A.x,dz=B.z-A.z;
+  for(var i=0;i<4;i++){var L=ax[i];
+    var rA=A.hw*Math.abs(A.u.x*L.x+A.u.z*L.z)+A.hl*Math.abs(A.v.x*L.x+A.v.z*L.z);
+    var rB=B.hw*Math.abs(B.u.x*L.x+B.u.z*L.z)+B.hl*Math.abs(B.v.x*L.x+B.v.z*L.z);
+    var dist=dx*L.x+dz*L.z,ov=rA+rB-Math.abs(dist);
+    if(ov<=0)return null;
+    if(!best||ov<best.pen){var sg=dist<0?-1:1;best={pen:ov,x:L.x*sg,z:L.z*sg};}
+  }
+  return best;
+}
+function drvOtherBlocked(O,px,pz){
+  var yaw=O.gr.rotation.y;
+  for(var i=0;i<wCols.length;i++){var w=wCols[i];
+    if(O.walls.indexOf(w)>=0||DRV.own.indexOf(w)>=0||w._gone)continue;
+    if(w.veh&&drvVehPass(w.veh))continue;
+    var top=(w.y||0)+(w.h||2);if(top<=DRV_STEP)continue;
+    if((w.y||0)>=O.gr.position.y+O.top)continue;
+    if(drvHitD(px,pz,yaw,O,w))return true;
+  }
+  for(var j=0;j<DRV.others.length;j++){var P=DRV.others[j];if(P===O)continue;
+    if(drvSat(drvObb(px,pz,yaw,O),drvObb(P.gr.position.x,P.gr.position.z,P.gr.rotation.y,P)))return true;}
+  return false;
+}
+function drvPushVehicles(x,z,k){
+  var contact=false;
+  for(var i=0;i<DRV.others.length;i++){
+    var O=DRV.others[i];
+    var r=drvSat(drvObb(x,z,DRV.yaw,DRV),drvObb(O.gr.position.x,O.gr.position.z,O.gr.rotation.y,O));
+    if(!r)continue;
+    contact=true;
+    var pen=r.pen+0.002,oy=O.gr.rotation.y;
+    var fx=-Math.sin(oy),fz=-Math.cos(oy),sx=Math.cos(oy),sz=-Math.sin(oy);
+    var af=Math.abs(r.x*fx+r.z*fz),as=Math.abs(r.x*sx+r.z*sz);
+    var mob=(af*0.9+as*0.45)/((af+as)||1); // toczy się łatwo, bokiem ciężej
+    var mx=r.x*pen*mob,mz=r.z*pen*mob;
+    if(drvOtherBlocked(O,O.gr.position.x+mx,O.gr.position.z+mz)){mx=0;mz=0;mob=0;}
+    if(mx||mz){
+      O.gr.position.x+=mx;O.gr.position.z+=mz;
+      O.walls.forEach(function(w){w.x+=mx;w.z+=mz;if(w.mp){w.mp[0]+=mx;w.mp[2]+=mz;}});
+      var roll=mx*fx+mz*fz;O.wheels.forEach(function(wh){wh.m.rotation.x+=roll/wh.r;});
+    }
+    var bx=x-r.x*pen*(1-mob),bz=z-r.z*pen*(1-mob);
+    if(!drvBlocked(bx,bz,DRV.yaw)){x=bx;z=bz;}
+  }
+  if(contact){
+    var cap=DRV_TANK_SPEED;
+    if(Math.abs(DRV.speed)>cap)DRV.speed=cap*(DRV.speed<0?-1:1);
+    var vs=Math.sqrt(DRV.vx*DRV.vx+DRV.vz*DRV.vz);if(vs>cap){DRV.vx*=cap/vs;DRV.vz*=cap/vs;}
+  }
+  return {x:x,z:z,contact:contact};
 }
 // ----- KOLIZJA Z POJAZDEM (efekty części: pass, destroy, knock, slow, jump, shake, sound) -----
 function drvVehPass(v){return !!(v&&(v.pass||v.destroy||v.knock||v.slow||v.jump));}
@@ -693,6 +810,7 @@ function drvKnock(mesh){
 function drvUpdateFx(k,dt){
   for(var i=DRV.fx.length-1;i>=0;i--){
     var f=DRV.fx[i];f.age+=dt;
+    if(f.fall){f.vy-=0.012*k;f.m.position.y+=f.vy*k;if(f.m.position.y<=f.target){f.m.position.y=f.target;f.m.userData._falling=false;(f.walls||[]).forEach(function(w){w._protUntil=DRV.time+1.0;});DRV.fx.splice(i,1);}continue;}
     if(!f.rest){
       f.m.position.x+=f.vx*k;f.m.position.y+=f.vy*k;f.m.position.z+=f.vz*k;f.vy-=0.012*k;var dr=Math.pow(0.985,k);f.vx*=dr;f.vz*=dr;
       f.m.rotation.x+=f.rx*k;f.m.rotation.z+=f.rz*k;
@@ -703,6 +821,41 @@ function drvUpdateFx(k,dt){
       if(f.age>f.life*0.6)f.m.material.opacity=Math.max(0,1-(f.age-f.life*0.6)/(f.life*0.4));
       if(f.age>=f.life){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();DRV.fx.splice(i,1);}
     }else if(f.rest||f.age>=f.life){f.m.position.y=Math.max(f.m.position.y,f.floor);DRV.fx.splice(i,1);}
+  }
+}
+// ----- GRAWITACJA po zniszczeniu części: niepodparte fragmenty obiektu spadają (w całości, bez rozpadania) -----
+function drvCollapse(grp){
+  if(!grp)return;
+  grp.updateMatrixWorld(true);
+  var ms=[];grp.traverse(function(o){if(o.isMesh&&o.visible&&!(o.userData&&o.userData._isGlow)&&!o.userData._falling){var p=o,vis=true;while(p&&p!==grp){if(!p.visible)vis=false;p=p.parent;}if(vis)ms.push(o);}});
+  if(ms.length<1)return;
+  var g0=new THREE.Vector3();grp.getWorldPosition(g0);var ground=g0.y;
+  var bx=ms.map(function(m){return new THREE.Box3().setFromObject(m);});
+  var n=ms.length,T=0.03;
+  function touch(a,b){return a.min.x<=b.max.x+T&&a.max.x>=b.min.x-T&&a.min.y<=b.max.y+T&&a.max.y>=b.min.y-T&&a.min.z<=b.max.z+T&&a.max.z>=b.min.z-T;}
+  // które części trzymają się ziemi (bezpośrednio albo przez połączone części)
+  var sup=new Array(n).fill(false),q=[];
+  for(var i=0;i<n;i++)if(bx[i].min.y<=ground+0.08){sup[i]=true;q.push(i);}
+  while(q.length){var a=q.shift();for(var j=0;j<n;j++)if(!sup[j]&&touch(bx[a],bx[j])){sup[j]=true;q.push(j);}}
+  // niepodparte → grupy połączonych części
+  var comp=new Array(n).fill(-1),nc=0;
+  for(var i2=0;i2<n;i2++){if(sup[i2]||comp[i2]>=0)continue;var st=[i2];comp[i2]=nc;
+    while(st.length){var c=st.pop();for(var j2=0;j2<n;j2++)if(!sup[j2]&&comp[j2]<0&&touch(bx[c],bx[j2])){comp[j2]=nc;st.push(j2);}}nc++;}
+  for(var ci=0;ci<nc;ci++){
+    var drop=Infinity;
+    for(var k=0;k<n;k++){if(comp[k]!==ci)continue;var b=bx[k],land=ground;
+      for(var s2=0;s2<n;s2++){if(!sup[s2])continue;var t=bx[s2];
+        if(t.min.x<b.max.x&&t.max.x>b.min.x&&t.min.z<b.max.z&&t.max.z>b.min.z&&t.max.y<=b.min.y+0.01)land=Math.max(land,t.max.y);}
+      drop=Math.min(drop,b.min.y-land);}
+    if(!(drop>0.02))continue;
+    for(var k2=0;k2<n;k2++){if(comp[k2]!==ci)continue;var m=ms[k2];
+      DRV.moved.push({m:m,parent:m.parent,pos:m.position.clone(),rot:m.rotation.clone(),sc:m.scale.clone()});
+      m.userData._falling=true;
+      var fw=[];
+      // kolizja tej części spada razem z nią i jest chroniona przed efektami, dopóki część spada
+      for(var wi=0;wi<wCols.length;wi++){var w=wCols[wi];if(w._poRef)continue;if(drvFindMesh(w)===m){w.y=(w.y||0)-drop;if(w.mp)w.mp[1]-=drop;DRV.wallMoves.push({w:w,dy:drop});w._protUntil=Infinity;fw.push(w);}}
+      DRV.fx.push({m:m,fall:true,vy:0,target:m.position.y-drop,age:0,walls:fw});
+    }
   }
 }
 function drvHitWall(w,power){
@@ -722,8 +875,10 @@ function drvHitWall(w,power){
     var mesh=drvFindMesh(w);
     if(!mesh){console.warn('Tabby: nie znaleziono części do zniszczenia',w);w._noFx=true;return;}
     if(mesh){
+      var pgrp=mesh.parent;
       if(v.destroy){drvDebris(mesh);mesh.visible=false;DRV.hidden.push(mesh);}
       else drvKnock(mesh);
+      drvCollapse(pgrp&&pgrp!==scene?(function(o){while(o.parent&&o.parent!==scene)o=o.parent;return o;})(pgrp):null);
     }
     drvRemoveWall(w);
   }
@@ -738,6 +893,7 @@ function drvVehEffects(x,z,k){
     if(!drvVehPass(w.veh))continue;
     if((w.y||0)>=DRV.t.gr.position.y+DRV.top)continue; // część wisi nad pojazdem
     var inside=drvHit(x,z,DRV.yaw,w);
+    if(w._protUntil&&DRV.time<w._protUntil){if(inside)w._vIn=true;continue;}
     if(inside&&!w._vIn){w._vIn=true;drvHitWall(w,1);}
     else if(!inside)w._vIn=false;
     if(inside&&w.veh.slow)DRV.speed*=Math.pow(0.9,k);
@@ -749,6 +905,7 @@ function drvFloorAt(x,z,yaw,ref){
   var bx=x+DRV.cx*c+DRV.cz*s,bz=z-DRV.cx*s+DRV.cz*c,f=0;
   for(var i=0;i<wCols.length;i++){
     var w=wCols[i];if(DRV.own.indexOf(w)>=0||w._gone)continue;
+    if(DRV.otherWalls&&DRV.otherWalls.indexOf(w)>=0)continue;
     if(w.veh&&(w.veh.pass||w.veh.destroy||w.veh.knock||w.veh.slow))continue;
     var top=(w.y||0)+(w.h||2);
     if(top-ref>DRV_STEP)continue;
@@ -756,7 +913,7 @@ function drvFloorAt(x,z,yaw,ref){
   }
   return f;
 }
-function drvEnter(obj){
+function drvEnter(obj,others){
   var g=obj.gr,a=obj.action||{};
   DRV.t=obj;DRV.yaw=g.rotation.y;DRV.steer=0;DRV.speed=0;DRV.vx=0;DRV.vz=0;DRV.wheels=[];
   DRV.y0=g.position.y;DRV.yaw0=g.rotation.y;
@@ -806,16 +963,18 @@ function drvEnter(obj){
     }
   }
   DRV.vehWalls=wCols.filter(function(w){return !!w.veh;});DRV.air=false;DRV.vy=0;DRV.shake=0;DRV.hitCd=0;
+  drvSetupOthers(obj,others);
   var ref=g.position.y;DRV.floor=drvFloorAt(g.position.x,g.position.z,DRV.yaw,ref);
   DRV.groundOff=g.position.y-DRV.floor;
 }
 // przywraca wszystko, co pojazd zniszczył lub odrzucił (edytor: przycisk „Odbuduj” i zapis gry)
 function drvRestoreAll(){
-  DRV.fx.forEach(function(f){if(f.debris){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();}});DRV.fx=[];
+  DRV.fx.forEach(function(f){if(f.debris){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();}if(f.m&&f.m.userData)f.m.userData._falling=false;});DRV.fx=[];
+  DRV.wallMoves.slice().reverse().forEach(function(it){it.w.y=(it.w.y||0)+it.dy;if(it.w.mp)it.w.mp[1]+=it.dy;});DRV.wallMoves=[];
   DRV.hidden.forEach(function(m){m.visible=true;});
   DRV.moved.slice().reverse().forEach(function(it){it.parent.attach(it.m);it.m.position.copy(it.pos);it.m.rotation.copy(it.rot);it.m.scale.copy(it.sc);});
   DRV.broken.slice().reverse().forEach(function(b){if(wCols.indexOf(b.w)<0)wCols.splice(Math.min(b.i,wCols.length),0,b.w);});
-  wCols.forEach(function(w){w._gone=false;w._vIn=false;w._noFx=false;delete w._mesh;delete w._grp;});
+  wCols.forEach(function(w){w._gone=false;w._vIn=false;w._noFx=false;delete w._mesh;delete w._grp;delete w._protUntil;});
   DRV.hidden=[];DRV.moved=[];DRV.broken=[];
 }
 function drvExit(){
@@ -828,7 +987,7 @@ function drvExit(){
   DRV.wheels=[];
   g.rotation.z=0;
   // dokończ lecące części i usuń odłamki
-  DRV.fx.forEach(function(f){if(f.debris){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();}else{f.m.position.y=Math.max(f.m.position.y,f.floor);}});
+  DRV.fx.forEach(function(f){if(f.fall){f.m.position.y=f.target;f.m.userData._falling=false;(f.walls||[]).forEach(function(w){w._protUntil=0;});}else if(f.debris){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();}else{f.m.position.y=Math.max(f.m.position.y,f.floor);}});
   DRV.fx=[];
   if(DRV.restore)drvRestoreAll();
   // przenieś własne kolizje w nowe miejsce
@@ -838,7 +997,8 @@ function drvExit(){
     w.hw=L.hw*ac+L.hd*as;w.hd=L.hw*as+L.hd*ac;w.y=L.y+hy;delete w._drvL;});
   DRV.own=[];
   var side=DRV.hw+Math.abs(DRV.cx)+1.0;
-  var res={x:g.position.x+Math.sin(DRV.yaw+Math.PI/2)*side,z:g.position.z+Math.cos(DRV.yaw+Math.PI/2)*side,yaw:DRV.yaw,y:g.position.y};
+  var res={x:g.position.x+Math.sin(DRV.yaw+Math.PI/2)*side,z:g.position.z+Math.cos(DRV.yaw+Math.PI/2)*side,yaw:DRV.yaw,y:g.position.y,others:(DRV.others||[]).map(function(d){return d.ref;})};
+  DRV.others=[];DRV.otherWalls=[];
   DRV.t=null;
   return res;
 }
@@ -846,6 +1006,7 @@ function drvSpawnSmoke(x,y,z){var geo=new THREE.SphereGeometry(0.08+Math.random(
 function drvUpdateSmoke(dt){for(var i=DRV.smoke.length-1;i>=0;i--){var p=DRV.smoke[i];p.age+=dt;p.mesh.position.y+=0.72*dt;var f=1-p.age/p.life;p.mesh.scale.setScalar(1+(1-f)*1.3);p.mesh.material.opacity=f*0.2;if(p.age>=p.life){scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();DRV.smoke.splice(i,1);}}}
 function drvStep(dt,camOff,camMode){
   var o=DRV.t;if(!o)return;var a=o.action||{},g=o.gr;
+  DRV.time=(DRV.time||0)+dt;
   var k=Math.min(dt*60,3); // mnożnik klatki: 1.0 przy 60 FPS — fizyka niezależna od odświeżania
   var maxSpeed=drvNum(a.speed,10)/60,accel=maxSpeed*0.02,brake=maxSpeed*0.013,friction=maxSpeed*0.004;
   var grip=Math.min(1,Math.max(0.001,drvNum(a.grip,0.07))),turnRate=drvNum(a.turnSpeed,2),steerSmooth=drvNum(a.steerSpeed,6);
@@ -876,6 +1037,7 @@ function drvStep(dt,camOff,camMode){
     var lv=DRV.lastBlock.veh;if(lv.shake)DRV.shake=Math.max(DRV.shake,0.3);if(lv.sound)drvThump(0.4+Math.abs(DRV.speed)*4);DRV.hitCd=0.6;
   }
   DRV.lastBlock=null;
+  if(DRV.others&&DRV.others.length){var pr=drvPushVehicles(x,z,k);x=pr.x;z=pr.z;}
   var moved=Math.sqrt((x-g.position.x)*(x-g.position.x)+(z-g.position.z)*(z-g.position.z));
   var dir=DRV.speed>=0?1:-1;
   g.position.x=x;g.position.z=z;g.rotation.y=DRV.yaw;
@@ -1108,7 +1270,7 @@ function triggerAction(){
     case'drive':
       edDriveTarget=po;edDriveCam='chase';
       placedObjs.forEach(function(o){if(o._col){var wv=tabbyWholeVeh(o);if(wv)o._col.veh=wv;else delete o._col.veh;}});
-      DRV.restore=false;drvEnter(po);
+      DRV.restore=false;drvEnter(po,placedObjs.filter(function(o){return o!==po&&o.action&&o.action.type==='drive';}));
       charGroup.visible=false;
       document.getElementById('interact-prompt').style.display='none';
       break;
@@ -2740,6 +2902,20 @@ function inspShowVeh(){
   document.querySelectorAll('.insp-veh').forEach(function(cb){var o=ex[cb.dataset.k];var dis=!!(o&&v[o]);cb.disabled=dis;cb.parentNode.classList.toggle('off',dis);});
   document.getElementById('insp-veh-count').textContent=n?'('+n+')':'';
 }
+// === 📷 Kamera: panel ustawień (przycisk lub Q) ===
+function tabbyCamMode(){return edDriveTarget?edDriveCam:'walk';}
+function tabbyCamPop(open){
+  edCamAdjust=!!open;
+  var p=document.getElementById('cam-pop'),b=document.getElementById('cam-btn');
+  p.classList.toggle('show',edCamAdjust);b.classList.toggle('on',edCamAdjust);b.setAttribute('aria-expanded',edCamAdjust?'true':'false');
+  tabbyCamLabel();
+}
+function tabbyCamLabel(){var n={walk:'pieszo',chase:'pojazd — pościg',cabin:'pojazd — kabina'};var el=document.getElementById('cam-mode');if(el)el.textContent='Tryb: '+(n[tabbyCamMode()]||tabbyCamMode());}
+function tabbyCamStep(c){
+  var m=tabbyCamMode();if(!edCamOff[m])edCamOff[m]={y:0,angle:0,dist:0};var o=edCamOff[m];
+  if(c==='y+')o.y+=0.3;else if(c==='y-')o.y-=0.3;else if(c==='a+')o.angle+=0.1;else if(c==='a-')o.angle-=0.1;
+  else if(c==='d-')o.dist=(o.dist||0)-0.5;else if(c==='d+')o.dist=(o.dist||0)+0.5;
+}
 // === KOLIZJE CZĘŚCI — wspólne funkcje (inspektor, przesuwanie, wczytywanie, eksport) ===
 function tabbyPartMesh(po,idx){
   var ob=loadedObjs[po.oi];if(!ob||ob.type==='glb'||!ob.parts)return null;
@@ -2803,8 +2979,8 @@ function tabbyWholeVehStr(po){
 }
 // eksport ściany z efektami pojazdu: dopisuje veh + pozycję części (żeby gra znalazła ją w świecie)
 function tabbyWallExtra(w){
-  if(!w.veh)return '';
-  var out=',veh:'+JSON.stringify(w.veh);
+  if(!w.veh&&!w._po)return '';
+  var out=w.veh?',veh:'+JSON.stringify(w.veh):'';
   if(w._po){var m=tabbyPartMesh(w._po,w._pi);if(m){var v=new THREE.Vector3();m.getWorldPosition(v);
     out+=',mp:['+v.x.toFixed(3)+','+v.y.toFixed(3)+','+v.z.toFixed(3)+']';
     var sh=loadedObjs[w._po.oi].parts[w._pi].shape;if(sh)out+=',ms:"'+sh+'"';}}
@@ -3001,6 +3177,7 @@ function init(){
       e.preventDefault();
       if(edDriveTarget){
         var ep=drvExit();
+        (ep.others||[]).forEach(function(o){o.x=o.gr.position.x;o.z=o.gr.position.z;}); // przepchnięte pojazdy zostają na nowym miejscu
         // pojazd zostaje tam, gdzie go zaparkowano — eksport zapisze nową pozycję
         edDriveTarget.x=edDriveTarget.gr.position.x;edDriveTarget.z=edDriveTarget.gr.position.z;edDriveTarget.rotY=edDriveTarget.gr.rotation.y;
         charGroup.visible=true;
@@ -3016,9 +3193,9 @@ function init(){
     }
     if(e.code==='Digit1'){e.preventDefault();toggleSelMode();return;}
     if(e.code==='Digit2'){e.preventDefault();toggleEd();return;}
-    if(e.code==='Escape'){if(edCamAdjust){e.preventDefault();return;}if(scalpelMode){exitScalpel();return;}if(wallPaintMode){exitWallPaint();return;}if(document.getElementById('inspector-overlay').classList.contains('show')){closeInspector();return;}if(moveMode){cancelMove();return;}if(pasteMode){stopPaste();return;}if(selMode){toggleSelMode();return;}}
-    if(e.code==='KeyQ'&&pLock){e.preventDefault();edCamAdjust=!edCamAdjust;document.getElementById('cam-adjust-hud').style.display=edCamAdjust?'block':'none';return;}
-    if(edCamAdjust&&pLock){
+    if(e.code==='Escape'){if(edCamAdjust){e.preventDefault();tabbyCamPop(false);return;}if(scalpelMode){exitScalpel();return;}if(wallPaintMode){exitWallPaint();return;}if(document.getElementById('inspector-overlay').classList.contains('show')){closeInspector();return;}if(moveMode){cancelMove();return;}if(pasteMode){stopPaste();return;}if(selMode){toggleSelMode();return;}}
+    if(e.code==='KeyQ'&&!/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||'')){e.preventDefault();tabbyCamPop(!edCamAdjust);return;}
+    if(edCamAdjust&&/^Arrow/.test(e.code)){
       var mode=edDriveTarget?edDriveCam:'walk';
       if(!edCamOff[mode])edCamOff[mode]={y:0,angle:0,dist:0};
       if(e.code==='ArrowUp'){e.preventDefault();if(e.shiftKey)edCamOff[mode].dist=(edCamOff[mode].dist||0)-0.5;else edCamOff[mode].y+=0.3;}
@@ -3031,7 +3208,7 @@ function init(){
     switch(e.code){
       case'KeyW':keys.w=1;break;case'KeyA':keys.a=1;break;case'KeyS':keys.s=1;break;case'KeyD':keys.d=1;break;
       case'ShiftLeft':case'ShiftRight':keys.sh=1;break;case'Space':keys.sp=1;e.preventDefault();break;
-      case'Tab':e.preventDefault();if(edDriveTarget){edDriveCam=edDriveCam==='chase'?'cabin':'chase';edCamAdjust=false;}else{cycleCam();}break;
+      case'Tab':e.preventDefault();if(edDriveTarget){edDriveCam=edDriveCam==='chase'?'cabin':'chase';}else{cycleCam();}break;
       case'KeyN':dnSpeed=Math.max(0.01,dnSpeed-0.05);break;
       case'KeyM':dnSpeed=Math.min(2,dnSpeed+0.05);break;
       case'KeyP':dnPaused=!dnPaused;break;
@@ -3738,6 +3915,16 @@ function init(){
     rb.addEventListener('click',function(e){e.stopPropagation();drvRestoreAll();rb.style.display='none';});
     setInterval(function(){var n=DRV.hidden.length+DRV.moved.length;rb.style.display=n?'block':'none';if(n)rb.textContent='♻ Odbuduj zniszczone ('+n+')';},400);
   })();
+  // przyciski panelu kamery
+  (function(){
+    var pop=document.getElementById('cam-pop');
+    document.getElementById('cam-btn').addEventListener('click',function(e){e.stopPropagation();tabbyCamPop(!edCamAdjust);});
+    document.getElementById('cam-pop-x').addEventListener('click',function(e){e.stopPropagation();tabbyCamPop(false);});
+    pop.querySelectorAll('[data-c]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();tabbyCamStep(b.dataset.c);});});
+    document.getElementById('cam-reset').addEventListener('click',function(e){e.stopPropagation();var m=tabbyCamMode();edCamOff[m]={y:0,angle:0,dist:0};});
+    ['mousedown','click','wheel'].forEach(function(t){pop.addEventListener(t,function(e){e.stopPropagation();});});
+    setInterval(function(){if(edCamAdjust)tabbyCamLabel();},400);
+  })();
   // === Pora dnia: przycisk ze słońcem + mały panelik ===
   (function(){
     var btn=document.getElementById('dn-btn'),pop=document.getElementById('dn-pop');
@@ -3865,7 +4052,7 @@ var _fpsInterval=1000/60,_lastFrame=0;
 function showText(msg){var tp=document.getElementById('text-popup');document.getElementById('tp-text').textContent=msg;tp.style.display='block';textPopupOpen=true;document.getElementById('interact-prompt').style.display='none';}
 function closeText(){document.getElementById('text-popup').style.display='none';textPopupOpen=false;}
 function enterVehicle(pa){
-  driveTarget=pa;driveCamMode='chase';drvEnter(pa);
+  driveTarget=pa;driveCamMode='chase';drvEnter(pa,placedActions.filter(function(o){return o!==pa&&o.action&&o.action.type==='drive';}));
   charGroup.visible=false;
   document.getElementById('interact-prompt').style.display='none';
   document.getElementById('drive-info').style.display='block';

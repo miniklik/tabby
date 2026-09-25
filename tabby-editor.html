@@ -1492,7 +1492,7 @@ function buildObj(data,x,z){
         g.add(glMesh);
         return;
       }
-      var geo,s=p.size,mat=new THREE.MeshStandardMaterial({color:p.color,roughness:0.7});
+      var geo,s=p.size,mat=p.hidden?new THREE.MeshStandardMaterial({color:p.color||'#ff3344',roughness:0.7,transparent:true,opacity:0.35,depthWrite:false}):new THREE.MeshStandardMaterial({color:p.color,roughness:0.7});
       switch(p.shape){
         case'box':geo=new THREE.BoxGeometry(s[0],s[1],s[2]);break;
         case'sphere':geo=new THREE.SphereGeometry(s[0],s[1]||8,s[2]||6);break;
@@ -1501,7 +1501,7 @@ function buildObj(data,x,z){
         case'plane':geo=new THREE.PlaneGeometry(s[0],s[1]);break;
         default:geo=new THREE.BoxGeometry(1,1,1);
       }
-      var m=new THREE.Mesh(geo,mat);
+      var m=new THREE.Mesh(geo,mat);if(p.hidden){m.userData._hidden=true;m.renderOrder=2;}
       if(p.position)m.position.set(p.position[0],p.position[1],p.position[2]);
       if(p.rotation)m.rotation.set(p.rotation[0],p.rotation[1],p.rotation[2]);
       if(p.role)m.userData._role=p.role;
@@ -2558,6 +2558,7 @@ function doExportHTML(opts){
         if(p.position)code+='  m.position.set('+p.position.join(',')+');\n';
         if(p.rotation)code+='  m.rotation.set('+p.rotation.join(',')+');\n';
         if(p.role)code+='  m.userData._role="'+p.role+'";\n';
+        if(p.hidden)code+='  m.visible=false;m.userData._hidden=true;\n'; // strefa kolizji — niewidoczna w grze
         code+='  g.add(m);\n';
       });
       code+='  g.userData._tb="'+fn+'";\n  g.position.set(x,0,z);\n  g.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});\n  scene.add(g);\n  return g;\n}\n';
@@ -2687,6 +2688,7 @@ function doExportZIP(opts){
     inject+='    if(p.position)m.position.set(p.position[0],p.position[1],p.position[2]);\n';
     inject+='    if(p.rotation)m.rotation.set(p.rotation[0],p.rotation[1],p.rotation[2]);\n';
     inject+='    if(p.role)m.userData._role=p.role;\n';
+    inject+='    if(p.hidden){m.visible=false;m.userData._hidden=true;}\n';
     inject+='    g.add(m);\n';
     inject+='  });\n';
     inject+='  g.userData._tb=data.name||"obj";\n';
@@ -2851,6 +2853,9 @@ var AI_PROMPT = [
 '   "veh": {"explode": 1}  — wybuch (beczka wybuchowa, kanister)',
 '   "veh": {"destroy": 1, "sound": 1}  — rozpada sie z hukiem',
 '   Inne: "knock" (odlatuje), "pass" (przepuszcza), "slow" (spowalnia), "jump" (podskok), "shake" (wstrzas).',
+'',
+'8. Strefa kolizji: czesc z "hidden": true jest niewidoczna w grze, ale ma kolizje',
+'   (w edytorze widac ja jako polprzezroczysta czerwona bryle). Np. niewidzialna sciana albo pudlo kolizji wokol domu.',
 '',
 'Jesli uzytkownik nie prosi o interakcje - nie dodawaj pola "action".',
 'Jesli prosi o obiekt ktory "sie otwiera", "mowi", "przenosi" - dodaj odpowiednia akcje.',
@@ -3268,6 +3273,11 @@ function init(){
         var po={oi:selIdx,x:sx,z:sz,gr:gr};
         if(loadedObjs[selIdx].action)po.action=JSON.parse(JSON.stringify(loadedObjs[selIdx].action));
         if(loadedObjs[selIdx].veh){po.veh=JSON.parse(JSON.stringify(loadedObjs[selIdx].veh));addCollision(po);} // zachowanie z assetu (np. beczka wybuchowa)
+        else{var hp=(loadedObjs[selIdx].parts||[]).map(function(pp,ii){return pp.hidden?ii:-1;}).filter(function(ii){return ii>=0;});
+          if(hp.length){ // strefa kolizji: sama strefa = kolizja całego obiektu, strefa w większym assecie = kolizja tej części
+            if(hp.length===loadedObjs[selIdx].parts.length)addCollision(po);
+            else{po._partCols=po._partCols||{};hp.forEach(function(ii){var c=tabbyMakePartCol(po,ii);if(c){po._partCols[ii]=c;wCols.push(c);}});}
+          }}
         placedObjs.push(po);
         refreshUI();
       }
@@ -4069,7 +4079,7 @@ function tabbyInstance(){
       if(c===g)return;
       if(c.isLight||c.isPoints||c.isLine){good=false;return;}
       if(c.isMesh){var mt=c.material;
-        if(!mt||!mt.isMeshStandardMaterial||mt.map||mt.transparent||(c.userData&&(c.userData._role||c.userData._isGlow))||c.parent!==g)good=false;}
+        if(!mt||!mt.isMeshStandardMaterial||mt.map||mt.transparent||!c.visible||(c.userData&&(c.userData._role||c.userData._isGlow||c.userData._hidden))||c.parent!==g)good=false;}
       else good=false;
     });
     return good;

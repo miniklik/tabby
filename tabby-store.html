@@ -596,7 +596,7 @@ var ASSETS = [
   {
     name:"Dynamit",
     category:["militaria","interaktywny"],
-    desc:"Wiązka lasek dynamitu z lontem. Najedź — wybucha i odpala inne ładunki obok.",
+    desc:"Wiązka lasek dynamitu z lontem. Podejdź i naciśnij E — po 7 sekundach wybucha. Najechany pojazdem wybucha od razu.",
     parts:[
       {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.065,-0.13],"rotation":[0,0,1.5708]},
       {"shape":"cylinder","size":[0.065,0.065,0.55,10],"color":"#c62828","position":[0,0.065,0],"rotation":[0,0,1.5708]},
@@ -609,7 +609,8 @@ var ASSETS = [
       {"shape":"box","size":[0.14,0.1,0.1],"color":"#333333","position":[0.6,0.08,0]},
       {"shape":"sphere","size":[0.03,8,6],"color":"#ff3322","position":[0.6,0.15,0]}
     ],
-    veh:{"explode":1}
+    veh:{"explode":1},
+    action:{"type":"fuse"}
   },
   {
     name:"Skrzynia z amunicją",
@@ -1399,7 +1400,7 @@ function renderCards(){
     meta.className = 'card-meta';
     meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
     if(asset.action){
-      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda'};
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
     if(asset.veh){var vl={explode:'💥 Wybuch',destroy:'🧱 Rozpada się',knock:'↗ Odlatuje',shake:'〰 Wstrząs'};var shown=['explode','destroy','knock','shake'].filter(function(k){return asset.veh[k];})[0];if(shown)meta.innerHTML+='<span>'+vl[shown]+'</span>';}

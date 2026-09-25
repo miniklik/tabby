@@ -42,6 +42,10 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 .act-info{font-size:11px;color:#3fb950;margin-top:4px}
 #ed-panel{position:fixed;top:52px;right:-360px;width:350px;height:calc(100% - 52px);border-top-left-radius:12px;border-top:1px solid rgba(255,255,255,0.12);z-index:30;background:rgba(14,17,23,0.97);border-left:1px solid rgba(255,255,255,0.12);transition:right 0.25s;display:flex;flex-direction:column;font-family:sans-serif;font-size:13px;color:#e6edf3}
 #ed-panel.open{right:0}
+.insp-veh-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:11.5px;color:#ddd;cursor:pointer;user-select:none;line-height:1.35}
+.insp-veh-row input{width:15px;height:15px;margin:1px 0 0;accent-color:#f0a35e;cursor:pointer;flex:none}
+.insp-veh-row b{color:#fff}
+.insp-veh-row.off{opacity:.35;cursor:not-allowed}
 .ep-top{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center}
 .ep-top h2{font-size:15px;font-weight:700}
 .ep-x{background:none;border:none;color:#888;font-size:22px;cursor:pointer;padding:0 4px}
@@ -186,6 +190,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <span id="dn-speed-label" style="font-family:monospace;font-size:11px;color:#aaa">0.15</span>
       </div>
 </div>
+<button id="rebuild-btn" style="display:none;position:fixed;bottom:44px;left:50%;transform:translateX(-50%);z-index:35;background:rgba(63,185,80,0.95);color:#06200d;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;font-family:sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.35)">♻ Odbuduj zniszczone</button>
 <button id="scenes-btn" title="Wróć do strony scen" style="position:fixed;top:12px;right:696px;z-index:30;background:rgba(107,91,214,0.92);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🗂 Tabby Sceny</button>
 <button id="store-btn" title="Otwiera Tabby Store w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:558px;z-index:30;background:rgba(240,163,94,0.92);color:#1a1230;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🐱 Tabby Store</button>
 <button id="wall-btn" style="position:fixed;top:12px;right:418px;z-index:30;background:rgba(210,153,34,0.85);color:#000;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🧱 Maluj kolizje</button>
@@ -240,6 +245,22 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
           </label>
         </div>
 
+        <div style="border:2px solid rgba(240,163,94,0.35);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(240,163,94,0.04)">
+          <button type="button" id="ed-veh-head" aria-expanded="false" style="all:unset;display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;font-size:13px;font-weight:600;color:#f0a35e">
+            <span>🚗 Kolizja z pojazdem <span id="ed-veh-count" style="color:#aaa;font-weight:400"></span></span><span id="ed-veh-arrow">▸</span>
+          </button>
+          <div id="ed-veh-body" style="display:none;margin-top:10px">
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="pass"><span><b>Przepuść</b> — pojazd przejeżdża</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="destroy"><span><b>Zniszcz</b> — cały obiekt rozpada się na kosteczki</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="knock"><span><b>Odrzuć</b> — cały obiekt odlatuje i się przewraca</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="slow"><span><b>Spowolnij</b> — pojazd zwalnia</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="jump"><span><b>Podskok</b> — pojazd się wybija</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="shake"><span><b>Wstrząs</b> — kamera się trzęsie</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="ed-veh" data-k="sound"><span><b>Dźwięk</b> — odgłos uderzenia</span></label>
+            <div style="font-size:10px;color:#777;margin-top:6px;line-height:1.4">Działa na cały obiekt. Można zaznaczyć kilka naraz. Zaznaczenie włącza Kolizję. Pieszo obiekt zawsze blokuje.</div>
+          </div>
+        </div>
+
         <div style="border:2px solid rgba(210,153,34,0.3);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(210,153,34,0.03)">
           <div style="font-size:12px;color:#d29922;font-weight:700;margin-bottom:8px">Obrót</div>
           <div class="edit-row">
@@ -275,13 +296,14 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
           <div style="font-size:12px;color:#3fb950;font-weight:700;margin-bottom:8px">Interakcja</div>
           <div class="act-row">
             <select id="act-type">
-              <option value="">Brak</option>
-              <option value="text">Pokaz tekst</option>
-              <option value="open">Otworz/zamknij</option>
+              <option value="drive">Jedź pojazdem</option>
+              <option value="text">Pokaż tekst</option>
+              <option value="sound">Odtwórz dźwięk</option>
               <option value="teleport">Teleportuj gracza</option>
-              <option value="sound">Odtworz dzwiek</option>
-              <option value="light">Zapal/zgas swiatlo</option>
-              <option value="drive">Jedz pojazdem</option>
+              <option value="">Brak</option>
+              <!-- ukryte: tylko do wyświetlania akcji, które przychodzą z assetu (drzwi, światło) -->
+              <option value="open" hidden>Z assetu: otwieranie</option>
+              <option value="light" hidden>Z assetu: światło</option>
             </select>
             <button class="edit-btn" style="background:#3fb950;color:#000" id="eb-setact">Ustaw</button>
           </div>
@@ -310,6 +332,22 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:#e6edf3;user-select:none">
               <input type="checkbox" id="insp-part-col" style="width:16px;height:16px;accent-color:#58a6ff;cursor:pointer"> Kolizja na tej części
             </label>
+          </div>
+          <div class="insp-section" style="border-color:rgba(240,163,94,0.35)">
+            <button type="button" id="insp-veh-head" aria-expanded="false" style="all:unset;display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;font-size:12px;font-weight:700;color:#f0a35e">
+              <span>🚗 Kolizja z pojazdem <span id="insp-veh-count" style="color:#aaa;font-weight:400"></span></span><span id="insp-veh-arrow">▸</span>
+            </button>
+            <div id="insp-veh-body" style="display:none;margin-top:10px">
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="pass"><span><b>Przepuść</b> — pojazd przejeżdża</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="destroy"><span><b>Zniszcz</b> — rozpada się na kosteczki</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="knock"><span><b>Odrzuć</b> — odlatuje i się przewraca</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="slow"><span><b>Spowolnij</b> — pojazd zwalnia</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="jump"><span><b>Podskok</b> — pojazd się wybija</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="shake"><span><b>Wstrząs</b> — kamera się trzęsie</span></label>
+              <label class="insp-veh-row"><input type="checkbox" class="insp-veh" data-k="sound"><span><b>Dźwięk</b> — odgłos uderzenia</span></label>
+              <button type="button" id="insp-veh-all" style="width:100%;margin-top:8px;padding:7px;background:rgba(240,163,94,0.12);border:1px solid rgba(240,163,94,0.35);color:#f0a35e;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Ustaw dla wszystkich części obiektu</button>
+              <div style="font-size:10px;color:#777;margin-top:6px;line-height:1.4">Można zaznaczyć kilka naraz. Zaznaczenie włącza kolizję tej części. Pieszo część zawsze blokuje.</div>
+            </div>
           </div>
         </div>
         <div class="insp-section" style="border-color:rgba(210,153,34,0.3);margin:0 12px 10px">
@@ -562,7 +600,8 @@ function getDriveCore(){
 // Wymaga zmiennych: THREE, scene, cam, keys, wCols.
 function drvNum(v,d){return(v===undefined||v===null||v===''||isNaN(v))?d:+v;}
 var DRV={t:null,yaw:0,steer:0,speed:0,vx:0,vz:0,wheels:[],own:[],smoke:[],
-  hw:1,hl:2,cx:0,cz:0,top:2,bodyTop:1.5,cabinY:2.5,camDist:7,camH:4,lookY:1,floor:0,groundOff:0,y0:0,yaw0:0};
+  hw:1,hl:2,cx:0,cz:0,top:2,bodyTop:1.5,cabinY:2.5,camDist:7,camH:4,lookY:1,floor:0,groundOff:0,y0:0,yaw0:0,
+  fx:[],broken:[],hidden:[],moved:[],vehWalls:[],air:false,vy:0,shake:0,hitCd:0,lastBlock:null,restore:false};
 function drvWheelRadius(m){var p=m.geometry&&m.geometry.parameters;return(p&&(p.radiusTop||p.radius))||0.4;}
 // Czy prostokąt pojazdu (obrócony) nachodzi na ścianę AABB — test SAT
 function drvHit(x,z,yaw,w){
@@ -579,19 +618,138 @@ var DRV_STEP=0.6;
 function drvBlocked(x,z,yaw){
   var vTop=DRV.t.gr.position.y+DRV.top;
   for(var i=0;i<wCols.length;i++){
-    var w=wCols[i];if(DRV.own.indexOf(w)>=0)continue;
+    var w=wCols[i];if(DRV.own.indexOf(w)>=0||w._gone)continue;
+    if(w.veh&&drvVehPass(w.veh)&&!w._noFx)continue; // część przepuszcza pojazd (efekt zadziała przy wjechaniu)
     var base=w.y||0,top=base+(w.h||2);
     if(top-DRV.floor<=DRV_STEP)continue; // niski — da się wjechać
     if(base>=vTop)continue;              // nad pojazdem (most, sufit)
-    if(drvHit(x,z,yaw,w))return true;
+    if(drvHit(x,z,yaw,w)){DRV.lastBlock=w;return true;}
   }
   return false;
 }
+// ----- KOLIZJA Z POJAZDEM (efekty części: pass, destroy, knock, slow, jump, shake, sound) -----
+function drvVehPass(v){return !!(v&&(v.pass||v.destroy||v.knock||v.slow||v.jump));}
+function drvFindMesh(w){
+  if(w._mesh!==undefined)return w._mesh;
+  w._mesh=null;
+  if(w._po&&typeof tabbyPartMesh==='function'){w._mesh=tabbyPartMesh(w._po,w._pi);return w._mesh;}
+  if(!w.mp)return null;
+  var best=null,bd=0.06,v=new THREE.Vector3();
+  scene.traverse(function(o){
+    if(!o.isMesh||(o.userData&&o.userData._isGlow))return;
+    if(w.ms&&o.geometry&&o.geometry.type.toLowerCase().indexOf(w.ms)<0)return;
+    o.getWorldPosition(v);var d=Math.abs(v.x-w.mp[0])+Math.abs(v.y-w.mp[1])+Math.abs(v.z-w.mp[2]);
+    if(d<bd){bd=d;best=o;}
+  });
+  w._mesh=best;return best;
+}
+var drvAudio=null;
+function drvThump(power){
+  try{
+    if(!drvAudio)drvAudio=new (window.AudioContext||window.webkitAudioContext)();
+    var ac=drvAudio,t=ac.currentTime,len=0.25;
+    var buf=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate),d=buf.getChannelData(0);
+    for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
+    var src=ac.createBufferSource();src.buffer=buf;
+    var f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=700;
+    var g=ac.createGain();g.gain.setValueAtTime(0.5*Math.min(1,power),t);g.gain.exponentialRampToValueAtTime(0.001,t+len);
+    src.connect(f);f.connect(g);g.connect(ac.destination);src.start(t);
+    var o=ac.createOscillator();o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(40,t+0.2);
+    var g2=ac.createGain();g2.gain.setValueAtTime(0.35*Math.min(1,power),t);g2.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    o.connect(g2);g2.connect(ac.destination);o.start(t);o.stop(t+0.25);
+  }catch(e){}
+}
+function drvFindGroup(w){
+  if(w._grp!==undefined)return w._grp;
+  w._grp=null;
+  if(w._poRef&&w._poRef.gr){w._grp=w._poRef.gr;return w._grp;}
+  var m=drvFindMesh(w);if(!m)return null;
+  var o=m;while(o.parent&&o.parent!==scene)o=o.parent;
+  w._grp=o;return o;
+}
+function drvRemoveWall(w){var i=wCols.indexOf(w);if(i>=0){wCols.splice(i,1);DRV.broken.push({w:w,i:i});}w._gone=true;}
+function drvDebris(mesh){
+  var box=new THREE.Box3().setFromObject(mesh),c=new THREE.Vector3(),sz=new THREE.Vector3();box.getCenter(c);box.getSize(sz);
+  var col=null;mesh.traverse(function(o){if(!col&&o.isMesh&&o.visible&&o.material&&o.material.color&&!(o.userData&&o.userData._isGlow))col=o.material.color;});
+  if(!col)col=new THREE.Color(0x888888);
+  var s=Math.max(0.08,Math.min(0.35,Math.max(sz.x,sz.y,sz.z)/4));
+  for(var i=0;i<10;i++){
+    var m=new THREE.Mesh(new THREE.BoxGeometry(s,s,s),new THREE.MeshStandardMaterial({color:col,roughness:0.8,transparent:true}));
+    m.position.set(c.x+(Math.random()-0.5)*sz.x,c.y+(Math.random()-0.5)*sz.y,c.z+(Math.random()-0.5)*sz.z);
+    scene.add(m);
+    DRV.fx.push({m:m,vx:(Math.random()-0.5)*0.16+DRV.vx*0.6,vy:0.08+Math.random()*0.12,vz:(Math.random()-0.5)*0.16+DRV.vz*0.6,
+      rx:(Math.random()-0.5)*0.4,rz:(Math.random()-0.5)*0.4,life:1.3+Math.random()*0.5,age:0,debris:true,floor:s/2});
+  }
+}
+function drvKnock(mesh){
+  var info={m:mesh,parent:mesh.parent,pos:mesh.position.clone(),rot:mesh.rotation.clone(),sc:mesh.scale.clone()};
+  DRV.moved.push(info);
+  scene.attach(mesh);
+  var box=new THREE.Box3().setFromObject(mesh),sz=new THREE.Vector3();box.getSize(sz);
+  var sp=Math.abs(DRV.speed);
+  DRV.fx.push({m:mesh,vx:DRV.vx*0.9+(Math.random()-0.5)*0.04,vy:0.07+sp*0.3,vz:DRV.vz*0.9+(Math.random()-0.5)*0.04,
+    rx:(Math.random()-0.5)*0.25,rz:(Math.random()-0.5)*0.25,life:4,age:0,debris:false,floor:Math.max(0.05,Math.min(mesh.position.y-box.min.y,Math.min(sz.x,sz.y,sz.z)/2)),rest:false});
+}
+function drvUpdateFx(k,dt){
+  for(var i=DRV.fx.length-1;i>=0;i--){
+    var f=DRV.fx[i];f.age+=dt;
+    if(!f.rest){
+      f.m.position.x+=f.vx*k;f.m.position.y+=f.vy*k;f.m.position.z+=f.vz*k;f.vy-=0.012*k;var dr=Math.pow(0.985,k);f.vx*=dr;f.vz*=dr;
+      f.m.rotation.x+=f.rx*k;f.m.rotation.z+=f.rz*k;
+      if(f.m.position.y<=f.floor){f.m.position.y=f.floor;f.vy=-f.vy*0.3;f.vx*=0.6;f.vz*=0.6;f.rx*=0.5;f.rz*=0.5;
+        if(Math.abs(f.vy)<0.02&&Math.abs(f.vx)+Math.abs(f.vz)<0.01){f.rest=true;}}
+    }
+    if(f.debris){
+      if(f.age>f.life*0.6)f.m.material.opacity=Math.max(0,1-(f.age-f.life*0.6)/(f.life*0.4));
+      if(f.age>=f.life){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();DRV.fx.splice(i,1);}
+    }else if(f.rest||f.age>=f.life){f.m.position.y=Math.max(f.m.position.y,f.floor);DRV.fx.splice(i,1);}
+  }
+}
+function drvHitWall(w,power){
+  var v=w.veh||{};
+  if(v.obj&&(v.destroy||v.knock)){ // cały obiekt
+    var grp=drvFindGroup(w);
+    if(!grp){console.warn('Tabby: nie znaleziono obiektu do zniszczenia',w);w._noFx=true;return;}
+    if(grp){
+      var bb=new THREE.Box3().setFromObject(grp).expandByScalar(0.05);
+      for(var wi=wCols.length-1;wi>=0;wi--){var ow=wCols[wi];if(ow===w||DRV.own.indexOf(ow)>=0)continue;
+        if(ow.x>=bb.min.x&&ow.x<=bb.max.x&&ow.z>=bb.min.z&&ow.z<=bb.max.z)drvRemoveWall(ow);}
+      if(v.destroy){drvDebris(grp);grp.visible=false;DRV.hidden.push(grp);}
+      else drvKnock(grp);
+    }
+    drvRemoveWall(w);
+  }else if(v.destroy||v.knock){
+    var mesh=drvFindMesh(w);
+    if(!mesh){console.warn('Tabby: nie znaleziono części do zniszczenia',w);w._noFx=true;return;}
+    if(mesh){
+      if(v.destroy){drvDebris(mesh);mesh.visible=false;DRV.hidden.push(mesh);}
+      else drvKnock(mesh);
+    }
+    drvRemoveWall(w);
+  }
+  if(v.jump&&!DRV.air){DRV.air=true;DRV.vy=0.1+Math.abs(DRV.speed)*0.3;}
+  if(v.shake)DRV.shake=Math.max(DRV.shake,0.35);
+  if(v.sound)drvThump(0.4+Math.abs(DRV.speed)*4);
+}
+function drvVehEffects(x,z,k){
+  var list=wCols.filter(function(w){return !!w.veh;}); // na bieżąco — efekty ustawione w trakcie jazdy też działają
+  for(var i=0;i<list.length;i++){
+    var w=list[i];if(w._gone||w._noFx)continue;
+    if(!drvVehPass(w.veh))continue;
+    if((w.y||0)>=DRV.t.gr.position.y+DRV.top)continue; // część wisi nad pojazdem
+    var inside=drvHit(x,z,DRV.yaw,w);
+    if(inside&&!w._vIn){w._vIn=true;drvHitWall(w,1);}
+    else if(!inside)w._vIn=false;
+    if(inside&&w.veh.slow)DRV.speed*=Math.pow(0.9,k);
+  }
+}
+
 function drvFloorAt(x,z,yaw,ref){
   var c=Math.cos(yaw),s=Math.sin(yaw);
   var bx=x+DRV.cx*c+DRV.cz*s,bz=z-DRV.cx*s+DRV.cz*c,f=0;
   for(var i=0;i<wCols.length;i++){
-    var w=wCols[i];if(DRV.own.indexOf(w)>=0)continue;
+    var w=wCols[i];if(DRV.own.indexOf(w)>=0||w._gone)continue;
+    if(w.veh&&(w.veh.pass||w.veh.destroy||w.veh.knock||w.veh.slow))continue;
     var top=(w.y||0)+(w.h||2);
     if(top-ref>DRV_STEP)continue;
     if(Math.abs(bx-w.x)<=w.hw&&Math.abs(bz-w.z)<=w.hd)f=Math.max(f,top);
@@ -647,8 +805,18 @@ function drvEnter(obj){
       w._drvL={lx:lx,lz:lz,hw:w.hw,hd:w.hd,y:w.y||0};DRV.own.push(w);
     }
   }
+  DRV.vehWalls=wCols.filter(function(w){return !!w.veh;});DRV.air=false;DRV.vy=0;DRV.shake=0;DRV.hitCd=0;
   var ref=g.position.y;DRV.floor=drvFloorAt(g.position.x,g.position.z,DRV.yaw,ref);
   DRV.groundOff=g.position.y-DRV.floor;
+}
+// przywraca wszystko, co pojazd zniszczył lub odrzucił (edytor: przycisk „Odbuduj” i zapis gry)
+function drvRestoreAll(){
+  DRV.fx.forEach(function(f){if(f.debris){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();}});DRV.fx=[];
+  DRV.hidden.forEach(function(m){m.visible=true;});
+  DRV.moved.slice().reverse().forEach(function(it){it.parent.attach(it.m);it.m.position.copy(it.pos);it.m.rotation.copy(it.rot);it.m.scale.copy(it.sc);});
+  DRV.broken.slice().reverse().forEach(function(b){if(wCols.indexOf(b.w)<0)wCols.splice(Math.min(b.i,wCols.length),0,b.w);});
+  wCols.forEach(function(w){w._gone=false;w._vIn=false;w._noFx=false;delete w._mesh;delete w._grp;});
+  DRV.hidden=[];DRV.moved=[];DRV.broken=[];
 }
 function drvExit(){
   var o=DRV.t;if(!o)return null;var g=o.gr;
@@ -659,6 +827,10 @@ function drvExit(){
   });
   DRV.wheels=[];
   g.rotation.z=0;
+  // dokończ lecące części i usuń odłamki
+  DRV.fx.forEach(function(f){if(f.debris){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();}else{f.m.position.y=Math.max(f.m.position.y,f.floor);}});
+  DRV.fx=[];
+  if(DRV.restore)drvRestoreAll();
   // przenieś własne kolizje w nowe miejsce
   var c=Math.cos(DRV.yaw),s=Math.sin(DRV.yaw),dy=DRV.yaw-DRV.yaw0,ac=Math.abs(Math.cos(dy)),as=Math.abs(Math.sin(dy)),hy=g.position.y-DRV.y0;
   DRV.own.forEach(function(w){var L=w._drvL;if(!L)return;
@@ -699,12 +871,21 @@ function drvStep(dt,camOff,camMode){
   else if(!drvBlocked(x,nz,ny)){z=nz;DRV.yaw=ny;DRV.vx*=0.3;DRV.speed*=Math.pow(0.9,k);}
   else if(!drvBlocked(x,z,ny)){DRV.yaw=ny;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
   else{appliedYaw=0;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
+  DRV.hitCd=Math.max(0,DRV.hitCd-dt);
+  if(DRV.lastBlock&&DRV.lastBlock.veh&&(x!==nx||z!==nz)&&DRV.hitCd<=0&&Math.abs(DRV.speed)>maxSpeed*0.15){
+    var lv=DRV.lastBlock.veh;if(lv.shake)DRV.shake=Math.max(DRV.shake,0.3);if(lv.sound)drvThump(0.4+Math.abs(DRV.speed)*4);DRV.hitCd=0.6;
+  }
+  DRV.lastBlock=null;
   var moved=Math.sqrt((x-g.position.x)*(x-g.position.x)+(z-g.position.z)*(z-g.position.z));
   var dir=DRV.speed>=0?1:-1;
   g.position.x=x;g.position.z=z;g.rotation.y=DRV.yaw;
   // podłoże (chodniki, krawężniki, niskie platformy)
   DRV.floor=drvFloorAt(x,z,DRV.yaw,DRV.floor);
-  g.position.y+=(DRV.groundOff+DRV.floor-g.position.y)*(1-Math.pow(0.7,k));
+  drvVehEffects(x,z,k);
+  var gy=DRV.groundOff+DRV.floor;
+  if(DRV.air){g.position.y+=DRV.vy*k;DRV.vy-=0.011*k;if(g.position.y<=gy&&DRV.vy<0){g.position.y=gy;DRV.air=false;DRV.vy=0;}}
+  else g.position.y+=(gy-g.position.y)*(1-Math.pow(0.7,k));
+  drvUpdateFx(k,dt);
   g.rotation.z=DRV.steer*DRV.speed*lean;
   // dym przy poślizgu — z tyłu pojazdu
   var vs=Math.sqrt(DRV.vx*DRV.vx+DRV.vz*DRV.vz),ang=Math.atan2(-DRV.vx,-DRV.vz),ad=DRV.yaw-ang;
@@ -734,6 +915,7 @@ function drvStep(dt,camOff,camMode){
     cam.position.set(cx-Math.sin(cabAng)*cabDist,g.position.y+DRV.cabinY+(co.y||0),cz-Math.cos(cabAng)*cabDist);
     cam.rotation.order='YXZ';cam.rotation.y=cabAng;cam.rotation.x=-0.05;cam.rotation.z=0;
   }
+  if(DRV.shake>0){var a2=DRV.shake*0.6;cam.position.x+=(Math.random()-0.5)*a2;cam.position.y+=(Math.random()-0.5)*a2;cam.position.z+=(Math.random()-0.5)*a2;DRV.shake=Math.max(0,DRV.shake-dt);}
 }
 //@@DRIVE_CORE_END
 
@@ -925,7 +1107,8 @@ function triggerAction(){
       break;
     case'drive':
       edDriveTarget=po;edDriveCam='chase';
-      drvEnter(po);
+      placedObjs.forEach(function(o){if(o._col){var wv=tabbyWholeVeh(o);if(wv)o._col.veh=wv;else delete o._col.veh;}});
+      DRV.restore=false;drvEnter(po);
       charGroup.visible=false;
       document.getElementById('interact-prompt').style.display='none';
       break;
@@ -1285,7 +1468,7 @@ function inspDeletePart(idx,ob){
   // reindex part collisions
   var newCols={};
   if(po._partCols){Object.keys(po._partCols).forEach(function(k){
-    var ki=parseInt(k);if(ki>idx)newCols[ki-1]=po._partCols[k];else if(ki<idx)newCols[ki]=po._partCols[k];
+    var ki=parseInt(k),cc=po._partCols[k];if(ki>idx){newCols[ki-1]=cc;cc._pi=ki-1;delete cc._mesh;}else if(ki<idx)newCols[ki]=cc;
   });po._partCols=newCols;}
   // reset selection
   if(inspSelectedPart===idx)deselectInspPart();
@@ -1372,6 +1555,7 @@ function selectInspPart(idx,ob,shiftKey){
     var po=placedObjs[editIdx];
     if(!po._partCols)po._partCols={};
     document.getElementById('insp-part-col').checked=!!po._partCols[inspSelectedPart];
+    inspShowVeh();
     document.getElementById('insp-move-panel').style.display='block';
     var p=ob.parts[inspSelectedPart];
     if(p.position){document.getElementById('insp-mv-pos').textContent='X:'+p.position[0]+' Y:'+p.position[1]+' Z:'+p.position[2];}
@@ -1696,6 +1880,7 @@ function addCollision(po){
   var col={x:center.x,z:center.z,hw:size.x/2,hd:size.z/2,y:box.min.y,h:size.y,_poRef:po};
   po._col=col;
   wCols.push(col);
+  if(typeof tabbyApplyWholeVeh==='function')tabbyApplyWholeVeh(po);
 }
 function removeCollision(po){
   if(!po._col)return;
@@ -1711,6 +1896,7 @@ function updateEditUI(){
   var po=placedObjs[editIdx],ob=loadedObjs[po.oi];
   document.getElementById('edit-title').textContent='Edycja: '+ob.name;
   document.getElementById('eb-col').checked=!!po._col;
+  edShowVeh();
   var rot=Math.round(po.gr.rotation.y*180/Math.PI);
   var px=Math.round(po.gr.position.x*100)/100;
   var py=Math.round(po.gr.position.y*100)/100;
@@ -1817,7 +2003,7 @@ function finishMove(sx,sz){
   var po=placedObjs[editIdx];
   po.gr.position.set(sx,0,sz);
   po.x=sx;po.z=sz;
-  if(po._col){removeCollision(po);addCollision(po);}
+  tabbySyncCols(po);
   po.gr.visible=true;
   if(editHighlight)editHighlight.visible=true;
   moveMode=false;
@@ -2035,6 +2221,7 @@ function tabbyFileName(n){n=(n||'').trim().replace(/[\\/:*?"<>|]+/g,'').replace(
 function tabbyTitle(html,n){var t=(n||'').trim();if(!t)return html;t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return html.replace('<title>Tabby</title>',function(){return '<title>'+t+'</title>';});}
 function doExportHTML(opts){
   opts=opts||{};
+  drvRestoreAll(); // gra startuje z całymi obiektami
   if(placedObjs.length===0){alert('Nic nie postawiono!');return;}
   var funcs={},calls=[],hasGlb=false;
   placedObjs.forEach(function(po){
@@ -2081,14 +2268,14 @@ function doExportHTML(opts){
     if(po._col){
       var box=new THREE.Box3().setFromObject(po.gr);
       var sz=new THREE.Vector3();box.getSize(sz);
-      calls.push('wCols.push({x:'+po._col.x+',z:'+po._col.z+',hw:'+(sz.x/2).toFixed(2)+',hd:'+(sz.z/2).toFixed(2)+',y:'+(po._col.y||0).toFixed(2)+',h:'+(po._col.h||sz.y).toFixed(2)+'});');
+      calls.push('wCols.push({x:'+po._col.x+',z:'+po._col.z+',hw:'+(sz.x/2).toFixed(2)+',hd:'+(sz.z/2).toFixed(2)+',y:'+(po._col.y||0).toFixed(2)+',h:'+(po._col.h||sz.y).toFixed(2)+tabbyWholeVehStr(po)+'});');
     }
   });
   if(hasGlb&&!opts.quiet){alert('Modele GLB nie moga byc zapisane w jednym HTML.\nUzyj eksportu ZIP!');}
   var inject='\n// === OBIEKTY ===\n';
   for(var fn in funcs)inject+=funcs[fn]+'\n';
   if(calls.length>0)inject+='// pozycje\n'+calls.join('\n')+'\n';
-  var wCalls=[];wCols.forEach(function(w){if(!w._poRef)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+'});');});
+  var wCalls=[];wCols.forEach(function(w){if(!w._poRef)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(wCalls.length>0)inject+='// sciany kolizji\n'+wCalls.join('\n')+'\n';
   inject+='\n// day-night cycle (ustawienia z edytora)\nvar dnTime='+(+dnTime).toFixed(2)+',dnSpeed='+(+dnSpeed)+',dnPaused='+(dnPaused?'true':'false')+',dnDirty=true;\nvar dnAmbient,dnSun,dnHemi,dnStars;\nvar dnC={night:{sky:new THREE.Color(0x0a0e1a),fog:new THREE.Color(0x0a0e1a),amb:new THREE.Color(0x112244),sun:0,hemi:0.05,gnd:new THREE.Color(0x1a2211)},dawn:{sky:new THREE.Color(0xd4734a),fog:new THREE.Color(0xc47755),amb:new THREE.Color(0x886655),sun:0.4,hemi:0.2,gnd:new THREE.Color(0x445533)},day:{sky:new THREE.Color(0x6699cc),fog:new THREE.Color(0x667799),amb:new THREE.Color(0x8899aa),sun:0.85,hemi:0.35,gnd:new THREE.Color(0x556644)},dusk:{sky:new THREE.Color(0xcc6644),fog:new THREE.Color(0xaa6655),amb:new THREE.Color(0x775544),sun:0.3,hemi:0.15,gnd:new THREE.Color(0x443322)}};\nfunction lerpC(a,b,t){return a.clone().lerp(b,t);}\n(function(){var ls=scene.children;for(var i=0;i<ls.length;i++){if(ls[i].isAmbientLight)dnAmbient=ls[i];if(ls[i].isDirectionalLight)dnSun=ls[i];if(ls[i].isHemisphereLight)dnHemi=ls[i];}})();\nvar stG=new THREE.BufferGeometry();var stV=[];for(var si=0;si<600;si++){var th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*0.8+0.2),r=90;stV.push(Math.sin(ph)*Math.cos(th)*r,Math.cos(ph)*r,Math.sin(ph)*Math.sin(th)*r);}stG.setAttribute(\'position\',new THREE.Float32BufferAttribute(stV,3));dnStars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.4,transparent:true,opacity:0}));scene.add(dnStars);\nfunction dnUpdate(dt){if(dnPaused){if(!dnDirty)return;dnDirty=false;}else{dnTime+=dt*dnSpeed;if(dnTime>=24)dnTime-=24;}var t=dnTime,s,f,a,si,hi,so,g,sy,sx,d=dnC;if(t>=22||t<4){s=d.night.sky;f=d.night.fog;a=d.night.amb;si=0;hi=d.night.hemi;so=0.9;g=d.night.gnd;sy=-10;sx=0;}else if(t<7){var p=(t-4)/3;s=lerpC(d.night.sky,d.dawn.sky,p);f=lerpC(d.night.fog,d.dawn.fog,p);a=lerpC(d.night.amb,d.dawn.amb,p);si=p*d.dawn.sun;hi=d.night.hemi+(d.dawn.hemi-d.night.hemi)*p;so=0.9*(1-p);g=lerpC(d.night.gnd,d.dawn.gnd,p);sy=p*15;sx=-20+p*10;}else if(t<10){var p=(t-7)/3;s=lerpC(d.dawn.sky,d.day.sky,p);f=lerpC(d.dawn.fog,d.day.fog,p);a=lerpC(d.dawn.amb,d.day.amb,p);si=d.dawn.sun+(d.day.sun-d.dawn.sun)*p;hi=d.dawn.hemi+(d.day.hemi-d.dawn.hemi)*p;so=0;g=lerpC(d.dawn.gnd,d.day.gnd,p);sy=15+p*20;sx=-10+p*30;}else if(t<17){s=d.day.sky;f=d.day.fog;a=d.day.amb;si=d.day.sun;hi=d.day.hemi;so=0;g=d.day.gnd;sy=35;sx=20-(t-10)/7*10;}else if(t<20){var p=(t-17)/3;s=lerpC(d.day.sky,d.dusk.sky,p);f=lerpC(d.day.fog,d.dusk.fog,p);a=lerpC(d.day.amb,d.dusk.amb,p);si=d.day.sun+(d.dusk.sun-d.day.sun)*p;hi=d.day.hemi+(d.dusk.hemi-d.day.hemi)*p;so=0;g=lerpC(d.day.gnd,d.dusk.gnd,p);sy=35-p*20;sx=10+p*10;}else{var p=(t-20)/2;s=lerpC(d.dusk.sky,d.night.sky,p);f=lerpC(d.dusk.fog,d.night.fog,p);a=lerpC(d.dusk.amb,d.night.amb,p);si=d.dusk.sun*(1-p);hi=d.dusk.hemi+(d.night.hemi-d.dusk.hemi)*p;so=p*0.9;g=lerpC(d.dusk.gnd,d.night.gnd,p);sy=15-p*25;sx=20;}scene.background.copy(s);scene.fog.color.copy(f);if(dnAmbient)dnAmbient.color.copy(a);if(dnSun){dnSun.intensity=si;dnSun.position.y=sy;dnSun.position.x=sx;}if(dnHemi)dnHemi.intensity=hi;if(dnStars)dnStars.material.opacity=so;var gm=scene.children.find(function(c){return c.isMesh&&c.geometry&&c.geometry.type===\'PlaneGeometry\'&&c.rotation.x<-1;});if(gm)gm.material.color.copy(g);}\n';
   inject+='dnTick=dnUpdate;\n';
@@ -2103,6 +2290,8 @@ function doExportHTML(opts){
     var ob=loadedObjs[po.oi];
     if(ob.type==='glb')return;
     var pd={oi:po.oi,x:po.x,z:po.z,rotY:po.rotY||po.gr.rotation.y||0,col:!!po._col};
+    if(po.veh&&Object.keys(po.veh).length)pd.veh=po.veh;
+    if(po._partCols&&Object.keys(po._partCols).length){pd.pc={};Object.keys(po._partCols).forEach(function(k){var c=po._partCols[k];pd.pc[k]=c&&c.veh?c.veh:1;});}
     if(po.action)pd.action=po.action;
     editorData.placed.push(pd);
   });
@@ -2128,6 +2317,7 @@ function doExportHTML(opts){
 // === EXPORT ZIP (foldery) ===
 function doExportZIP(opts){
   opts=opts||{};
+  drvRestoreAll();
   if(placedObjs.length===0){alert('Nic nie postawiono!');return;}
   var zip=new JSZip();
   var folder=zip.folder('gra');
@@ -2165,7 +2355,7 @@ function doExportZIP(opts){
       if(po._col){
         var box=new THREE.Box3().setFromObject(po.gr);
         var sz=new THREE.Vector3();box.getSize(sz);
-        jsonCalls.push('wCols.push({x:'+po._col.x+',z:'+po._col.z+',hw:'+(sz.x/2).toFixed(2)+',hd:'+(sz.z/2).toFixed(2)+',y:'+(po._col.y||0).toFixed(2)+',h:'+(po._col.h||sz.y).toFixed(2)+'});');
+        jsonCalls.push('wCols.push({x:'+po._col.x+',z:'+po._col.z+',hw:'+(sz.x/2).toFixed(2)+',hd:'+(sz.z/2).toFixed(2)+',y:'+(po._col.y||0).toFixed(2)+',h:'+(po._col.h||sz.y).toFixed(2)+tabbyWholeVehStr(po)+'});');
       }
     }
   });
@@ -2214,7 +2404,7 @@ function doExportZIP(opts){
     inject+='function loadGLB(path,x,z,ry){\n  _glbLoader.load(path,function(gltf){\n    var m=gltf.scene;\n    m.position.set(x,0,z);\n    if(ry)m.rotation.y=ry;\n    m.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});\n    scene.add(m);\n  });\n}\n';
     inject+='// pozycje GLB\n'+glbCalls.join('\n')+'\n';
   }
-  var zWCalls=[];wCols.forEach(function(w){if(!w._poRef)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+'});');});
+  var zWCalls=[];wCols.forEach(function(w){if(!w._poRef)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(zWCalls.length>0)inject+='// sciany kolizji\n'+zWCalls.join('\n')+'\n';
   inject+='\n// day-night cycle (ustawienia z edytora)\nvar dnTime='+(+dnTime).toFixed(2)+',dnSpeed='+(+dnSpeed)+',dnPaused='+(dnPaused?'true':'false')+',dnDirty=true;\nvar dnAmbient,dnSun,dnHemi,dnStars;\nvar dnC={night:{sky:new THREE.Color(0x0a0e1a),fog:new THREE.Color(0x0a0e1a),amb:new THREE.Color(0x112244),sun:0,hemi:0.05,gnd:new THREE.Color(0x1a2211)},dawn:{sky:new THREE.Color(0xd4734a),fog:new THREE.Color(0xc47755),amb:new THREE.Color(0x886655),sun:0.4,hemi:0.2,gnd:new THREE.Color(0x445533)},day:{sky:new THREE.Color(0x6699cc),fog:new THREE.Color(0x667799),amb:new THREE.Color(0x8899aa),sun:0.85,hemi:0.35,gnd:new THREE.Color(0x556644)},dusk:{sky:new THREE.Color(0xcc6644),fog:new THREE.Color(0xaa6655),amb:new THREE.Color(0x775544),sun:0.3,hemi:0.15,gnd:new THREE.Color(0x443322)}};\nfunction lerpC(a,b,t){return a.clone().lerp(b,t);}\n(function(){var ls=scene.children;for(var i=0;i<ls.length;i++){if(ls[i].isAmbientLight)dnAmbient=ls[i];if(ls[i].isDirectionalLight)dnSun=ls[i];if(ls[i].isHemisphereLight)dnHemi=ls[i];}})();\nvar stG=new THREE.BufferGeometry();var stV=[];for(var si=0;si<600;si++){var th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*0.8+0.2),r=90;stV.push(Math.sin(ph)*Math.cos(th)*r,Math.cos(ph)*r,Math.sin(ph)*Math.sin(th)*r);}stG.setAttribute(\'position\',new THREE.Float32BufferAttribute(stV,3));dnStars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.4,transparent:true,opacity:0}));scene.add(dnStars);\nfunction dnUpdate(dt){if(dnPaused){if(!dnDirty)return;dnDirty=false;}else{dnTime+=dt*dnSpeed;if(dnTime>=24)dnTime-=24;}var t=dnTime,s,f,a,si,hi,so,g,sy,sx,d=dnC;if(t>=22||t<4){s=d.night.sky;f=d.night.fog;a=d.night.amb;si=0;hi=d.night.hemi;so=0.9;g=d.night.gnd;sy=-10;sx=0;}else if(t<7){var p=(t-4)/3;s=lerpC(d.night.sky,d.dawn.sky,p);f=lerpC(d.night.fog,d.dawn.fog,p);a=lerpC(d.night.amb,d.dawn.amb,p);si=p*d.dawn.sun;hi=d.night.hemi+(d.dawn.hemi-d.night.hemi)*p;so=0.9*(1-p);g=lerpC(d.night.gnd,d.dawn.gnd,p);sy=p*15;sx=-20+p*10;}else if(t<10){var p=(t-7)/3;s=lerpC(d.dawn.sky,d.day.sky,p);f=lerpC(d.dawn.fog,d.day.fog,p);a=lerpC(d.dawn.amb,d.day.amb,p);si=d.dawn.sun+(d.day.sun-d.dawn.sun)*p;hi=d.dawn.hemi+(d.day.hemi-d.dawn.hemi)*p;so=0;g=lerpC(d.dawn.gnd,d.day.gnd,p);sy=15+p*20;sx=-10+p*30;}else if(t<17){s=d.day.sky;f=d.day.fog;a=d.day.amb;si=d.day.sun;hi=d.day.hemi;so=0;g=d.day.gnd;sy=35;sx=20-(t-10)/7*10;}else if(t<20){var p=(t-17)/3;s=lerpC(d.day.sky,d.dusk.sky,p);f=lerpC(d.day.fog,d.dusk.fog,p);a=lerpC(d.day.amb,d.dusk.amb,p);si=d.day.sun+(d.dusk.sun-d.day.sun)*p;hi=d.day.hemi+(d.dusk.hemi-d.day.hemi)*p;so=0;g=lerpC(d.day.gnd,d.dusk.gnd,p);sy=35-p*20;sx=10+p*10;}else{var p=(t-20)/2;s=lerpC(d.dusk.sky,d.night.sky,p);f=lerpC(d.dusk.fog,d.night.fog,p);a=lerpC(d.dusk.amb,d.night.amb,p);si=d.dusk.sun*(1-p);hi=d.dusk.hemi+(d.night.hemi-d.dusk.hemi)*p;so=p*0.9;g=lerpC(d.dusk.gnd,d.night.gnd,p);sy=15-p*25;sx=20;}scene.background.copy(s);scene.fog.color.copy(f);if(dnAmbient)dnAmbient.color.copy(a);if(dnSun){dnSun.intensity=si;dnSun.position.y=sy;dnSun.position.x=sx;}if(dnHemi)dnHemi.intensity=hi;if(dnStars)dnStars.material.opacity=so;var gm=scene.children.find(function(c){return c.isMesh&&c.geometry&&c.geometry.type===\'PlaneGeometry\'&&c.rotation.x<-1;});if(gm)gm.material.color.copy(g);}\n';
   inject+='dnTick=dnUpdate;\n';
@@ -2532,6 +2722,94 @@ var AI_SCENE_PROMPT = [
 ].join('\n');
 
 // === INIT ===
+// ramka "Kolizja z pojazdem" dla całego obiektu (panel Edytor)
+function edShowVeh(){
+  var po=editIdx>=0?placedObjs[editIdx]:null,v=(po&&po.veh)||{},n=0;
+  document.querySelectorAll('.ed-veh').forEach(function(cb){cb.checked=!!v[cb.dataset.k];if(cb.checked)n++;});
+  var ex={destroy:'knock',knock:'destroy'};
+  document.querySelectorAll('.ed-veh').forEach(function(cb){var o=ex[cb.dataset.k];var dis=!!(o&&v[o]);cb.disabled=dis;cb.parentNode.classList.toggle('off',dis);});
+  document.getElementById('ed-veh-count').textContent=n?'('+n+')':'';
+}
+// ramka "Kolizja z pojazdem" w edycji części
+function inspShowVeh(){
+  var po=editIdx>=0?placedObjs[editIdx]:null,idx=inspSelectedPart;
+  var col=(po&&po._partCols&&idx>=0)?po._partCols[idx]:null,v=(col&&col.veh)||{};
+  var n=0;
+  document.querySelectorAll('.insp-veh').forEach(function(cb){cb.checked=!!v[cb.dataset.k];if(cb.checked)n++;});
+  var ex={destroy:'knock',knock:'destroy'};
+  document.querySelectorAll('.insp-veh').forEach(function(cb){var o=ex[cb.dataset.k];var dis=!!(o&&v[o]);cb.disabled=dis;cb.parentNode.classList.toggle('off',dis);});
+  document.getElementById('insp-veh-count').textContent=n?'('+n+')':'';
+}
+// === KOLIZJE CZĘŚCI — wspólne funkcje (inspektor, przesuwanie, wczytywanie, eksport) ===
+function tabbyPartMesh(po,idx){
+  var ob=loadedObjs[po.oi];if(!ob||ob.type==='glb'||!ob.parts)return null;
+  var ci=0;
+  for(var i=0;i<ob.parts.length;i++){
+    var sh=ob.parts[i].shape;
+    if(i===idx)return sh==='pointlight'?null:(po.gr.children[ci]||null);
+    ci+=sh==='pointlight'?2:1;
+  }
+  return null;
+}
+function tabbyMakePartCol(po,idx){
+  var ob=loadedObjs[po.oi];var p=ob&&ob.parts?ob.parts[idx]:null;
+  if(!p||p.shape==='pointlight')return null;
+  var s=p.size;
+  var px=p.position?p.position[0]:0,py=p.position?p.position[1]:0,pz=p.position?p.position[2]:0;
+  var hw,hd,hh;
+  switch(p.shape){
+    case'box':hw=s[0]/2;hd=s[2]/2;hh=s[1];break;
+    case'cylinder':hw=Math.max(s[0],s[1]);hd=hw;hh=s[2];break;
+    case'sphere':hw=s[0];hd=s[0];hh=s[0]*2;break;
+    case'cone':hw=s[0];hd=s[0];hh=s[1];break;
+    default:hw=0.5;hd=0.5;hh=1;
+  }
+  var ry=po.gr.rotation.y||0;
+  var cs=Math.cos(ry),sn=Math.sin(ry);
+  var wx=px*cs-pz*sn+po.gr.position.x;
+  var wz=px*sn+pz*cs+po.gr.position.z;
+  var wy=py-hh/2+po.gr.position.y;
+  if(Math.abs(Math.sin(ry))>0.3){var t=hw;hw=hd;hd=t;}
+  return {x:wx,z:wz,hw:hw,hd:hd,y:wy,h:hh,_po:po,_pi:idx};
+}
+// po przesunięciu/obrocie obiektu kolizje części idą razem z nim
+function tabbyRefreshPartCols(po){
+  if(!po._partCols)return;
+  Object.keys(po._partCols).forEach(function(k){
+    var c=po._partCols[k],n=tabbyMakePartCol(po,parseInt(k));if(!c||!n)return;
+    c.x=n.x;c.z=n.z;c.hw=n.hw;c.hd=n.hd;c.y=n.y;c.h=n.h;c._po=po;c._pi=parseInt(k);delete c._mesh;
+  });
+}
+function tabbySyncCols(po){if(po._col){removeCollision(po);addCollision(po);}tabbyRefreshPartCols(po);}
+// kolizja CAŁEGO obiektu dziedziczy zachowanie wobec pojazdu po efektach jego części
+// (inaczej niewidzialne pudełko wokół obiektu zatrzymałoby pojazd przed częścią z efektem)
+function tabbyWholeVeh(po){
+  if(po.veh&&Object.keys(po.veh).length){var r={obj:1};Object.keys(po.veh).forEach(function(k){r[k]=1;});return r;}
+  if(!po._partCols)return null;
+  var pass=false,shake=false,sound=false;
+  Object.keys(po._partCols).forEach(function(k){var v=po._partCols[k]&&po._partCols[k].veh;if(!v)return;
+    if(v.pass||v.destroy||v.knock||v.slow||v.jump)pass=true;if(v.shake)shake=true;if(v.sound)sound=true;});
+  if(pass)return {pass:1};
+  if(shake||sound){var r={};if(shake)r.shake=1;if(sound)r.sound=1;return r;}
+  return null;
+}
+function tabbyApplyWholeVeh(po){if(!po||!po._col)return;var v=tabbyWholeVeh(po);if(v)po._col.veh=v;else delete po._col.veh;delete po._col._grp;delete po._col._vIn;}
+function tabbyWholeVehStr(po){
+  var v=tabbyWholeVeh(po);if(!v)return '';
+  var out=',veh:'+JSON.stringify(v);
+  if(v.obj){var m=null;po.gr.traverse(function(o){if(!m&&o.isMesh&&!(o.userData&&o.userData._isGlow))m=o;});
+    if(m){var p=new THREE.Vector3();m.getWorldPosition(p);out+=',mp:['+p.x.toFixed(3)+','+p.y.toFixed(3)+','+p.z.toFixed(3)+'],ms:"'+m.geometry.type.replace('Geometry','').toLowerCase()+'"';}}
+  return out;
+}
+// eksport ściany z efektami pojazdu: dopisuje veh + pozycję części (żeby gra znalazła ją w świecie)
+function tabbyWallExtra(w){
+  if(!w.veh)return '';
+  var out=',veh:'+JSON.stringify(w.veh);
+  if(w._po){var m=tabbyPartMesh(w._po,w._pi);if(m){var v=new THREE.Vector3();m.getWorldPosition(v);
+    out+=',mp:['+v.x.toFixed(3)+','+v.y.toFixed(3)+','+v.z.toFixed(3)+']';
+    var sh=loadedObjs[w._po.oi].parts[w._pi].shape;if(sh)out+=',ms:"'+sh+'"';}}
+  return out;
+}
 // === WCZYTYWANIE SCENY (editor-data) — wspólne dla "Wczytaj scenę" i menu Tabby ===
 function tabbyLoadEditorData(ed){
   placedObjs.forEach(function(po){
@@ -2552,7 +2830,9 @@ function tabbyLoadEditorData(ed){
     if(pd.rotY)gr.rotation.y=pd.rotY;
     var po={oi:pd.oi,x:pd.x,z:pd.z,gr:gr,rotY:pd.rotY||0};
     if(pd.action)po.action=pd.action;
+    if(pd.veh)po.veh=pd.veh;
     if(pd.col){addCollision(po);}
+    if(pd.pc){po._partCols={};Object.keys(pd.pc).forEach(function(k){var c=tabbyMakePartCol(po,parseInt(k));if(!c)return;if(typeof pd.pc[k]==='object')c.veh=pd.pc[k];po._partCols[k]=c;wCols.push(c);});}
     placedObjs.push(po);placed++;
   });
   if(ed.dn)tabbyApplyDn(ed.dn);
@@ -2637,6 +2917,15 @@ function init(){
         var po={oi:pasteObjIdx,x:sx,z:sz,gr:gr,rotY:pasteRotY};
         if(editIdx>=0&&placedObjs[editIdx]&&placedObjs[editIdx].action)po.action=JSON.parse(JSON.stringify(placedObjs[editIdx].action));
         else if(loadedObjs[pasteObjIdx].action)po.action=JSON.parse(JSON.stringify(loadedObjs[pasteObjIdx].action));
+        // kopia dostaje też kolizje oryginału: całego obiektu i części (razem z efektami pojazdu)
+        var srcPo=(editIdx>=0&&placedObjs[editIdx]&&placedObjs[editIdx].oi===pasteObjIdx)?placedObjs[editIdx]:null;
+        if(srcPo){
+          if(srcPo.veh)po.veh=JSON.parse(JSON.stringify(srcPo.veh));
+          if(srcPo._col)addCollision(po);
+          if(srcPo._partCols){po._partCols={};Object.keys(srcPo._partCols).forEach(function(k){
+            var sc=srcPo._partCols[k];var c=tabbyMakePartCol(po,parseInt(k));if(!c)return;
+            if(sc&&sc.veh)c.veh=JSON.parse(JSON.stringify(sc.veh));po._partCols[k]=c;wCols.push(c);});}
+        }
         placedObjs.push(po);
         refreshUI();
       }
@@ -2986,23 +3275,38 @@ function init(){
     var po=placedObjs[editIdx];
     if(this.checked){addCollision(po);}else{removeCollision(po);}
   });
+  document.getElementById('ed-veh-head').addEventListener('click',function(){
+    var b=document.getElementById('ed-veh-body'),open=b.style.display==='none';
+    b.style.display=open?'block':'none';this.setAttribute('aria-expanded',open?'true':'false');
+    document.getElementById('ed-veh-arrow').textContent=open?'▾':'▸';
+  });
+  document.querySelectorAll('.ed-veh').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      if(editIdx<0)return;var po=placedObjs[editIdx];
+      var v={};document.querySelectorAll('.ed-veh').forEach(function(c){if(c.checked&&!c.disabled)v[c.dataset.k]=1;});
+      if(v.destroy&&v.knock)delete v[cb.dataset.k==='destroy'?'knock':'destroy'];
+      if(Object.keys(v).length){po.veh=v;if(!po._col){addCollision(po);document.getElementById('eb-col').checked=true;}}
+      else delete po.veh;
+      tabbyApplyWholeVeh(po);edShowVeh();
+    });
+  });
   document.getElementById('eb-rot90').addEventListener('click',function(){
     if(editIdx<0)return;placedObjs[editIdx].gr.rotation.y+=Math.PI/2;
     if(!placedObjs[editIdx].rotY)placedObjs[editIdx].rotY=0;
     placedObjs[editIdx].rotY+=Math.PI/2;
-    updateHighlight();updateEditUI();
+    tabbySyncCols(placedObjs[editIdx]);updateHighlight();updateEditUI();
   });
   document.getElementById('eb-rot-90').addEventListener('click',function(){
     if(editIdx<0)return;placedObjs[editIdx].gr.rotation.y-=Math.PI/2;
     if(!placedObjs[editIdx].rotY)placedObjs[editIdx].rotY=0;
     placedObjs[editIdx].rotY-=Math.PI/2;
-    updateHighlight();updateEditUI();
+    tabbySyncCols(placedObjs[editIdx]);updateHighlight();updateEditUI();
   });
   document.getElementById('eb-rot45').addEventListener('click',function(){
     if(editIdx<0)return;placedObjs[editIdx].gr.rotation.y+=Math.PI/4;
     if(!placedObjs[editIdx].rotY)placedObjs[editIdx].rotY=0;
     placedObjs[editIdx].rotY+=Math.PI/4;
-    updateHighlight();updateEditUI();
+    tabbySyncCols(placedObjs[editIdx]);updateHighlight();updateEditUI();
   });
   // MOVE STEP SIZE
   var moveStep=0.5;
@@ -3025,7 +3329,7 @@ function init(){
     else if(axis==='z')po.gr.position.z+=dir*moveStep;
     po.x=Math.round(po.gr.position.x*100)/100;
     po.z=Math.round(po.gr.position.z*100)/100;
-    if(po._col){removeCollision(po);addCollision(po);}
+    tabbySyncCols(po);
     updateHighlight();updateEditUI();
   }
   document.getElementById('eb-xl').addEventListener('click',function(){nudge('x',-1);});
@@ -3058,40 +3362,60 @@ function init(){
   document.getElementById('insp-save-exit').addEventListener('click',function(){closeInspector();});
   function inspApplyPartCol(){
     var idx=inspSelectedPart;if(idx<0||editIdx<0)return;
-    var po=placedObjs[editIdx];var ob=loadedObjs[po.oi];
+    var po=placedObjs[editIdx];
     if(!po._partCols)po._partCols={};
     var colCb=document.getElementById('insp-part-col');
-    // remove old
+    var prevVeh=null;
     if(po._partCols[idx]){
-      var old=po._partCols[idx];
+      var old=po._partCols[idx];prevVeh=old.veh||null;
       var ci=wCols.indexOf(old);if(ci>=0)wCols.splice(ci,1);
       delete po._partCols[idx];
     }
-    if(!colCb.checked){return;}
-    var p=ob.parts[idx];
-    if(p.shape==='pointlight'){colCb.checked=false;return;}
-    var s=p.size;
-    var px=p.position?p.position[0]:0,py=p.position?p.position[1]:0,pz=p.position?p.position[2]:0;
-    var hw,hd,hh;
-    switch(p.shape){
-      case'box':hw=s[0]/2;hd=s[2]/2;hh=s[1];break;
-      case'cylinder':hw=Math.max(s[0],s[1]);hd=hw;hh=s[2];break;
-      case'sphere':hw=s[0];hd=s[0];hh=s[0]*2;break;
-      case'cone':hw=s[0];hd=s[0];hh=s[1];break;
-      default:hw=0.5;hd=0.5;hh=1;
-    }
-    var ry=po.gr.rotation.y||0;
-    var cs=Math.cos(ry),sn=Math.sin(ry);
-    var wx=px*cs-pz*sn+po.gr.position.x;
-    var wz=px*sn+pz*cs+po.gr.position.z;
-    var wy=py-hh/2+po.gr.position.y;
-    if(Math.abs(Math.sin(ry))>0.3){var t=hw;hw=hd;hd=t;}
-    var col={x:wx,z:wz,hw:hw,hd:hd,y:wy,h:hh};
+    if(!colCb.checked){inspShowVeh();return;}
+    var col=tabbyMakePartCol(po,idx);
+    if(!col){colCb.checked=false;inspShowVeh();return;}
+    if(prevVeh)col.veh=prevVeh;
     po._partCols[idx]=col;
     wCols.push(col);
+    inspShowVeh();
   }
   document.getElementById('insp-copy-part').addEventListener('click',function(){inspCopyPart();});
   document.getElementById('insp-part-col').addEventListener('change',function(){inspApplyPartCol();});
+  document.getElementById('insp-veh-head').addEventListener('click',function(){
+    var b=document.getElementById('insp-veh-body'),open=b.style.display==='none';
+    b.style.display=open?'block':'none';this.setAttribute('aria-expanded',open?'true':'false');
+    document.getElementById('insp-veh-arrow').textContent=open?'▾':'▸';
+  });
+  document.getElementById('insp-veh-all').addEventListener('click',function(){
+    var idx=inspSelectedPart;if(idx<0||editIdx<0)return;
+    var po=placedObjs[editIdx],ob=loadedObjs[po.oi];if(!po._partCols)po._partCols={};
+    var src=po._partCols[idx],v=src&&src.veh?src.veh:null,n=0;
+    ob.parts.forEach(function(p,i){
+      if(p.shape==='pointlight')return;
+      var c=po._partCols[i];
+      if(!c){c=tabbyMakePartCol(po,i);if(!c)return;po._partCols[i]=c;wCols.push(c);}
+      if(v)c.veh=JSON.parse(JSON.stringify(v));else delete c.veh;n++;
+    });
+    document.getElementById('insp-part-col').checked=true;tabbyApplyWholeVeh(po);inspShowVeh();
+    var b=this,t=b.textContent;b.textContent='✓ Ustawiono dla '+n+' części';setTimeout(function(){b.textContent=t;},1600);
+  });
+  document.querySelectorAll('.insp-veh').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      var idx=inspSelectedPart;if(idx<0||editIdx<0)return;
+      var po=placedObjs[editIdx];if(!po._partCols)po._partCols={};
+      // najpierw odczytaj zaznaczenia — włączenie kolizji części odświeża ramkę
+      var v={};document.querySelectorAll('.insp-veh').forEach(function(c){if(c.checked&&!c.disabled)v[c.dataset.k]=1;});
+      var colCb=document.getElementById('insp-part-col');
+      if(!po._partCols[idx]){colCb.checked=true;inspApplyPartCol();}
+      var col=po._partCols[idx];
+      if(!col){cb.checked=false;inspShowVeh();return;}
+      if(v.destroy&&v.knock)delete v[cb.dataset.k==='destroy'?'knock':'destroy'];
+      if(Object.keys(v).length)col.veh=v;else delete col.veh;
+      delete col._mesh;delete col._vIn;tabbyApplyWholeVeh(po);
+      inspShowVeh();
+    });
+  });
+
   document.getElementById('insp-undo').addEventListener('click',function(){inspUndo();});
   document.querySelectorAll('.insp-sc').forEach(function(btn){
     btn.addEventListener('click',function(){inspScalePart(btn.dataset.ax,parseInt(btn.dataset.dr));});
@@ -3408,6 +3732,12 @@ function init(){
     updateEditUI();
   });
 
+  // === ♻ Odbuduj zniszczone (pojawia się, gdy pojazd coś rozbił) ===
+  (function(){
+    var rb=document.getElementById('rebuild-btn');
+    rb.addEventListener('click',function(e){e.stopPropagation();drvRestoreAll();rb.style.display='none';});
+    setInterval(function(){var n=DRV.hidden.length+DRV.moved.length;rb.style.display=n?'block':'none';if(n)rb.textContent='♻ Odbuduj zniszczone ('+n+')';},400);
+  })();
   // === Pora dnia: przycisk ze słońcem + mały panelik ===
   (function(){
     var btn=document.getElementById('dn-btn'),pop=document.getElementById('dn-pop');

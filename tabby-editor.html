@@ -331,6 +331,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
               <!-- ukryte: tylko do wyświetlania akcji, które przychodzą z assetu (drzwi, światło) -->
               <option value="open" hidden>Z assetu: otwieranie</option>
               <option value="light" hidden>Z assetu: światło</option>
+              <option value="fuse" hidden>Z assetu: zapalnik (7 s)</option>
             </select>
             <button class="edit-btn" style="background:#3fb950;color:#000" id="eb-setact">Ustaw</button>
           </div>
@@ -624,7 +625,7 @@ function getDriveCore(){
 function drvNum(v,d){return(v===undefined||v===null||v===''||isNaN(v))?d:+v;}
 var DRV={t:null,yaw:0,steer:0,speed:0,vx:0,vz:0,wheels:[],own:[],smoke:[],
   hw:1,hl:2,cx:0,cz:0,top:2,bodyTop:1.5,cabinY:2.5,camDist:7,camH:4,lookY:1,floor:0,groundOff:0,y0:0,yaw0:0,
-  fx:[],broken:[],hidden:[],moved:[],wallMoves:[],others:[],otherWalls:[],pending:[],vehWalls:[],air:false,vy:0,shake:0,hitCd:0,lastBlock:null,restore:false};
+  fx:[],broken:[],hidden:[],moved:[],wallMoves:[],others:[],otherWalls:[],pending:[],fuses:[],pk:null,vehWalls:[],air:false,vy:0,shake:0,hitCd:0,lastBlock:null,restore:false};
 function drvWheelRadius(m){var p=m.geometry&&m.geometry.parameters;return(p&&(p.radiusTop||p.radius))||0.4;}
 // Czy prostokąt pojazdu (obrócony) nachodzi na ścianę AABB — test SAT
 function drvHit(x,z,yaw,w){
@@ -928,9 +929,62 @@ function drvExplode(w){
     var dx=O.gr.position.x-c.x,dz=O.gr.position.z-c.z,d=Math.sqrt(dx*dx+dz*dz);if(d>DRV_BLAST_R+1||d<0.001)return;
     var f=(1-Math.min(1,d/(DRV_BLAST_R+1)))*0.35;O.kick={vx:dx/d*f,vz:dz/d*f};
   });
+  if(!DRV.t&&typeof charX!=='undefined'){var dxp=charX-c.x,dzp=charZ-c.z,dp=Math.sqrt(dxp*dxp+dzp*dzp);
+    if(dp<DRV_BLAST_R+1){var fp=1-Math.min(1,dp/(DRV_BLAST_R+1));if(typeof velY!=='undefined'){velY=Math.max(velY,4+fp*5);onGr=false;}
+      if(dp>0.001)DRV.pk={vx:dxp/dp*fp*9,vz:dzp/dp*fp*9};}}
   if(DRV.t){var g=DRV.t.gr,dx2=g.position.x-c.x,dz2=g.position.z-c.z,d2=Math.sqrt(dx2*dx2+dz2*dz2);
     if(d2<DRV_BLAST_R+1){var f2=(1-Math.min(1,d2/(DRV_BLAST_R+1)));DRV.air=true;DRV.vy=Math.max(DRV.vy,0.07+f2*0.1);
       if(d2>0.001){DRV.vx+=dx2/d2*f2*0.25;DRV.vz+=dz2/d2*f2*0.25;}DRV.speed*=0.4;}}
+}
+// ----- ⏱ ZAPALNIK: E odpala ładunek, 7 s odliczania, potem wybuch (działa też pieszo) -----
+var DRV_FUSE_TIME=7;
+function drvBeep(hi){
+  try{if(!drvAudio)drvAudio=new (window.AudioContext||window.webkitAudioContext)();
+    var ac=drvAudio,t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=hi?1320:880;g.gain.setValueAtTime(0.12,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+0.1);}catch(e){}
+}
+function drvCountdown(n){
+  var el=document.getElementById('tb-countdown');
+  if(!el){el=document.createElement('div');el.id='tb-countdown';
+    el.style.cssText='position:fixed;left:50%;top:22%;transform:translate(-50%,-50%);z-index:60;pointer-events:none;font:900 88px/1 sans-serif;color:#ff4433;text-shadow:0 0 18px rgba(255,120,40,.8),0 4px 0 #000;display:none';
+    document.body.appendChild(el);}
+  if(n>0){el.textContent=n;el.style.display='block';}else el.style.display='none';
+}
+function drvFuseStart(gr){
+  if(!gr||gr.userData._fuse||!gr.visible)return false;
+  var lamp=null,best=1e9;
+  gr.traverse(function(o){if(o.isMesh&&o.geometry&&o.geometry.type==='SphereGeometry'){var r=o.geometry.parameters.radius;if(r<best){best=r;lamp=o;}}});
+  gr.userData._fuse=true;
+  DRV.fuses.push({gr:gr,t:DRV_FUSE_TIME,lamp:lamp,sec:DRV_FUSE_TIME,base:gr.scale.x});
+  drvBeep(false);drvCountdown(DRV_FUSE_TIME);
+  return true;
+}
+function drvFuseTick(dt){
+  var show=0;
+  for(var i=DRV.fuses.length-1;i>=0;i--){
+    var f=DRV.fuses[i];f.t-=dt;
+    var el=DRV_FUSE_TIME-f.t,rate=2+el*1.2; // miga coraz szybciej
+    var on=Math.sin(el*rate*Math.PI)>0;
+    if(f.lamp)f.lamp.visible=on;else f.gr.scale.setScalar(f.base*(on?1.06:1));
+    var s=Math.ceil(f.t);if(s<f.sec&&s>0){f.sec=s;drvBeep(s<=2);}
+    show=Math.max(show,Math.ceil(f.t));
+    if(f.t<=0){
+      DRV.fuses.splice(i,1);if(f.lamp)f.lamp.visible=true;f.gr.scale.setScalar(f.base);
+      if(f.gr.visible){
+        var bb=new THREE.Box3().setFromObject(f.gr),c=new THREE.Vector3();bb.getCenter(c);
+        drvExplode({x:c.x,z:c.z,y:bb.min.y,h:bb.max.y-bb.min.y,veh:{obj:1,explode:1},_poRef:{gr:f.gr}});
+      }
+    }
+  }
+  drvCountdown(show);
+}
+// efekty, wybuchy i zapalniki także wtedy, gdy nikt nie jedzie pojazdem
+function drvTick(dt){
+  DRV.time=(DRV.time||0)+dt;var k=Math.min(dt*60,3);
+  drvFuseTick(dt);drvUpdateBlast(k);drvUpdateFx(k,dt);
+  if(DRV.pk&&typeof charX!=='undefined'){charX+=DRV.pk.vx*dt;charZ+=DRV.pk.vz*dt;var d=Math.pow(0.9,k);DRV.pk.vx*=d;DRV.pk.vz*=d;if(Math.abs(DRV.pk.vx)+Math.abs(DRV.pk.vz)<0.05)DRV.pk=null;}
+  if(DRV.shake>0){var a=DRV.shake*0.6;cam.position.x+=(Math.random()-0.5)*a;cam.position.y+=(Math.random()-0.5)*a;cam.position.z+=(Math.random()-0.5)*a;DRV.shake=Math.max(0,DRV.shake-dt);}
 }
 function drvUpdateBlast(k){
   for(var i=DRV.pending.length-1;i>=0;i--){var p=DRV.pending[i];if(DRV.time<p.t)continue;DRV.pending.splice(i,1);
@@ -1055,6 +1109,8 @@ function drvEnter(obj,others){
 // przywraca wszystko, co pojazd zniszczył lub odrzucił (edytor: przycisk „Odbuduj” i zapis gry)
 function drvRestoreAll(){
   DRV.fx.forEach(function(f){if(f.debris||f.spr){scene.remove(f.m);if(f.m.geometry)f.m.geometry.dispose();f.m.material.dispose();}if(f.m&&f.m.userData)f.m.userData._falling=false;});DRV.fx=[];DRV.pending=[];
+  DRV.fuses.forEach(function(f){if(f.lamp)f.lamp.visible=true;f.gr.scale.setScalar(f.base);});DRV.fuses=[];drvCountdown(0);
+  scene.traverse(function(o){if(o.userData&&o.userData._fuse)o.userData._fuse=false;});
   DRV.wallMoves.slice().reverse().forEach(function(it){it.w.y=(it.w.y||0)+it.dy;if(it.w.mp)it.w.mp[1]+=it.dy;});DRV.wallMoves=[];
   DRV.hidden.forEach(function(m){m.visible=true;});
   DRV.moved.slice().reverse().forEach(function(it){it.parent.attach(it.m);it.m.position.copy(it.pos);it.m.rotation.copy(it.rot);it.m.scale.copy(it.sc);});
@@ -1133,6 +1189,7 @@ function drvStep(dt,camOff,camMode){
   var gy=DRV.groundOff+DRV.floor;
   if(DRV.air){g.position.y+=DRV.vy*k;DRV.vy-=0.011*k;if(g.position.y<=gy&&DRV.vy<0){g.position.y=gy;DRV.air=false;DRV.vy=0;}}
   else g.position.y+=(gy-g.position.y)*(1-Math.pow(0.7,k));
+  drvFuseTick(dt);
   drvUpdateBlast(k);
   drvUpdateFx(k,dt);
   g.rotation.z=DRV.steer*DRV.speed*lean;
@@ -1290,7 +1347,7 @@ function update(dt){
     var bestIdx=-1,bestDist=INTERACT_DIST;
     for(var pi=0;pi<placedObjs.length;pi++){
       var po=placedObjs[pi];
-      if(!po.action)continue;
+      if(!po.action||!po.gr.visible)continue;
       var dx=charX-po.gr.position.x,dz=charZ-po.gr.position.z,dist=Math.sqrt(dx*dx+dz*dz);
       if(dist<bestDist){bestDist=dist;bestIdx=pi;}
     }
@@ -1305,6 +1362,7 @@ function update(dt){
       else if(a.type==='sound')label='E — sluchaj';
       else if(a.type==='light')label=placedObjs[nearIdx]._lightOn?'E — zgas':'E — zapal';
       else if(a.type==='drive')label='E — jedz';
+      else if(a.type==='fuse')label=placedObjs[nearIdx].gr.userData._fuse?'Uciekaj!':'E — odpal';
       document.getElementById('interact-prompt').textContent=label;
     }
   }else{
@@ -1319,6 +1377,9 @@ function triggerAction(){
   var po=placedObjs[nearIdx],a=po.action;
   if(!a)return;
   switch(a.type){
+    case'fuse':
+      drvFuseStart(po.gr);
+      break;
     case'text':
       document.getElementById('tp-text').textContent=a.message||'...';
       document.getElementById('text-popup').style.display='block';
@@ -1387,7 +1448,7 @@ function showActParams(type,existing){
   }
 }
 
-function animate(now){requestAnimationFrame(animate);var dt=Math.min(clock.getDelta(),0.05);update(dt);dnUpdate(dt);renderer.render(scene,cam);}
+function animate(now){requestAnimationFrame(animate);var dt=Math.min(clock.getDelta(),0.05);update(dt);if(!edDriveTarget)drvTick(dt);dnUpdate(dt);renderer.render(scene,cam);}
 
 function initTouch(){
   document.body.classList.add('touch-active');isMobile=true;pLock=true;camPitch=1.0;CDIST=14;
@@ -4145,16 +4206,19 @@ function triggerAction(pa){
     pa.gr.rotation.y=pa._open?(pa._baseRotY||0)+(a.angle||1.2):(pa._baseRotY||0);
   }
   else if(a.type==='drive'){enterVehicle(pa);}
+  else if(a.type==='fuse'){drvFuseStart(pa.gr);}
 }
 function checkInteract(){
   if(driveTarget)return;
   var oldNear=nearIdx;nearIdx=-1;
   for(var i=0;i<placedActions.length;i++){
-    var pa=placedActions[i];
+    var pa=placedActions[i];if(!pa.gr.visible)continue;
     var dx=charX-pa.gr.position.x,dz=charZ-pa.gr.position.z;
     if(Math.sqrt(dx*dx+dz*dz)<INTERACT_DIST){nearIdx=i;break;}
   }
   var ip=document.getElementById('interact-prompt');
+  if(!ip.dataset.def)ip.dataset.def=ip.textContent;
+  if(nearIdx>=0){var na=placedActions[nearIdx];ip.textContent=na.action.type==='fuse'?(na.gr.userData._fuse?'Uciekaj!':'E — odpal'):ip.dataset.def;}
   if(nearIdx>=0&&!textPopupOpen){ip.style.display='block';}else if(!textPopupOpen){ip.style.display='none';}
 }
 
@@ -4278,7 +4342,7 @@ function update(dt){
 function animate(now){
   if(!animRunning)return;requestAnimationFrame(animate);
   if(now-_lastFrame<_fpsInterval)return;_lastFrame=now-(now-_lastFrame)%_fpsInterval;
-  var dt=Math.min(clock.getDelta(),0.05);if(driveTarget){updateDrive(dt);}else{update(dt);}checkInteract();if(dnTick)dnTick(dt);renderer.render(scene,cam);
+  var dt=Math.min(clock.getDelta(),0.05);if(driveTarget){updateDrive(dt);}else{update(dt);drvTick(dt);}checkInteract();if(dnTick)dnTick(dt);renderer.render(scene,cam);
 }
 var animRunning=false;
 var dnTick=null; // pora dnia — ustawiane przez kod wstrzyknięty przy eksporcie

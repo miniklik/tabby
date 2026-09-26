@@ -1407,11 +1407,6 @@ function wpnEnsure(){
     '#wpn-ch .t{width:2px;height:8px;left:-1px;bottom:var(--g)}#wpn-ch .b{width:2px;height:8px;left:-1px;top:var(--g)}'+
     '#wpn-ch .l{width:8px;height:2px;top:-1px;right:var(--g)}#wpn-ch .r{width:8px;height:2px;top:-1px;left:var(--g)}'+
     '#wpn-ch b{width:2px;height:2px;left:-1px;top:-1px}'+
-    '#wpn-is{position:fixed;left:50%;top:50%;width:0;height:0;z-index:30;pointer-events:none;display:none;--g:7px}'+
-    '#wpn-is .p{position:absolute;left:-2px;top:0;width:4px;height:17px;background:#f4f4f4;box-shadow:0 0 0 1px rgba(0,0,0,.8);border-radius:1px 1px 0 0}'+
-    '#wpn-is .p b{position:absolute;left:0;top:0;width:4px;height:4px;background:#ff3b30;border-radius:1px}'+
-    '#wpn-is .l,#wpn-is .r{position:absolute;top:0;width:20px;height:11px;background:rgba(28,28,32,.92);box-shadow:0 0 0 1px rgba(255,255,255,.7);transition:none}'+
-    '#wpn-is .l{right:var(--g);border-radius:2px 0 0 2px}#wpn-is .r{left:var(--g);border-radius:0 2px 2px 0}'+
     '#wpn-hm{position:fixed;left:50%;top:50%;z-index:31;pointer-events:none;opacity:0;transition:opacity .12s}'+
     '#wpn-hm i{position:absolute;width:2px;height:8px;left:-1px;top:-4px;background:var(--c,#fff);box-shadow:0 0 3px rgba(0,0,0,.7)}'+
     '#wpn-hm i:nth-child(1){transform:rotate(45deg) translateY(-12px)}#wpn-hm i:nth-child(2){transform:rotate(135deg) translateY(-12px)}'+
@@ -1421,10 +1416,9 @@ function wpnEnsure(){
     '#wpn-hud .n{font-weight:bold;font-size:16px}#wpn-hud .am{margin-left:12px;font-variant-numeric:tabular-nums}#wpn-hud .am.lo{color:#ffb454}#wpn-hud .am.no{color:#ff5a4a}#wpn-hud .am.rl{color:#9aa4b2;font-weight:normal}#wpn-hud .am.up{color:#6fdc8c}#wpn-hud .k{font-size:11px;color:#9aa4b2}';
   var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
   var ch=document.createElement('div');ch.id='wpn-ch';ch.innerHTML='<i class="t"></i><i class="b"></i><i class="l"></i><i class="r"></i><b></b>';document.body.appendChild(ch);
-  var is=document.createElement('div');is.id='wpn-is';is.innerHTML='<i class="l"></i><i class="r"></i><i class="p"><b></b></i>';document.body.appendChild(is);
   var hm=document.createElement('div');hm.id='wpn-hm';hm.innerHTML='<i></i><i></i><i></i><i></i>';document.body.appendChild(hm);
   var hud=document.createElement('div');hud.id='wpn-hud';hud.innerHTML='<div><span class="n"></span><span class="am"></span></div><div class="k">PPM celuj • LPM strzał • G odłóż</div>';document.body.appendChild(hud);
-  WPN.ui={ch:ch,is:is,hm:hm,hud:hud,n:hud.querySelector('.n'),am:hud.querySelector('.am'),g:-1,chOn:null,isOn:null,hudOn:null};
+  WPN.ui={ch:ch,hm:hm,hud:hud,n:hud.querySelector('.n'),am:hud.querySelector('.am'),g:-1,chOn:null,hudOn:null};
   function ok(){return WPN.po&&pLock&&!DRV.t&&(typeof wpnCanShoot!=='function'||wpnCanShoot());}
   document.addEventListener('mousedown',function(e){if(!ok())return;
     if(e.button===0){WPN.lmb=true;wpnFire();}else if(e.button===2){WPN.rmb=true;}});
@@ -1758,13 +1752,12 @@ function wpnHitMark(c){if(!WPN.ui.hm)return;WPN.ui.hm.style.setProperty('--c',c)
 
 // ---------- celownik i panel ----------
 function wpnHud(on){
-  if(!WPN.ready)return;var u=WPN.ui,fps=camStyle==='fps';
-  var rl=WPN.rl>0,ch=!!(on&&pLock&&fps&&WPN.aimT<0.55&&!rl),is=!!(on&&pLock&&!fps&&WPN.readyOn&&!rl),hd=!!on;
+  if(!WPN.ready)return;var u=WPN.ui,fps=camStyle==='fps',rl=WPN.rl>0;
+  // zza pleców: plusik w gotowości (PPM); z oczu: plusik, a przy PPM celujesz przez szczerbkę i muszkę na broni
+  var ch=!!(on&&pLock&&!rl&&(fps?WPN.aimT<0.55:WPN.readyOn)),hd=!!on;
   if(u.chOn!==ch){u.chOn=ch;u.ch.style.display=ch?'block':'none';}
-  if(u.isOn!==is){u.isOn=is;u.is.style.display=is?'block':'none';}
   if(u.hudOn!==hd){u.hudOn=hd;u.hud.style.display=hd?'block':'none';}
-  if(ch||is){var g=Math.round(Math.max(3,5+WPN.spread*0.9+(isMov?4:0)+(onGr?0:6)-WPN.aimT*3));
-    if(g!==u.g){u.g=g;u.ch.style.setProperty('--g',g+'px');u.is.style.setProperty('--g',(g+3)+'px');}}
+  if(ch){var g=Math.round(Math.max(3,5+WPN.spread*0.9+(isMov?4:0)+(onGr?0:6)-WPN.aimT*3));if(g!==u.g){u.g=g;u.ch.style.setProperty('--g',g+'px');}}
 }
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){

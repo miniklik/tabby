@@ -904,6 +904,48 @@ var ASSETS = [
     action:{"type": "ammo", "amount": 90, "name": "Amunicja 7,62 mm", "caliber": "7.62"}
   },
   {
+    name:"Dron zwiadowczy",
+    category:["militaria","interaktywny"],
+    desc:"Czwórwirnikowiec zwiadowczy. E podnosi, F rozstawia lądowisko i startuje — kamera przelatuje nad drona. WASD lot, Spacja/Shift góra/dół, Tab kamera drona, F powrót na lądowisko, E zwija. Bateria 90 s (ładuje się na lądowisku), zasięg 80 m.",
+    parts:[
+      {"shape": "box", "size": [0.035, 0.035, 0.4], "color": "#1a1c1f", "position": [-0.13, 0.018, 0]},
+      {"shape": "box", "size": [0.028, 0.14, 0.028], "color": "#1a1c1f", "position": [-0.13, 0.09, -0.11]},
+      {"shape": "box", "size": [0.028, 0.14, 0.028], "color": "#1a1c1f", "position": [-0.13, 0.09, 0.11]},
+      {"shape": "box", "size": [0.035, 0.035, 0.4], "color": "#1a1c1f", "position": [0.13, 0.018, 0]},
+      {"shape": "box", "size": [0.028, 0.14, 0.028], "color": "#1a1c1f", "position": [0.13, 0.09, -0.11]},
+      {"shape": "box", "size": [0.028, 0.14, 0.028], "color": "#1a1c1f", "position": [0.13, 0.09, 0.11]},
+      {"shape": "box", "size": [0.36, 0.11, 0.3], "color": "#2b2e33", "position": [0, 0.2, 0]},
+      {"shape": "box", "size": [0.3, 0.05, 0.24], "color": "#3a3f46", "position": [0, 0.278, 0.01]},
+      {"shape": "box", "size": [0.31, 0.02, 0.05], "color": "#f2c200", "position": [0, 0.305, 0.06]},
+      {"shape": "box", "size": [0.12, 0.03, 0.07], "color": "#1f2226", "position": [0, 0.3, -0.07]},
+      {"shape": "box", "size": [0.06, 0.05, 0.04], "color": "#141517", "position": [0, 0.13, -0.12]},
+      {"shape": "box", "size": [0.11, 0.09, 0.09], "color": "#111214", "position": [0, 0.09, -0.16]},
+      {"shape": "cylinder", "size": [0.03, 0.03, 0.02, 16], "color": "#2f5fd0", "position": [0, 0.09, -0.212], "rotation": [1.5708, 0, 0]},
+      {"shape": "cylinder", "size": [0.018, 0.018, 0.022, 16], "color": "#0b1430", "position": [0, 0.09, -0.214], "rotation": [1.5708, 0, 0]},
+      {"shape": "box", "size": [0.46, 0.04, 0.05], "color": "#2b2e33", "position": [-0.17, 0.225, -0.17], "rotation": [0, 2.3562, 0]},
+      {"shape": "cylinder", "size": [0.05, 0.05, 0.07, 16], "color": "#1a1a1a", "position": [-0.33, 0.25, -0.33]},
+      {"shape": "cylinder", "size": [0.018, 0.018, 0.03, 16], "color": "#8a8f96", "position": [-0.33, 0.3, -0.33]},
+      {"shape": "box", "size": [0.4, 0.008, 0.045], "color": "#d8d8d8", "position": [-0.33, 0.318, -0.33], "rotation": [0, 0.4, 0], "role": "prop"},
+      {"shape": "box", "size": [0.03, 0.02, 0.03], "color": "#ff3333", "position": [-0.33, 0.205, -0.33], "role": "led"},
+      {"shape": "box", "size": [0.46, 0.04, 0.05], "color": "#2b2e33", "position": [0.17, 0.225, -0.17], "rotation": [0, 0.7854, 0]},
+      {"shape": "cylinder", "size": [0.05, 0.05, 0.07, 16], "color": "#1a1a1a", "position": [0.33, 0.25, -0.33]},
+      {"shape": "cylinder", "size": [0.018, 0.018, 0.03, 16], "color": "#8a8f96", "position": [0.33, 0.3, -0.33]},
+      {"shape": "box", "size": [0.4, 0.008, 0.045], "color": "#d8d8d8", "position": [0.33, 0.318, -0.33], "rotation": [0, 1.3, 0], "role": "prop"},
+      {"shape": "box", "size": [0.03, 0.02, 0.03], "color": "#ff3333", "position": [0.33, 0.205, -0.33], "role": "led"},
+      {"shape": "box", "size": [0.46, 0.04, 0.05], "color": "#2b2e33", "position": [-0.17, 0.225, 0.17], "rotation": [0, -2.3562, 0]},
+      {"shape": "cylinder", "size": [0.05, 0.05, 0.07, 16], "color": "#1a1a1a", "position": [-0.33, 0.25, 0.33]},
+      {"shape": "cylinder", "size": [0.018, 0.018, 0.03, 16], "color": "#8a8f96", "position": [-0.33, 0.3, 0.33]},
+      {"shape": "box", "size": [0.4, 0.008, 0.045], "color": "#d8d8d8", "position": [-0.33, 0.318, 0.33], "rotation": [0, 2.2, 0], "role": "prop"},
+      {"shape": "box", "size": [0.03, 0.02, 0.03], "color": "#33ff66", "position": [-0.33, 0.205, 0.33], "role": "led"},
+      {"shape": "box", "size": [0.46, 0.04, 0.05], "color": "#2b2e33", "position": [0.17, 0.225, 0.17], "rotation": [0, -0.7854, 0]},
+      {"shape": "cylinder", "size": [0.05, 0.05, 0.07, 16], "color": "#1a1a1a", "position": [0.33, 0.25, 0.33]},
+      {"shape": "cylinder", "size": [0.018, 0.018, 0.03, 16], "color": "#8a8f96", "position": [0.33, 0.3, 0.33]},
+      {"shape": "box", "size": [0.4, 0.008, 0.045], "color": "#d8d8d8", "position": [0.33, 0.318, 0.33], "rotation": [0, 3.1, 0], "role": "prop"},
+      {"shape": "box", "size": [0.03, 0.02, 0.03], "color": "#33ff66", "position": [0.33, 0.205, 0.33], "role": "led"}
+    ],
+    action:{"type": "drone", "name": "Dron zwiadowczy", "speed": 9, "range": 80, "battery": 90}
+  },
+  {
     name:"Amunicja 9 mm",
     category:["militaria","interaktywny"],
     desc:"Metalowa skrzynka z nabojami do pistoletu. Trzymając M9 podejdź i naciśnij E — dostajesz 45 naboi do zapasu.",
@@ -1753,7 +1795,7 @@ function renderCards(){
     meta.className = 'card-meta';
     meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
     if(asset.action){
-      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni', ammo:'📦 Amunicja'};
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni', ammo:'📦 Amunicja', drone:'🛸 Dron'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
     if(asset.parts.some(function(q){return q.hidden;})) meta.innerHTML += '<span>👻 Niewidoczna w grze</span>';

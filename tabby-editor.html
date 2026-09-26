@@ -1993,9 +1993,9 @@ function drnPickup(po){
   wpnHint();wpnSnd('pick');
 }
 function drnMakeCarry(){
-  drnDropCarry();var po=DRN.po;
+  drnDropCarry();var po=DRN.po;drnLights(false);
   var c=po.gr.clone(true);c.position.set(0,1.45,0.3);c.rotation.set(Math.PI/2,0,0);c.scale.setScalar(0.62);c.visible=true; // na plecach, jak plecak
-  c.traverse(function(o){if(o.isMesh)o.visible=!(o.userData&&o.userData._hidden)&&camStyle!=='fps';});
+  c.traverse(function(o){if(o.isMesh)o.visible=!(o.userData&&(o.userData._hidden||o.userData._wfx))&&camStyle!=='fps';});
   charGroup.add(c);DRN.carry=c;
 }
 function drnDropCarry(){if(DRN.carry){if(DRN.carry.parent)DRN.carry.parent.remove(DRN.carry);DRN.carry=null;}}
@@ -2077,7 +2077,7 @@ function drnAutoStep(dt){
 }
 // wszystko do stanu z edytora (Odbuduj / eksport)
 function drnRestoreAll(){
-  drnHum(false);drnDropCarry();DRN.pad=null;
+  drnLights(false);drnHum(false);drnDropCarry();DRN.pad=null;
   if(drnFlying()&&DRN.sv){camYaw=DRN.sv.yaw;camPitch=DRN.sv.pitch;}
   DRN.touched.forEach(function(po){var h=po.gr.userData._drnHome;if(h){po.gr.position.copy(h.p);po.gr.rotation.copy(h.r);delete po.gr.userData._drnHome;}po.gr.visible=true;
     var b=po.gr.userData._drnBase;if(b){b.visible=true;b.position.set(po.gr.position.x,po.gr.position.y-0.06,po.gr.position.z);}});
@@ -2148,8 +2148,35 @@ function drnCollide(nx,nz,y){
     if(ox<oz)nx+=(dx>0?ox:-ox);else nz+=(dz>0?oz:-oz);}
   return [nx,nz,fl];
 }
+// 🌙 nocne światła drona: lampka pod każdym silnikiem + plama światła na ziemi (tylko w nocy i tylko w locie)
+function drnNight(){ // 0 = dzień, 1 = pełna noc (z koloru nieba ustawionego przez porę dnia)
+  var b=(typeof TBFOG!=='undefined'&&TBFOG.base)?TBFOG.base:scene.background;if(!b)return 0;
+  var lum=Math.max(b.r,b.g,b.b);return Math.max(0,Math.min(1,(0.38-lum)/0.24));
+}
+function drnLights(on){
+  var po=DRN.po;if(!po||!po.gr)return;var g=po.gr,u=g.userData,k=on?drnNight():0;
+  if(!u._nl&&k<=0.01)return;
+  if(!u._nl){ // tworzone raz, przy pierwszym nocnym locie
+    var L={lamps:[],pool:null},tex=drvGlow();
+    DRN.props.forEach(function(p){
+      var bulb=new THREE.Mesh(new THREE.SphereGeometry(0.028,8,6),new THREE.MeshBasicMaterial({color:0xfff4d6}));
+      bulb.position.set(p.position.x,0.19,p.position.z);bulb.userData._wfx=true;g.add(bulb);
+      var gl=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0xffe7b0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));
+      gl.position.copy(bulb.position);gl.userData._wfx=true;gl.scale.setScalar(0.4);g.add(gl);L.lamps.push({b:bulb,g:gl});});
+    var pool=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tex,color:0xfff0c8,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));
+    pool.rotation.x=-Math.PI/2;pool.userData._wfx=true;scene.add(pool);L.pool=pool;u._nl=L;
+  }
+  var L2=u._nl;
+  L2.lamps.forEach(function(l){l.b.visible=k>0.01;l.g.visible=k>0.01;l.g.material.opacity=0.9*k;});
+  var alt=Math.max(0,g.position.y-(TBWIN&&TBWIN.on?TBWIN.depth:0));
+  L2.pool.visible=k>0.01&&alt<18;
+  if(L2.pool.visible){var fl=(TBWIN&&TBWIN.on&&TBWIN.depth>0.01)?TBWIN.depth:0;
+    L2.pool.position.set(g.position.x,fl+0.03,g.position.z);var sz=2.2+alt*0.55;L2.pool.scale.set(sz,sz,1);
+    L2.pool.material.opacity=k*0.55*Math.max(0,1-alt/18);}
+}
 // wygląd drona: przechył, obrót, śmigła, diody, dźwięk
 function drnPose(dt,spinOn){
+  drnLights(spinOn);
   var g=DRN.po.gr,a=drnAct(),sp=drvNum(a.speed,9);
   var cy=Math.cos(DRN.yaw),sy=Math.sin(DRN.yaw),fwd=-(DRN.vx*sy+DRN.vz*cy),side=DRN.vx*cy-DRN.vz*sy;
   DRN.tp+=((-fwd/sp)*0.35-DRN.tp)*Math.min(1,dt*6);DRN.tr+=((-side/sp)*0.35-DRN.tr)*Math.min(1,dt*6);
@@ -2229,7 +2256,7 @@ function drnStep(dt){
     cam.position.copy(DRN.cam0.p).lerp(hp,s);cam.quaternion.copy(DRN.cam0.q).slerp(q1,s);
     if(DRN.camT>=1){DRN.noise=0;drnNoise(0);
       if(DRN.after==='toBase'){if(DRN.arrived){DRN.arrived=false;DRN.after='placed';DRN.stage='none';DRN.po=null;wpnHint();}else DRN.stage='toBase';}
-      else{DRN.stage='placed';DRN.po.gr.rotation.set(0,DRN.yaw,0);}}
+      else{DRN.stage='placed';DRN.po.gr.rotation.set(0,DRN.yaw,0);drnLights(false);}}
   }else if(DRN.stage==='takeoff'&&DRN.cam0){
     DRN.camT=Math.min(1,DRN.camT+dt/1.0);var s2=DRN.camT*DRN.camT*(3-2*DRN.camT),q2=cam.quaternion.clone(),p2=cam.position.clone();
     cam.position.copy(DRN.cam0.p).lerp(p2,s2);cam.quaternion.copy(DRN.cam0.q).slerp(q2,s2);
@@ -2244,7 +2271,7 @@ function drnStep(dt){
   drnNoise(DRN.stage==='landed'?0:DRN.noise+(DRN.own?0.04:0));
 }
 function drnArriveBase(){
-  var po=DRN.po,b=drnBasePos(po),g=po.gr;
+  var po=DRN.po,b=drnBasePos(po),g=po.gr;drnLights(false);
   g.position.set(b.x,b.y+0.06,b.z);g.rotation.set(0,DRN.yaw,0);
   drnHum(false);drnBeep(520);
   if(DRN.stage==='toBase'){DRN.after='placed';DRN.stage='none';DRN.po=null;wpnHint();}

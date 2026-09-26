@@ -1372,6 +1372,11 @@ function wpnSnd(k,vol){
       wpnTone(ac,t,0.05,'sine',3200+Math.random()*1400,0,0.04,d);wpnTone(ac,t,0.03,'sine',5200+Math.random()*900,0,0.02,d);
     }else if(k==='impact'){
       wpnNoise(ac,t,0.06,'bandpass',900+Math.random()*1800,0,0.22*v,d);
+    }else if(k==='rshot'){ // karabin: ostrzejszy trzask i dłuższy huk
+      wpnNoise(ac,t,0.07,'highpass',2600,0,0.95*v);
+      wpnNoise(ac,t,0.4,'lowpass',3600,300,0.85*v);
+      wpnTone(ac,t,0.12,'sine',140,38,0.75*v);
+      wpnNoise(ac,t+0.01,0.03,'bandpass',5200,0,0.18*v,d);
     }else if(k==='dry'){
       wpnNoise(ac,t,0.02,'highpass',4000,0,0.35,d);wpnTone(ac,t,0.025,'square',1900,1200,0.05,d);
     }else if(k==='magout'){
@@ -1438,7 +1443,7 @@ function wpnEnsure(){
 
 // ---------- model broni w dłoni: kopia obiektu ze świata, obrócona do układu "prawo +X, góra +Y, przód -Z" ----------
 function wpnBuild(po,scale,hold,fps){
-  var V=THREE.Vector3,m=po.gr.clone(true),drop=[],muzzle=null,grip=null,laser=null,mags=[];
+  var V=THREE.Vector3,m=po.gr.clone(true),drop=[],muzzle=null,grip=null,laser=null,mags=[],stock=null;
   m.position.set(0,0,0);m.rotation.set(0,0,0);m.scale.set(1,1,1);m.visible=true;
   m.traverse(function(o){
     if(o===m)return;
@@ -1447,7 +1452,7 @@ function wpnBuild(po,scale,hold,fps){
       if(o.material&&o.material.wireframe){drop.push(o);return;}
       o.material=o.material.clone();if(o.material.emissive)o.material.emissive.setHex(0);
       o.visible=true;o.castShadow=!fps;o.receiveShadow=!fps;
-      var r=o.userData&&o.userData._role;if(r==='muzzle')muzzle=o;else if(r==='grip')grip=o;else if(r==='laser')laser=o;else if(r==='mag')mags.push(o);
+      var r=o.userData&&o.userData._role;if(r==='muzzle')muzzle=o;else if(r==='grip')grip=o;else if(r==='laser')laser=o;else if(r==='mag')mags.push(o);else if(r==='stock')stock=o;
     }
   });
   drop.forEach(function(o){if(o.parent)o.parent.remove(o);});
@@ -1468,7 +1473,8 @@ function wpnBuild(po,scale,hold,fps){
   var f2=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0xfff3cf,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
   f1.visible=f2.visible=false;f1.userData._wfx=f2.userData._wfx=true;mz.add(f1);mz.add(f2);
   std.scale.setScalar(scale);
-  return {g:std,mz:mz,ej:ej,f1:f1,f2:f2,top:bb.max.y,sc:scale,laser:laser,mags:mags};
+  var stp=null;if(stock){var sb=new THREE.Box3().setFromObject(stock),sc0=new V();sb.getCenter(sc0);stp=new V(sc0.x,sc0.y,sb.max.z);}
+  return {g:std,mz:mz,ej:ej,f1:f1,f2:f2,top:bb.max.y,sc:scale,laser:laser,mags:mags,stock:stp};
 }
 
 // ---------- podniesienie / odłożenie ----------
@@ -1479,14 +1485,22 @@ function wpnPickup(po){
   for(var i=WPN.fx.length-1;i>=0;i--)if(WPN.fx[i].m===po.gr)WPN.fx.splice(i,1);
   if(!po.gr.userData._wpnHome){po.gr.userData._wpnHome={p:po.gr.position.clone(),r:po.gr.rotation.clone()};WPN.touched.push(po);}
   var a=po.action||{};WPN.po=po;WPN.act=a;
-  WPN.tps=wpnBuild(po,drvNum(a.holdScale,1.1),a.hold,false);
-  var h=new THREE.Group();h.position.set(0,-0.7,0);h.rotation.set(-Math.PI/2,0,0.2,'ZYX');h.add(WPN.tps.g);bp.armR.add(h);WPN.tpsH=h;
-  WPN.fps=wpnBuild(po,drvNum(a.fpsScale,0.75),a.hold,true);
+  WPN.rifle=a.stance==='rifle';
+  WPN.tps=wpnBuild(po,drvNum(a.holdScale,WPN.rifle?0.95:1.1),a.hold,false);
+  var h=new THREE.Group();
+  if(WPN.rifle){ // karabin: uchwyt przy ciele, kolba dosunięta do prawego barku
+    var sp=WPN.tps.stock;if(sp)WPN.tps.g.position.set(-sp.x*WPN.tps.sc,-sp.y*WPN.tps.sc,-sp.z*WPN.tps.sc);
+    charGroup.add(h);
+  }else{h.position.set(0,-0.7,0);h.rotation.set(-Math.PI/2,0,0.2,'ZYX');bp.armR.add(h);}
+  h.add(WPN.tps.g);WPN.tpsH=h;
+  WPN.fps=wpnBuild(po,drvNum(a.fpsScale,WPN.rifle?0.46:0.75),a.hold,true);
   var f=new THREE.Group();f.add(WPN.fps.g);
   // dłonie i rękawy w widoku z oczu (kolory jak u postaci)
   var skin=new THREE.MeshStandardMaterial({color:0xffcc88,roughness:0.6}),shirt=new THREE.MeshStandardMaterial({color:0x3366cc,roughness:0.5});
-  [[0.075,0.1,0.11,skin,0,-0.035,0.005,0,0],[0.1,0.1,0.44,shirt,0.035,-0.1,0.25,0.32,0.08],
-   [0.07,0.085,0.1,skin,-0.055,-0.05,0.0,0,0],[0.095,0.095,0.44,shirt,-0.12,-0.11,0.23,0.32,-0.45]].forEach(function(q){
+  (WPN.rifle?[[0.075,0.1,0.11,skin,0,-0.035,0.005,0,0],[0.1,0.1,0.44,shirt,0.035,-0.1,0.25,0.32,0.08],
+   [0.07,0.065,0.1,skin,0,-0.04,-0.25,0,0],[0.085,0.085,0.44,shirt,-0.11,-0.11,-0.06,0.28,-0.55]]
+  :[[0.075,0.1,0.11,skin,0,-0.035,0.005,0,0],[0.1,0.1,0.44,shirt,0.035,-0.1,0.25,0.32,0.08],
+   [0.07,0.085,0.1,skin,-0.055,-0.05,0.0,0,0],[0.095,0.095,0.44,shirt,-0.12,-0.11,0.23,0.32,-0.45]]).forEach(function(q){
     var mm=new THREE.Mesh(new THREE.BoxGeometry(q[0],q[1],q[2]),q[3]);mm.userData._own=true;mm.position.set(q[4],q[5],q[6]);mm.rotation.set(q[7],q[8],0);f.add(mm);});if(!cam.parent)scene.add(cam);cam.add(f);WPN.fpsH=f;
   f.position.set(0.19,-0.45,-0.42); // wjeżdża od dołu ekranu
   if(charGroup&&camStyle==='fps')h.traverse(function(o){if(o.isMesh)o.visible=false;});
@@ -1520,19 +1534,20 @@ function wpnDropMag(){
   if(WPN.mags.length>8){var o=WPN.mags.shift();wpnKillMag(o);}
 }
 function wpnKillMag(o){if(o.g.parent)o.g.parent.remove(o.g);o.g.traverse(function(m){if(m.isMesh){if(m.material)m.material.dispose();if(m.geometry&&m!==o.g.children[1])m.geometry.dispose();}});}
-function wpnAmmoLabel(po){var a=po.action||{};if(!WPN.po)return 'Najpierw weź broń';if(!wpnAmmo(WPN.po))return 'Ta broń nie potrzebuje amunicji';return 'E — weź amunicję (+'+drvNum(a.amount,45)+')';}
+function wpnCal(a){return String((a&&a.caliber)||'9mm').replace(/\s/g,'').replace('mm','').replace(',','.');}
+function wpnAmmoLabel(po){var a=po.action||{};if(!WPN.po)return 'Najpierw weź broń';if(!wpnAmmo(WPN.po))return 'Ta broń nie potrzebuje amunicji';if(wpnCal(a)!==wpnCal(WPN.act))return 'Ta amunicja nie pasuje do '+wpnName(WPN.po);return 'E — weź amunicję (+'+drvNum(a.amount,45)+')';}
 function wpnTakeAmmo(po){
-  var am=wpnAmmo(WPN.po);if(!am||!po||!po.gr)return;var a=po.action||{},wa=WPN.act||{};
+  var am=wpnAmmo(WPN.po);if(!am||!po||!po.gr)return;var a=po.action||{},wa=WPN.act||{};if(wpnCal(a)!==wpnCal(wa)){wpnSnd('dry');return;}
   am.res=Math.min(drvNum(wa.maxAmmo,150),am.res+drvNum(a.amount,45));
   if(WPN.touched.indexOf(po)<0){po.gr.userData._wpnHome={p:po.gr.position.clone(),r:po.gr.rotation.clone()};WPN.touched.push(po);}
   po.gr.visible=false;wpnSnd('magin');WPN.amFlash=1.2;
 }
 function wpnRefreshHeld(){
   var po=WPN.po;if(!po)return;var a=WPN.act||{};
-  [['tps','tpsH',drvNum(a.holdScale,1.1),false],['fps','fpsH',drvNum(a.fpsScale,0.75),true]].forEach(function(q){
+  [['tps','tpsH',drvNum(a.holdScale,WPN.rifle?0.95:1.1),false],['fps','fpsH',drvNum(a.fpsScale,WPN.rifle?0.46:0.75),true]].forEach(function(q){
     var old=WPN[q[0]],h=WPN[q[1]];if(!old||!h)return;
     h.remove(old.g);old.g.traverse(function(o){if((o.isMesh||o.isSprite)&&o.material)o.material.dispose();});
-    var nb=wpnBuild(po,q[2],a.hold,q[3]);h.add(nb.g);WPN[q[0]]=nb;
+    var nb=wpnBuild(po,q[2],a.hold,q[3]);if(!q[3]&&WPN.rifle&&nb.stock)nb.g.position.set(-nb.stock.x*nb.sc,-nb.stock.y*nb.sc,-nb.stock.z*nb.sc);h.add(nb.g);WPN[q[0]]=nb;
     if(!q[3]&&camStyle==='fps')nb.g.traverse(function(o){if(o.isMesh)o.visible=false;});
   });
 }
@@ -1583,7 +1598,7 @@ function wpnUnmount(){
   if(WPN.readyOn&&camStyle!=='fps')camPitch=WPN.walkPitch;
   WPN.readyOn=false;WPN.rdy=0;
   if(WPN.beam){WPN.beam.visible=false;WPN.dot.visible=false;}
-  WPN.rl=0;WPN.autoRl=0;
+  WPN.rl=0;WPN.autoRl=0;WPN.rifle=false;
   WPN.po=null;WPN.act=null;WPN.lmb=WPN.rmb=false;WPN.aimT=0;WPN.camT=0;WPN.kick=0;WPN.flashT=0;
   if(WPN.light)WPN.light.intensity=0;
   wpnHud(false);
@@ -1651,15 +1666,15 @@ function wpnFire(){
   var h2=rc.intersectObjects(list,false),hit=h2.length?h2[0]:null,end=hit?hit.point:aimP;
   // efekty strzału
   var s=0.8+Math.random()*0.5;
-  B.f1.visible=B.f2.visible=true;B.f1.scale.setScalar(0.34*s);B.f2.scale.setScalar(0.16*s);
+  if(WPN.rifle)s*=1.5;B.f1.visible=B.f2.visible=true;B.f1.scale.setScalar(0.34*s);B.f2.scale.setScalar(0.16*s);
   B.f1.material.rotation=Math.random()*6.28;WPN.flashT=0.05;
   WPN.light.position.copy(mz);WPN.light.intensity=3.2;
   wpnTracer(mz.clone().addScaledVector(d2,0.12),end);
   wpnPuff(mz,0xb8b8b8,0.1,0.55,0.4,new V(d2.x*0.4,0.25,d2.z*0.4));
   wpnShell(B);
-  wpnSnd('shot');
+  wpnSnd(a.sound==='rifle'?'rshot':'shot');
   WPN.kick=Math.min(1.8,WPN.kick+drvNum(a.recoil,1));WPN.spread=Math.min(20,WPN.spread+6);
-  camPitch-=0.006*drvNum(a.recoil,1);
+  camPitch-=0.006*drvNum(a.recoil,1)*(WPN.rifle?1.4:1);if(WPN.rifle)camYaw+=(Math.random()-0.45)*0.006*drvNum(a.recoil,1); // seria: lufa ucieka w górę i na boki
   if(hit)wpnImpact(hit,d2);
 }
 function wpnTracer(a,b){
@@ -1677,7 +1692,7 @@ function wpnShell(B){
   B.g.updateMatrixWorld(true);
   var p=new THREE.Vector3();B.ej.getWorldPosition(p);
   var e=B.g.matrixWorld.elements,r=new THREE.Vector3(e[0],e[1],e[2]).normalize(),u=new THREE.Vector3(e[4],e[5],e[6]).normalize();
-  var m=new THREE.Mesh(WPN.shellGeo,WPN.shellMat);m.userData._wfx=true;m.castShadow=true;m.position.copy(p);m.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);scene.add(m);
+  var m=new THREE.Mesh(WPN.shellGeo,WPN.shellMat);m.userData._wfx=true;m.castShadow=true;m.position.copy(p);if(WPN.rifle)m.scale.set(1.2,1.6,1.2);m.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);scene.add(m);
   var v=r.multiplyScalar(1.3+Math.random()*0.7).addScaledVector(u,1.7+Math.random()*0.8);
   WPN.shells.push({m:m,v:v,rx:(Math.random()-0.5)*25,rz:(Math.random()-0.5)*25,floor:WPN.floor,age:0,rest:false,bn:0});
   if(WPN.shells.length>25){var o=WPN.shells.shift();if(o.m.parent)o.m.parent.remove(o.m);}
@@ -1784,6 +1799,17 @@ function wpnUpdate(dt,offs){
   var lx=bp.armL.rotation.x;bp.armL.rotation.set(lx+(Math.PI/2+e+k*0.25-lx)*rd,0,0.75*rd);
   bp.head.rotation.x=e*0.5*rd;
   if(rk>0){bp.armR.rotation.x-=0.55*rk;bp.armL.rotation.set(bp.armL.rotation.x+(1.15-bp.armL.rotation.x)*rk,0,bp.armL.rotation.z+(0.55-bp.armL.rotation.z)*rk);}
+  if(WPN.rifle){
+    // opuszczony: ukośnie przed klatką, lufą w dół w lewo • gotowość: kolba przy prawym barku, lufa tam, gdzie celownik
+    var hh=WPN.tpsH,LO=[0.02,1.12,-0.3],SH=[0.24,1.44,0.04];
+    hh.position.set(LO[0]+(SH[0]-LO[0])*rd,LO[1]+(SH[1]-LO[1])*rd,LO[2]+(SH[2]-LO[2])*rd);
+    var qa=new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.8,0.75,0.3)),qb=new THREE.Quaternion().setFromEuler(new THREE.Euler(e+k*0.05,0.03,0));
+    hh.quaternion.copy(qa).slerp(qb,rd);if(rk>0){hh.rotateZ(0.45*rk);hh.rotateX(0.25*rk);}
+    var wr=bp.armR.rotation.x;
+    bp.armR.rotation.set((0.55+wr*0.2)+(Math.PI/2*0.62+e*0.8-(0.55+wr*0.2))*rd,0,0.1+(-0.35-0.1)*rd);
+    bp.armL.rotation.set(0.95+(Math.PI/2+e-0.95)*rd,0,0.7+(0.5-0.7)*rd);
+    if(rk>0){bp.armL.rotation.x-=0.4*rk;}
+  }else
   WPN.tpsH.rotation.set(-Math.PI/2+0.75*(1-rd)+0.6*rk,0,-armZ,'ZYX'); // nadgarstek: lufa w dół i lekko do przodu
   if(!fps){
     var want=!!(WPN.rmb&&pLock);
@@ -1817,10 +1843,11 @@ function wpnUpdate(dt,offs){
     if(isMov)WPN.bob+=dt*(isRun?13:8.5);
     WPN.swX*=Math.exp(-dt*9);WPN.swY*=Math.exp(-dt*9);
     var bbx=Math.sin(WPN.bob)*0.014*mv,bby=-Math.abs(Math.cos(WPN.bob))*0.012*mv;
-    var tx=0.19*(1-a)+bbx-WPN.swX*0.5*(1-a*0.7),ty=-0.19+(0.19-B.top*B.sc+0.003)*a+bby+WPN.swY*0.4*(1-a*0.7),tz=-0.42+0.03*a+k*0.06;
+    var R=WPN.rifle,bx0=R?0.15:0.19,by0=R?-0.15:-0.19,bz0=R?-0.3:-0.42,az=R?-0.33:-0.39;
+    var tx=bx0*(1-a)+bbx-WPN.swX*0.5*(1-a*0.7),ty=by0+(-by0-B.top*B.sc+0.003)*a+bby+WPN.swY*0.4*(1-a*0.7),tz=bz0+(az-bz0)*a+k*(R?0.03:0.06);
     var lf=Math.min(1,dt*18);
     h.position.x+=(tx-h.position.x)*lf;h.position.y+=(ty-h.position.y)*Math.min(1,dt*(h.position.y<-0.3?8:18));h.position.z+=(tz-h.position.z)*lf;
-    h.rotation.set(k*0.22+WPN.swY*1.1*(1-a*0.7)+0.55*rk,WPN.swX*1.1*(1-a*0.7),bbx*1.5+0.7*rk);h.position.y-=0.07*rk;
+    h.rotation.set(k*(WPN.rifle?0.06:0.22)+WPN.swY*1.1*(1-a*0.7)+0.55*rk,WPN.swX*1.1*(1-a*0.7),bbx*1.5+0.7*rk);h.position.y-=0.07*rk;
   }
   wpnLaser(fps);
   var tf=WPN.fov0*(1-WPN.aimT*(fps?0.3:0.1));
@@ -3412,6 +3439,8 @@ var AI_PROMPT = [
 '   Bron moze tez miec laser od razu: czesc z "role": "laser" w samej broni — gracz wlacza go klawiszem L.',
 '   Amunicja: w action broni "mag": 15 (naboje w magazynku), "ammo": 45 (zapas); czesc ze stopka magazynka ma "role": "mag". R przeladowuje.',
 '   Skrzynka z nabojami: "action": {"type": "ammo", "amount": 45, "name": "Amunicja 9 mm"} — E dodaje naboje do zapasu trzymanej broni.',
+'   Karabin: "stance": "rifle" (kolba przy barku, czesc kolby z "role": "stock"), "auto": true (seria przy trzymaniu LPM), "sound": "rifle".',
+'   Kaliber: "caliber": "7.62" w broni i w skrzynce z amunicja — skrzynka pasuje tylko do broni o tym samym kalibrze (domyslnie 9 mm).',
 '',
 '   Czesc z "col": true jest widoczna i ma wlasna kolizje (sciany, podlogi i schody budynkow z Tabby budynki).',
 '   Czesc z "role": "bud" to czesc budynku: gdy ludzik jest w srodku, pietra nad jego glowa robia sie przezroczyste; "role": "roof" (dach) znika calkiem.',

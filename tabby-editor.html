@@ -263,13 +263,10 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
     <div class="row"><button class="pri" id="tb-restore-ok">↺ Przywróć</button><button class="sec" id="tb-restore-no">Zacznij od nowa</button></div>
   </div>
 </div>
-<button id="scenes-btn" title="Wróć do strony scen" style="position:fixed;top:12px;right:792px;z-index:30;background:rgba(107,91,214,0.92);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🗂 Tabby Sceny</button>
-<button id="store-btn" title="Otwiera Tabby Store w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:654px;z-index:30;background:rgba(240,163,94,0.92);color:#1a1230;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🐱 Tabby Store</button>
-<button id="wall-btn" style="position:fixed;top:12px;right:514px;z-index:30;background:rgba(210,153,34,0.85);color:#000;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">🧱 Maluj kolizje</button>
+<button id="scenes-btn" title="Wróć do strony scen" style="position:fixed;top:12px;right:792px;z-index:30;background:rgba(107,91,214,0.92);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">Tabby Sceny</button>
+<button id="store-btn" title="Otwiera Tabby Store w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:654px;z-index:30;background:rgba(240,163,94,0.92);color:#1a1230;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">Tabby Store</button>
+<button id="bud-btn" title="Otwiera Tabby budynki w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:514px;z-index:30;background:rgba(210,153,34,0.85);color:#000;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">Tabby budynki</button>
 <div id="dn-time" style="position:fixed;top:50px;right:12px;z-index:25;background:rgba(0,0,0,0.7);color:#ffcc44;padding:6px 14px;border-radius:8px;font-size:18px;font-weight:bold;font-family:monospace;display:none">12:00</div>
-<button id="scalpel-btn" style="position:fixed;top:12px;right:1036px;z-index:30;background:rgba(248,81,73,0.85);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif;display:none">🔪 Skalpel</button>
-<div id="wall-hint" style="position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(210,153,34,0.95);color:#000;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:bold;display:none;font-family:sans-serif">🧱 Klikaj na ściany • Esc = koniec</div>
-<div id="scalpel-hint" style="position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(248,81,73,0.95);color:#fff;padding:8px 20px;border-radius:8px;font-size:14px;font-weight:bold;display:none;font-family:sans-serif">🔪 2×klik = tnij • Prawy = usuń kawałek • Z = cofnij • Esc = koniec</div>
 <div id="snap-bar">
   <span class="snap-lbl">Siatka:</span>
   <button class="snap-btn active" data-snap="5">5</button>
@@ -586,9 +583,6 @@ var isMov=false,isRun=false,wTime=0,tgtAng=0;
 var bp={};
 var isMobile=false,stepTarget=null,STEP_SPEED=18,mobileCamYaw=Math.PI,mobileFacing=2;
 var wCols=[];
-var wallPaintMode=false,wallPaintActive=false;
-var wallBuilderWalls=[];
-var scalpelMode=false,scalpelUndoStack=[];
 // DAY-NIGHT CYCLE
 var dnTime=12,dnSpeed=0.15,dnPaused=true,dnDirty=false;
 var dnAmbient,dnSun,dnHemi,dnStars;
@@ -664,7 +658,7 @@ var edCamAdjust=false;
 var edCamOff={chase:{y:0,angle:0,dist:0},cabin:{y:0,angle:0,dist:0},walk:{y:0,angle:0,dist:0},aim:{y:0,angle:0,dist:0}};
 // broń (WEAPON CORE): lista obiektów z akcjami i kiedy wolno strzelać
 function wpnList(){return placedObjs;}
-function wpnCanShoot(){var io=document.getElementById('inspector-overlay');return !edOpen&&!selMode&&!edPlacing&&!pasteMode&&!moveMode&&!wallPaintMode&&!scalpelMode&&!textPopupOpen&&!edDriveTarget&&!(io&&io.classList.contains('show'));}
+function wpnCanShoot(){var io=document.getElementById('inspector-overlay');return !edOpen&&!selMode&&!edPlacing&&!pasteMode&&!moveMode&&!textPopupOpen&&!edDriveTarget&&!(io&&io.classList.contains('show'));}
 // Wyciąga DRIVE CORE z własnego kodu — eksport dostaje dokładnie ten sam silnik jazdy co edytor
 function getWeaponCore(){
   var S='//@@WEAPON_'+'CORE_START',E='//@@WEAPON_'+'CORE_END';
@@ -2890,135 +2884,6 @@ function refreshUI(){
 }
 
 
-// === WALL PAINT + SCALPEL ===
-function doPaintWall(hitPoint,hitNormal,hitMesh){
-  var box=new THREE.Box3().setFromObject(hitMesh);
-  var sz=new THREE.Vector3();box.getSize(sz);
-  var ct=new THREE.Vector3();box.getCenter(ct);
-  var nx=Math.abs(hitNormal.x),ny=Math.abs(hitNormal.y),nz=Math.abs(hitNormal.z);
-  var w;
-  if(ny>nx&&ny>nz){
-    w={x:Math.round(ct.x*100)/100,z:Math.round(ct.z*100)/100,hw:Math.max(0.1,Math.round(sz.x/2*100)/100),hd:Math.max(0.1,Math.round(sz.z/2*100)/100),y:Math.round(hitPoint.y*100)/100,h:0.2};
-  }else if(nx>nz){
-    w={x:Math.round(hitPoint.x*100)/100,z:Math.round(ct.z*100)/100,hw:0.12,hd:Math.max(0.1,Math.round(sz.z/2*100)/100),y:Math.round(box.min.y*100)/100,h:Math.max(0.3,Math.round(sz.y*100)/100)};
-  }else{
-    w={x:Math.round(ct.x*100)/100,z:Math.round(hitPoint.z*100)/100,hw:Math.max(0.1,Math.round(sz.x/2*100)/100),hd:0.12,y:Math.round(box.min.y*100)/100,h:Math.max(0.3,Math.round(sz.y*100)/100)};
-  }
-  for(var i=0;i<wCols.length;i++){var c=wCols[i];if(Math.abs(c.x-w.x)<0.3&&Math.abs(c.z-w.z)<0.3&&Math.abs(c.hw-w.hw)<0.3&&Math.abs(c.hd-w.hd)<0.3)return;}
-  wCols.push(w);
-  var geo=new THREE.BoxGeometry(w.hw*2,w.h,w.hd*2);
-  var mat=new THREE.MeshBasicMaterial({color:0xd29922,transparent:true,opacity:0.3});
-  var mesh=new THREE.Mesh(geo,mat);mesh.position.set(w.x,w.y+w.h/2,w.z);
-  mesh.add(new THREE.Mesh(geo.clone(),new THREE.MeshBasicMaterial({color:0xd29922,wireframe:true,transparent:true,opacity:0.6})));
-  scene.add(mesh);
-  wallBuilderWalls.push({x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y,h:w.h,mesh:mesh,_col:w});
-}
-function enterWallPaint(){
-  wallPaintMode=true;wallPaintActive=true;
-  document.getElementById('wall-hint').style.display='block';
-  document.getElementById('wall-btn').style.background='rgba(63,185,80,0.9)';
-  document.getElementById('wall-btn').textContent='✓ Gotowe';
-  document.getElementById('scalpel-btn').style.display='block';
-  wallBuilderWalls.forEach(function(w){if(w.mesh)w.mesh.visible=true;});
-}
-function exitWallPaint(){
-  wallPaintMode=false;wallPaintActive=false;
-  if(scalpelMode)exitScalpel();
-  document.getElementById('wall-hint').style.display='none';
-  document.getElementById('wall-btn').style.background='rgba(210,153,34,0.85)';
-  document.getElementById('wall-btn').textContent='🧱 Maluj kolizje';
-  document.getElementById('scalpel-btn').style.display='none';
-  wallBuilderWalls.forEach(function(w){if(w.mesh)w.mesh.visible=false;});
-}
-function rebuildWallMesh(idx){
-  var w=wallBuilderWalls[idx];if(!w)return;
-  if(w.mesh)scene.remove(w.mesh);
-  var geo=new THREE.BoxGeometry(w.hw*2,w.h,w.hd*2);
-  var mat=new THREE.MeshBasicMaterial({color:0xd29922,transparent:true,opacity:0.3});
-  var mesh=new THREE.Mesh(geo,mat);mesh.position.set(w.x,w.y+w.h/2,w.z);
-  mesh.add(new THREE.Mesh(geo.clone(),new THREE.MeshBasicMaterial({color:0xd29922,wireframe:true,transparent:true,opacity:0.6})));
-  scene.add(mesh);w.mesh=mesh;
-  if(w._col){w._col.x=w.x;w._col.z=w.z;w._col.hw=w.hw;w._col.hd=w.hd;w._col.y=w.y;w._col.h=w.h;}
-}
-function enterScalpel(){
-  scalpelMode=true;wallPaintActive=false;
-  document.getElementById('scalpel-hint').style.display='block';
-  document.getElementById('wall-hint').style.display='none';
-  document.getElementById('scalpel-btn').style.background='rgba(63,185,80,0.9)';
-  document.getElementById('scalpel-btn').textContent='\u2713 Koniec ci\u0119cia';
-}
-function exitScalpel(){
-  scalpelMode=false;
-  document.getElementById('scalpel-hint').style.display='none';
-  document.getElementById('scalpel-btn').style.background='rgba(248,81,73,0.85)';
-  document.getElementById('scalpel-btn').textContent='\ud83d\udd2a Skalpel';
-  if(wallPaintMode){wallPaintActive=true;document.getElementById('wall-hint').style.display='block';}
-}
-function doScalpelCut(hitPoint,wallIdx){
-  var w=wallBuilderWalls[wallIdx];if(!w)return;
-  var isX=(w.hw>=w.hd);
-  scalpelUndoStack.push({type:'cut',orig:{x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y,h:w.h},wIdx:wallIdx,pieceB:-1});
-  var undo=scalpelUndoStack[scalpelUndoStack.length-1];
-  if(isX){
-    var cut=Math.round(hitPoint.x*100)/100,wL=w.x-w.hw,wR=w.x+w.hw;
-    if(cut<=wL+0.15||cut>=wR-0.15){scalpelUndoStack.pop();return;}
-    var aHW=(cut-wL)/2,bHW=(wR-cut)/2;
-    if(w._col){var ci=wCols.indexOf(w._col);if(ci>=0)wCols.splice(ci,1);}
-    scene.remove(w.mesh);
-    var colA={x:Math.round((wL+aHW)*100)/100,z:w.z,hw:Math.round(aHW*100)/100,hd:w.hd,y:w.y,h:w.h};
-    wCols.push(colA);w.x=colA.x;w.hw=colA.hw;w._col=colA;rebuildWallMesh(wallIdx);
-    var colB={x:Math.round((cut+bHW)*100)/100,z:w.z,hw:Math.round(bHW*100)/100,hd:w.hd,y:w.y,h:w.h};
-    wCols.push(colB);
-    var g=new THREE.BoxGeometry(colB.hw*2,colB.h,colB.hd*2);
-    var m=new THREE.MeshBasicMaterial({color:0xd29922,transparent:true,opacity:0.3});
-    var mesh=new THREE.Mesh(g,m);mesh.position.set(colB.x,colB.y+colB.h/2,colB.z);
-    mesh.add(new THREE.Mesh(g.clone(),new THREE.MeshBasicMaterial({color:0xd29922,wireframe:true,transparent:true,opacity:0.6})));
-    scene.add(mesh);
-    wallBuilderWalls.push({x:colB.x,z:colB.z,hw:colB.hw,hd:colB.hd,y:colB.y,h:colB.h,mesh:mesh,_col:colB});
-    undo.pieceB=wallBuilderWalls.length-1;
-  }else{
-    var cutZ=Math.round(hitPoint.z*100)/100,wF=w.z-w.hd,wB=w.z+w.hd;
-    if(cutZ<=wF+0.15||cutZ>=wB-0.15){scalpelUndoStack.pop();return;}
-    var aHD=(cutZ-wF)/2,bHD=(wB-cutZ)/2;
-    if(w._col){var ci2=wCols.indexOf(w._col);if(ci2>=0)wCols.splice(ci2,1);}
-    scene.remove(w.mesh);
-    var colA2={x:w.x,z:Math.round((wF+aHD)*100)/100,hw:w.hw,hd:Math.round(aHD*100)/100,y:w.y,h:w.h};
-    wCols.push(colA2);w.z=colA2.z;w.hd=colA2.hd;w._col=colA2;rebuildWallMesh(wallIdx);
-    var colB2={x:w.x,z:Math.round((cutZ+bHD)*100)/100,hw:w.hw,hd:Math.round(bHD*100)/100,y:w.y,h:w.h};
-    wCols.push(colB2);
-    var g2=new THREE.BoxGeometry(colB2.hw*2,colB2.h,colB2.hd*2);
-    var m2=new THREE.MeshBasicMaterial({color:0xd29922,transparent:true,opacity:0.3});
-    var mesh2=new THREE.Mesh(g2,m2);mesh2.position.set(colB2.x,colB2.y+colB2.h/2,colB2.z);
-    mesh2.add(new THREE.Mesh(g2.clone(),new THREE.MeshBasicMaterial({color:0xd29922,wireframe:true,transparent:true,opacity:0.6})));
-    scene.add(mesh2);
-    wallBuilderWalls.push({x:colB2.x,z:colB2.z,hw:colB2.hw,hd:colB2.hd,y:colB2.y,h:colB2.h,mesh:mesh2,_col:colB2});
-    undo.pieceB=wallBuilderWalls.length-1;
-  }
-}
-function doScalpelDelete(wallIdx){
-  var w=wallBuilderWalls[wallIdx];if(!w||w._dead)return;
-  scalpelUndoStack.push({type:'del',wallIdx:wallIdx,data:{x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y,h:w.h}});
-  if(w._col){var ci=wCols.indexOf(w._col);if(ci>=0)wCols.splice(ci,1);}
-  if(w.mesh)scene.remove(w.mesh);
-  w._dead=true;w.mesh=null;w._col=null;
-}
-function doScalpelUndo(){
-  if(scalpelUndoStack.length===0)return;
-  var u=scalpelUndoStack.pop();
-  if(u.type==='del'){
-    var w=wallBuilderWalls[u.wallIdx];
-    if(w){w.x=u.data.x;w.z=u.data.z;w.hw=u.data.hw;w.hd=u.data.hd;w.y=u.data.y;w.h=u.data.h;w._dead=false;
-    var col={x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y,h:w.h};w._col=col;wCols.push(col);rebuildWallMesh(u.wallIdx);}
-  }else if(u.type==='cut'){
-    var wB=wallBuilderWalls[u.pieceB];
-    if(wB){if(wB._col){var ci=wCols.indexOf(wB._col);if(ci>=0)wCols.splice(ci,1);}if(wB.mesh)scene.remove(wB.mesh);wB._dead=true;wB.mesh=null;wB._col=null;}
-    var wA=wallBuilderWalls[u.wIdx];
-    if(wA){if(wA._col){var ci2=wCols.indexOf(wA._col);if(ci2>=0)wCols.splice(ci2,1);}
-    wA.x=u.orig.x;wA.z=u.orig.z;wA.hw=u.orig.hw;wA.hd=u.orig.hd;wA.y=u.orig.y;wA.h=u.orig.h;
-    var col2={x:wA.x,z:wA.z,hw:wA.hw,hd:wA.hd,y:wA.y,h:wA.h};wA._col=col2;wCols.push(col2);rebuildWallMesh(u.wIdx);}
-  }
-}
-
 // === EXPORT HTML (jeden plik) ===
 // Nazwa obiektu → bezpieczna nazwa pliku/funkcji (ą→a, ł→l, ż→z ... zamiast gubienia liter)
 function tabbySlug(n){var m={'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z','Ą':'A','Ć':'C','Ę':'E','Ł':'L','Ń':'N','Ó':'O','Ś':'S','Ź':'Z','Ż':'Z'};
@@ -3626,7 +3491,7 @@ function tabbyWallExtra(w){
 }
 // === PROJEKT: zbieranie danych (wspólne dla zapisu projektu, autozapisu i zapisu gry) ===
 function tabbyCollectProject(){
-  var d={objects:[],placed:[],walls:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused}};
+  var d={objects:[],placed:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused}};
   loadedObjs.forEach(function(ob){
     if(ob.type==='glb'){d.objects.push({name:ob.name,parts:[]});return;}
     var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;d.objects.push(eo);
@@ -3639,22 +3504,7 @@ function tabbyCollectProject(){
     if(po.action)pd.action=po.action;
     d.placed.push(pd);
   });
-  (typeof wallBuilderWalls!=='undefined'?wallBuilderWalls:[]).forEach(function(w){d.walls.push({x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y,h:w.h});});
   return d;
-}
-// ściany z „Maluj kolizje” — odtworzenie po wczytaniu
-function tabbyClearPaintedWalls(){
-  if(typeof wallBuilderWalls==='undefined')return;
-  wallBuilderWalls.forEach(function(w){if(w.mesh)scene.remove(w.mesh);var i=wCols.indexOf(w._col);if(i>=0)wCols.splice(i,1);});
-  wallBuilderWalls.length=0;
-}
-function tabbyAddPaintedWall(w){
-  var c={x:w.x,z:w.z,hw:w.hw,hd:w.hd,y:w.y||0,h:w.h||2};wCols.push(c);
-  var geo=new THREE.BoxGeometry(c.hw*2,c.h,c.hd*2);
-  var mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xd29922,transparent:true,opacity:0.3}));mesh.position.set(c.x,c.y+c.h/2,c.z);
-  mesh.add(new THREE.Mesh(geo.clone(),new THREE.MeshBasicMaterial({color:0xd29922,wireframe:true,transparent:true,opacity:0.6})));
-  scene.add(mesh);
-  wallBuilderWalls.push({x:c.x,z:c.z,hw:c.hw,hd:c.hd,y:c.y,h:c.h,mesh:mesh,_col:c});
 }
 // === PROJEKT: zapis / otwieranie / autozapis ===
 function tbPl(n){var d=n%10,h=n%100;return n+' '+(n===1?'obiekt':(d>=2&&d<=4&&(h<12||h>14))?'obiekty':'obiektów');}
@@ -3682,7 +3532,7 @@ function tbProjMsg(t,ok){var m=document.getElementById('proj-msg');if(!m)return;
 function tbProjLabel(){var el=document.getElementById('proj-name');if(el)el.textContent=tabbyProjName||'bez nazwy';document.title=(tabbyProjName?tabbyProjName+' — ':'')+'Tabby Editor';}
 function tbProjJson(){var d=tabbyCollectProject();d.format='tabby-project';d.version=1;d.name=tabbyProjName;return d;}
 function tbAutosave(clean){
-  try{var d=tbProjJson(),j=JSON.stringify(d.placed.length||d.walls.length?d:{});
+  try{var d=tbProjJson(),j=JSON.stringify(d.placed.length?d:{});
     if(!clean&&j===tbLastAutoJson)return;
     tbLastAutoJson=j;
     localStorage.setItem('tabby-autosave',JSON.stringify({t:Date.now(),name:tabbyProjName,clean:!!clean,data:j}));
@@ -3761,7 +3611,7 @@ function tbInitProject(fromMenu){
   var raw=null;try{raw=localStorage.getItem('tabby-autosave');}catch(e){}
   if(raw&&!fromMenu){
     try{var a=JSON.parse(raw),d=JSON.parse(a.data||'{}');
-      if(!a.clean&&d.placed&&(d.placed.length||(d.walls&&d.walls.length))){
+      if(!a.clean&&d.placed&&d.placed.length){
         var t=new Date(a.t);
         $('tb-restore-info').textContent='Znaleziono niezapisaną pracę z '+t.toLocaleDateString('pl-PL')+' '+t.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+(a.name?' (projekt „'+a.name+'”)':'')+' — '+tbPl(d.placed.length)+'. Przywrócić?';
         $('tb-restore').classList.add('show');
@@ -3797,8 +3647,6 @@ function tabbyLoadEditorData(ed){
     if(pd.pc){po._partCols={};Object.keys(pd.pc).forEach(function(k){var c=tabbyMakePartCol(po,parseInt(k));if(!c)return;if(typeof pd.pc[k]==='object')c.veh=pd.pc[k];po._partCols[k]=c;wCols.push(c);});}
     placedObjs.push(po);placed++;
   });
-  tabbyClearPaintedWalls();
-  (ed.walls||[]).forEach(tabbyAddPaintedWall);
   if(ed.dn)tabbyApplyDn(ed.dn);
   refreshUI();
   return placed;
@@ -3840,19 +3688,6 @@ function init(){
 
   // CONTROLS
   renderer.domElement.addEventListener('click',function(e){
-    // SCALPEL — in scalpel mode, single clicks do nothing (dblclick cuts)
-    if(wallPaintMode&&scalpelMode&&pLock){return;}
-    // WALL PAINT — click on surface to paint collision
-    if(wallPaintMode&&wallPaintActive&&pLock){
-      var r2=renderer.domElement.getBoundingClientRect();
-      var mx2=((e.clientX-r2.left)/r2.width)*2-1;
-      var my2=-((e.clientY-r2.top)/r2.height)*2+1;
-      rayc.setFromCamera(new THREE.Vector2(mx2,my2),cam);
-      var all=[];scene.traverse(function(c){if(c.isMesh&&c!==groundMesh){var skip=false;wallBuilderWalls.forEach(function(w){if(w.mesh===c||w.mesh===c.parent)skip=true;});if(!skip)all.push(c);}});
-      var hits=rayc.intersectObjects(all,false);
-      if(hits.length>0){doPaintWall(hits[0].point,hits[0].face.normal.clone().transformDirection(hits[0].object.matrixWorld),hits[0].object);}
-      return;
-    }
     // MOVE MODE — click to place at new position
     if(moveMode&&editIdx>=0){
       var rect=renderer.domElement.getBoundingClientRect();
@@ -3940,32 +3775,9 @@ function init(){
     if(pLock){si.style.display='none';renderer.domElement.style.cursor='none';}
     else{si.textContent='Click to continue';si.style.display=edOpen?'none':'block';renderer.domElement.style.cursor='pointer';}
   });
-  document.addEventListener('mousemove',function(e){if(!pLock)return;if(scalpelMode)return;var ws=wpnSens();camYaw-=e.movementX*CSENS*ws;
+  document.addEventListener('mousemove',function(e){if(!pLock)return;var ws=wpnSens();camYaw-=e.movementX*CSENS*ws;
     camPitch+=e.movementY*CSENS*ws;camPitch=Math.max(camStyle==='fps'?-1.0:(wpnReady()?-0.75:CMINP),Math.min(camStyle==='fps'?1.0:(wpnReady()?0.9:CMAXP),camPitch));});
   renderer.domElement.addEventListener('mousemove',function(e){moveGhost(e);});
-  renderer.domElement.addEventListener('dblclick',function(e){
-    if(!wallPaintMode||!scalpelMode||!pLock)return;
-    var r=renderer.domElement.getBoundingClientRect();
-    var mx=((e.clientX-r.left)/r.width)*2-1;
-    var my=-((e.clientY-r.top)/r.height)*2+1;
-    rayc.setFromCamera(new THREE.Vector2(mx,my),cam);
-    var wM=[];wallBuilderWalls.forEach(function(w){if(w.mesh&&!w._dead)wM.push(w.mesh);});
-    var wH=rayc.intersectObjects(wM,true);
-    if(wH.length>0){var hit=wH[0].object;if(hit.parent&&wM.indexOf(hit.parent)>=0)hit=hit.parent;
-    for(var wi=0;wi<wallBuilderWalls.length;wi++){if(wallBuilderWalls[wi].mesh===hit){doScalpelCut(wH[0].point,wi);return;}}}
-  });
-  renderer.domElement.addEventListener('contextmenu',function(e){
-    if(!wallPaintMode||!scalpelMode)return;
-    e.preventDefault();
-    var r=renderer.domElement.getBoundingClientRect();
-    var mx=((e.clientX-r.left)/r.width)*2-1;
-    var my=-((e.clientY-r.top)/r.height)*2+1;
-    rayc.setFromCamera(new THREE.Vector2(mx,my),cam);
-    var wM=[];wallBuilderWalls.forEach(function(w){if(w.mesh&&!w._dead)wM.push(w.mesh);});
-    var wH=rayc.intersectObjects(wM,true);
-    if(wH.length>0){var hit=wH[0].object;if(hit.parent&&wM.indexOf(hit.parent)>=0)hit=hit.parent;
-    for(var wi=0;wi<wallBuilderWalls.length;wi++){if(wallBuilderWalls[wi].mesh===hit){doScalpelDelete(wi);return;}}}
-  });
   document.addEventListener('keydown',function(e){
     if(e.code==='KeyE'){
       e.preventDefault();
@@ -3987,7 +3799,7 @@ function init(){
     }
     if(e.code==='Digit1'){e.preventDefault();toggleSelMode();return;}
     if(e.code==='Digit2'){e.preventDefault();toggleEd();return;}
-    if(e.code==='Escape'){if(edCamAdjust){e.preventDefault();tabbyCamPop(false);return;}if(scalpelMode){exitScalpel();return;}if(wallPaintMode){exitWallPaint();return;}if(document.getElementById('inspector-overlay').classList.contains('show')){closeInspector();return;}if(moveMode){cancelMove();return;}if(pasteMode){stopPaste();return;}if(selMode){toggleSelMode();return;}}
+    if(e.code==='Escape'){if(edCamAdjust){e.preventDefault();tabbyCamPop(false);return;}if(document.getElementById('inspector-overlay').classList.contains('show')){closeInspector();return;}if(moveMode){cancelMove();return;}if(pasteMode){stopPaste();return;}if(selMode){toggleSelMode();return;}}
     if(e.code==='KeyQ'&&!/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||'')){e.preventDefault();tabbyCamPop(!edCamAdjust);return;}
     if(edCamAdjust&&/^Arrow/.test(e.code)){
       var mode=tabbyCamMode();
@@ -3998,7 +3810,6 @@ function init(){
       if(e.code==='ArrowRight'){e.preventDefault();edCamOff[mode].angle-=0.1;}
       return;
     }
-    if(e.code==='KeyZ'&&scalpelMode){e.preventDefault();doScalpelUndo();return;}
     switch(e.code){
       case'KeyW':keys.w=1;break;case'KeyA':keys.a=1;break;case'KeyS':keys.s=1;break;case'KeyD':keys.d=1;break;
       case'ShiftLeft':case'ShiftRight':keys.sh=1;break;case'Space':keys.sp=1;e.preventDefault();break;
@@ -4060,9 +3871,8 @@ function init(){
     }
     e.target.value='';
   });
-  // WALL PAINT + SCALPEL buttons
-  document.getElementById('wall-btn').addEventListener('click',function(){if(wallPaintMode){exitWallPaint();}else{enterWallPaint();}});
-  document.getElementById('scalpel-btn').addEventListener('click',function(){if(scalpelMode){exitScalpel();}else{enterScalpel();}});
+  // Tabby budynki — osobna strona w tym samym folderze, otwiera się w osobnej karcie (jak Tabby Store)
+  document.getElementById('bud-btn').addEventListener('click',function(e){e.stopPropagation();window.open('tabby-budynki.html','tabby-budynki');});
 
   document.getElementById('ed-export-html').addEventListener('click',function(){doExportHTML();});
   document.getElementById('ed-export-zip').addEventListener('click',function(){doExportZIP();});
@@ -5129,5 +4939,23 @@ init();
 </body>
 </html>
 </textarea>
+<script>
+// Górny pasek: przyciski układają się od „Opcje” w lewo, zawsze z równym odstępem (niezależnie od czcionki i szerokości napisów)
+(function(){
+  var GAP=10,chain=['opt-btn','bud-btn','store-btn','scenes-btn','dn-btn','cam-btn'];
+  function lay(){
+    var ref=document.getElementById(chain[0]);if(!ref)return;
+    var left=ref.getBoundingClientRect().left;
+    for(var i=1;i<chain.length;i++){
+      var el=document.getElementById(chain[i]);if(!el)continue;
+      el.style.right=Math.round(innerWidth-left+GAP)+'px';
+      left=el.getBoundingClientRect().left;
+    }
+  }
+  addEventListener('resize',lay);addEventListener('load',lay);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(lay);
+  lay();
+})();
+</script>
 </body>
 </html>

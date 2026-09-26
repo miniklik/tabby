@@ -1032,9 +1032,44 @@ function drvFuseTick(dt){
   }
   drvCountdown(show);
 }
+// ----- 🏠 PRZEKRÓJ BUDYNKÓW: części z role "bud" nad głową ludzika robią się przezroczyste, gdy jest w środku -----
+var DRV_CUT=null;
+function drvCutaway(){
+  if(typeof charX==='undefined'||!scene)return;
+  var now=DRV.time||0;
+  if(!DRV_CUT||now-DRV_CUT.t>1.5||now<DRV_CUT.t||DRV_CUT.n!==scene.children.length){ // lista budynków odświeżana co 1,5 s (obiekty w edytorze mogą się ruszać)
+    var map=[],idx=new Map();
+    scene.traverse(function(o){
+      if(!o.isMesh||!o.userData||(o.userData._role!=='bud'&&o.userData._role!=='roof'))return;
+      var g=o;while(g.parent&&g.parent!==scene)g=g.parent;
+      var b=idx.get(g);if(!b){b={g:g,parts:[],box:new THREE.Box3().setFromObject(g)};idx.set(g,b);map.push(b);}
+      var bb=new THREE.Box3().setFromObject(o);b.parts.push({m:o,y:bb.min.y,roof:o.userData._role==='roof'});
+    });
+    DRV_CUT={t:now,list:map,n:scene.children.length};
+  }
+  var fps=typeof camStyle!=='undefined'&&camStyle==='fps',hy=charY+2.2;
+  DRV_CUT.list.forEach(function(b){
+    if(!b.g.visible)return;
+    var inside=!fps&&!DRV.t&&charX>b.box.min.x&&charX<b.box.max.x&&charZ>b.box.min.z&&charZ<b.box.max.z;
+    b.parts.forEach(function(p){
+      var above=inside&&p.y>hy;
+      if(p.roof){if(DRV.hidden.indexOf(p.m)<0&&p.m.visible===above)p.m.visible=!above;} // dach: znika całkiem, żeby w środku było jasno
+      else drvGhost(p.m,above);                                                          // piętra nad głową: szkło
+    });
+  });
+}
+// część budynku jak szkło (tak jak piętra w Ghost Maze) — widać przez nią ludzika i zarys budynku
+function drvGhost(m,on){
+  var u=m.userData;if(!!u._ghost===on)return;u._ghost=on;
+  if(!u._cutOrig){m.material=m.material.clone();u._cutOrig={t:m.material.transparent,o:m.material.opacity,d:m.material.depthWrite,s:m.castShadow};}
+  var mt=m.material,o=u._cutOrig;
+  mt.transparent=on?true:o.t;mt.opacity=on?0.18:o.o;mt.depthWrite=on?false:o.d;mt.needsUpdate=true;
+  m.castShadow=on?false:o.s; // szkło nie zaciemnia wnętrza
+}
 // efekty, wybuchy i zapalniki także wtedy, gdy nikt nie jedzie pojazdem
 function drvTick(dt){
   DRV.time=(DRV.time||0)+dt;var k=Math.min(dt*60,3);
+  drvCutaway();
   drvFuseTick(dt);drvUpdateBlast(k);drvUpdateFx(k,dt);
   if(DRV.pk&&typeof charX!=='undefined'){charX+=DRV.pk.vx*dt;charZ+=DRV.pk.vz*dt;var d=Math.pow(0.9,k);DRV.pk.vx*=d;DRV.pk.vz*=d;if(Math.abs(DRV.pk.vx)+Math.abs(DRV.pk.vz)<0.05)DRV.pk=null;}
   if(DRV.shake>0){var a=DRV.shake*0.6;cam.position.x+=(Math.random()-0.5)*a;cam.position.y+=(Math.random()-0.5)*a;cam.position.z+=(Math.random()-0.5)*a;DRV.shake=Math.max(0,DRV.shake-dt);}
@@ -1161,6 +1196,7 @@ function drvEnter(obj,others){
 }
 // przywraca wszystko, co pojazd zniszczył lub odrzucił (edytor: przycisk „Odbuduj” i zapis gry)
 function drvRestoreAll(){
+  if(DRV_CUT){DRV_CUT.list.forEach(function(b){b.parts.forEach(function(p){if(p.roof)p.m.visible=true;else drvGhost(p.m,false);});});DRV_CUT=null;}
   if(typeof wpnRestoreAll==='function')wpnRestoreAll();
   DRV.fx.forEach(function(f){if(f.debris||f.spr){scene.remove(f.m);if(f.m.geometry)f.m.geometry.dispose();f.m.material.dispose();}if(f.m&&f.m.userData)f.m.userData._falling=false;});DRV.fx=[];DRV.pending=[];
   DRV.fuses.forEach(function(f){if(f.lamp)f.lamp.visible=true;f.gr.scale.setScalar(f.base);});DRV.fuses=[];drvCountdown(0);
@@ -1769,6 +1805,8 @@ function collide(nx,nz){
     var ox=w.hw+CR-Math.abs(dx),oz=w.hd+CR-Math.abs(dz);
     if(ox>0&&oz>0){
       var baseY=w.y||0;var topY=baseY+(w.h||2);
+      if(w.ramp){var rt=((nx-w.x)*w.ramp[0]+(nz-w.z)*w.ramp[1])/(2*w.ramp[2])+0.5;topY=baseY+(w.h||2)*Math.max(0,Math.min(1,rt));} // schody = gładka pochylnia
+      if(baseY>charY+1.8)continue; // np. podłoga piętra nad głową
       if(topY-charY<=STEP&&charY>=baseY-0.1){floorY=Math.max(floorY,topY);}
       else if(charY<topY-STEP){if(ox<oz)nx+=(dx>0?ox:-ox);else nz+=(dz>0?oz:-oz);}
     }
@@ -1808,8 +1846,10 @@ function update(dt){
       var tgt=faceCam?camYaw:tgtAng,ad=tgt-charAng;
       while(ad>Math.PI)ad-=Math.PI*2;while(ad<-Math.PI)ad+=Math.PI*2;
       charAng+=ad*(faceCam?0.3:TSM);
-      if(keys.sp&&onGr){velY=JF;onGr=false;}velY-=GR*dt;charY+=velY*dt;
-      if(charY<=floorY){charY=floorY;velY=0;onGr=true;}
+      var wasGr=onGr&&velY<=0;
+      if(keys.sp&&onGr){velY=JF;onGr=false;wasGr=false;}velY-=GR*dt;charY+=velY*dt;
+      if(charY<=floorY||(wasGr&&charY-floorY<0.45)){charY=floorY;velY=0;onGr=true;} // przyklejenie do podłoża przy schodzeniu
+      else if(charY-floorY>=0.45)onGr=false; // prawdziwe spadanie (np. z krawędzi)
       charGroup.position.set(charX,charY,charZ);
     }
     charGroup.rotation.y=charAng;animCh(dt);
@@ -3217,6 +3257,8 @@ var AI_PROMPT = [
 '   ROLE: "role": "muzzle" na czesci przy wylocie lufy (stad leci strzal), "role": "grip" na rekojesci (tu trzyma dlon).',
 '   Trafiony obiekt reaguje wedlug swojego "veh": explode — wybucha, destroy — rozpada sie, knock — odlatuje.',
 '',
+'   Czesc z "col": true jest widoczna i ma wlasna kolizje (sciany, podlogi i schody budynkow z Tabby budynki).',
+'   Czesc z "role": "bud" to czesc budynku: gdy ludzik jest w srodku, pietra nad jego glowa robia sie przezroczyste; "role": "roof" (dach) znika calkiem.',
 '9. Strefa kolizji: czesc z "hidden": true jest niewidoczna w grze, ale ma kolizje',
 '   (w edytorze widac ja jako polprzezroczysta czerwona bryle). Np. niewidzialna sciana albo pudlo kolizji wokol domu.',
 '',
@@ -3433,7 +3475,8 @@ function tabbyPartMesh(po,idx){
 function tabbyMakePartCol(po,idx){
   var ob=loadedObjs[po.oi];var p=ob&&ob.parts?ob.parts[idx]:null;
   if(!p||p.shape==='pointlight')return null;
-  var s=p.size;
+  var s=p.size,rp=p.ramp&&p.ramp.size&&p.ramp.position&&p.ramp.dir?p.ramp:null;
+  if(rp){p={shape:'box',size:rp.size,position:rp.position};s=rp.size;} // kolizja = gładka pochylnia zamiast stopnia
   var px=p.position?p.position[0]:0,py=p.position?p.position[1]:0,pz=p.position?p.position[2]:0;
   var hw,hd,hh;
   switch(p.shape){
@@ -3445,11 +3488,14 @@ function tabbyMakePartCol(po,idx){
   }
   var ry=po.gr.rotation.y||0;
   var cs=Math.cos(ry),sn=Math.sin(ry);
-  var wx=px*cs-pz*sn+po.gr.position.x;
-  var wz=px*sn+pz*cs+po.gr.position.z;
+  var wx=px*cs+pz*sn+po.gr.position.x;
+  var wz=-px*sn+pz*cs+po.gr.position.z;
   var wy=py-hh/2+po.gr.position.y;
   if(Math.abs(Math.sin(ry))>0.3){var t=hw;hw=hd;hd=t;}
-  return {x:wx,z:wz,hw:hw,hd:hd,y:wy,h:hh,_po:po,_pi:idx};
+  var col={x:wx,z:wz,hw:hw,hd:hd,y:wy,h:hh,_po:po,_pi:idx};
+  if(rp){var dx=rp.dir[0],dz=rp.dir[1],rl=Math.abs(dx)>Math.abs(dz)?rp.size[0]/2:rp.size[2]/2;
+    col.ramp=[+(dx*cs+dz*sn).toFixed(4),+(-dx*sn+dz*cs).toFixed(4),rl];}
+  return col;
 }
 // po przesunięciu/obrocie obiektu kolizje części idą razem z nim
 function tabbyRefreshPartCols(po){
@@ -3457,6 +3503,7 @@ function tabbyRefreshPartCols(po){
   Object.keys(po._partCols).forEach(function(k){
     var c=po._partCols[k],n=tabbyMakePartCol(po,parseInt(k));if(!c||!n)return;
     c.x=n.x;c.z=n.z;c.hw=n.hw;c.hd=n.hd;c.y=n.y;c.h=n.h;c._po=po;c._pi=parseInt(k);delete c._mesh;
+    if(n.ramp)c.ramp=n.ramp;else delete c.ramp; // kierunek pochylni też obraca się z budynkiem
   });
 }
 function tabbySyncCols(po){if(po._col){removeCollision(po);addCollision(po);}tabbyRefreshPartCols(po);}
@@ -3482,8 +3529,9 @@ function tabbyWholeVehStr(po){
 }
 // eksport ściany z efektami pojazdu: dopisuje veh + pozycję części (żeby gra znalazła ją w świecie)
 function tabbyWallExtra(w){
-  if(!w.veh&&!w._po)return '';
+  if(!w.veh&&!w._po&&!w.ramp)return '';
   var out=w.veh?',veh:'+JSON.stringify(w.veh):'';
+  if(w.ramp)out+=',ramp:'+JSON.stringify(w.ramp);
   if(w._po){var m=tabbyPartMesh(w._po,w._pi);if(m){var v=new THREE.Vector3();m.getWorldPosition(v);
     out+=',mp:['+v.x.toFixed(3)+','+v.y.toFixed(3)+','+v.z.toFixed(3)+']';
     var sh=loadedObjs[w._po.oi].parts[w._pi].shape;if(sh)out+=',ms:"'+sh+'"';}}
@@ -3672,7 +3720,7 @@ function init(){
   // LIGHTING — day/night
   dnAmbient=new THREE.AmbientLight(0x8899aa,0.5);scene.add(dnAmbient);
   dnSun=new THREE.DirectionalLight(0xfff5e0,0.85);dnSun.position.set(20,35,15);dnSun.castShadow=true;
-  dnSun.shadow.mapSize.set(1024,1024);var sc=dnSun.shadow.camera;sc.left=-55;sc.right=55;sc.top=55;sc.bottom=-55;sc.far=120;
+  dnSun.shadow.mapSize.set(1024,1024);dnSun.shadow.bias=-0.0006;dnSun.shadow.normalBias=0.03;var sc=dnSun.shadow.camera;sc.left=-55;sc.right=55;sc.top=55;sc.bottom=-55;sc.far=120;
   scene.add(dnSun);
   dnHemi=new THREE.HemisphereLight(0x88bbff,0x445533,0.35);scene.add(dnHemi);
   // STARS
@@ -3757,9 +3805,9 @@ function init(){
         var po={oi:selIdx,x:sx,z:sz,gr:gr};
         if(loadedObjs[selIdx].action)po.action=JSON.parse(JSON.stringify(loadedObjs[selIdx].action));
         if(loadedObjs[selIdx].veh){po.veh=JSON.parse(JSON.stringify(loadedObjs[selIdx].veh));addCollision(po);} // zachowanie z assetu (np. beczka wybuchowa)
-        else{var hp=(loadedObjs[selIdx].parts||[]).map(function(pp,ii){return pp.hidden?ii:-1;}).filter(function(ii){return ii>=0;});
-          if(hp.length){ // strefa kolizji: sama strefa = kolizja całego obiektu, strefa w większym assecie = kolizja tej części
-            if(hp.length===loadedObjs[selIdx].parts.length)addCollision(po);
+        else{var hp=(loadedObjs[selIdx].parts||[]).map(function(pp,ii){return (pp.hidden||pp.col)?ii:-1;}).filter(function(ii){return ii>=0;});
+          if(hp.length){ // strefa kolizji: sama strefa = kolizja całego obiektu, strefa w większym assecie albo części "col" (budynki) = kolizja tych części
+            if(hp.length===loadedObjs[selIdx].parts.length&&!loadedObjs[selIdx].parts.some(function(pp){return pp.col;}))addCollision(po);
             else{po._partCols=po._partCols||{};hp.forEach(function(ii){var c=tabbyMakePartCol(po,ii);if(c){po._partCols[ii]=c;wCols.push(c);}});}
           }}
         placedObjs.push(po);
@@ -4744,6 +4792,8 @@ function collide(nx,nz){
     var ox=w.hw+CR-Math.abs(dx),oz=w.hd+CR-Math.abs(dz);
     if(ox>0&&oz>0){
         var baseY=w.y||0;var topY=baseY+(w.h||2);
+        if(w.ramp){var rt=((nx-w.x)*w.ramp[0]+(nz-w.z)*w.ramp[1])/(2*w.ramp[2])+0.5;topY=baseY+(w.h||2)*Math.max(0,Math.min(1,rt));} // schody = gładka pochylnia
+        if(baseY>charY+1.8)continue; // np. podłoga piętra nad głową
         if(topY-charY<=STEP&&charY>=baseY-0.1){floorY=Math.max(floorY,topY);}
         else if(charY<topY-STEP){if(ox<oz)nx+=(dx>0?ox:-ox);else nz+=(dz>0?oz:-oz);}
     }
@@ -4788,8 +4838,10 @@ function update(dt){
       var tgt=faceCam?camYaw:tgtAng;var ad=tgt-charAng;
       while(ad>Math.PI)ad-=Math.PI*2;while(ad<-Math.PI)ad+=Math.PI*2;
       charAng+=ad*(faceCam?0.3:TSM);
-      if(keys.sp&&onGr){velY=JF;onGr=false;}velY-=GR*dt;charY+=velY*dt;
-      if(charY<=floorY){charY=floorY;velY=0;onGr=true;}
+      var wasGr=onGr&&velY<=0;
+      if(keys.sp&&onGr){velY=JF;onGr=false;wasGr=false;}velY-=GR*dt;charY+=velY*dt;
+      if(charY<=floorY||(wasGr&&charY-floorY<0.45)){charY=floorY;velY=0;onGr=true;} // przyklejenie do podłoża przy schodzeniu
+      else if(charY-floorY>=0.45)onGr=false; // prawdziwe spadanie (np. z krawędzi)
       charGroup.position.set(charX,charY,charZ);
     }
     charGroup.rotation.y=charAng;animCh(dt);
@@ -4887,7 +4939,7 @@ function init(){
   // Lights
   scene.add(new THREE.AmbientLight(0x8899aa,0.5));
   var sun=new THREE.DirectionalLight(0xfff5e0,0.85);sun.position.set(20,35,15);sun.castShadow=true;
-  sun.shadow.mapSize.set(1024,1024);var sc=sun.shadow.camera;sc.left=-55;sc.right=55;sc.top=55;sc.bottom=-55;sc.far=120;
+  sun.shadow.mapSize.set(1024,1024);sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.03;var sc=sun.shadow.camera;sc.left=-55;sc.right=55;sc.top=55;sc.bottom=-55;sc.far=120;
   scene.add(sun);scene.add(new THREE.HemisphereLight(0x88bbff,0x445533,0.35));
 
   // Ground

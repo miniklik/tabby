@@ -1322,7 +1322,7 @@ function drvStep(dt,camOff,camMode){
 //   "side" (domyślnie): broń leży na boku — lufa +X, góra broni +Z (jak pistolet na stole). "upright": lufa -Z, góra +Y.
 //   role części: "muzzle" (wylot lufy — stąd leci strzał), "grip" (rękojeść — tu trzyma dłoń).
 var WPN={po:null,act:null,tps:null,fps:null,tpsH:null,fpsH:null,cd:0,kick:0,aimT:0,camT:0,lmb:false,rmb:false,
-  fx:[],holes:[],shells:[],light:null,readyOn:false,rdy:0,walkPitch:1.1,aimPitch:0.12,tr:1,lp:null,lq:null,fp:null,fq:null,swX:0,swY:0,bob:0,mv:0,spread:0,hm:0,flashT:0,fov0:0,pitch0:1.1,floor:0,touched:[],ready:false,ui:{}};
+  fx:[],holes:[],shells:[],mounts:[],tg:null,tgT:0,light:null,readyOn:false,rdy:0,walkPitch:1.1,aimPitch:0.12,tr:1,lp:null,lq:null,fp:null,fq:null,swX:0,swY:0,bob:0,mv:0,spread:0,hm:0,flashT:0,fov0:0,pitch0:1.1,floor:0,touched:[],ready:false,ui:{}};
 function wpnArmed(){return !!WPN.po;}
 function wpnSens(){return 1-WPN.aimT*0.45;}
 // gotowość: w widoku z 3. osoby tylko przy trzymaniu PPM, w widoku z oczu zawsze
@@ -1388,6 +1388,10 @@ function wpnEnsure(){
   WPN.shellGeo=new THREE.CylinderGeometry(0.012,0.012,0.042,6);
   WPN.shellMat=new THREE.MeshStandardMaterial({color:0xd9a93c,metalness:0.7,roughness:0.35});
   WPN.boxGeo=new THREE.BoxGeometry(1,1,1);
+  WPN.beam=new THREE.Mesh(WPN.boxGeo,new THREE.MeshBasicMaterial({color:0xff3030,transparent:true,opacity:0.75,blending:THREE.AdditiveBlending,depthWrite:false}));
+  WPN.beam.userData._wfx=true;WPN.beam.visible=false;scene.add(WPN.beam);
+  WPN.dot=new THREE.Sprite(new THREE.SpriteMaterial({map:drvGlow(),color:0xff2a2a,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  WPN.dot.userData._wfx=true;WPN.dot.visible=false;WPN.dot.scale.setScalar(0.16);scene.add(WPN.dot);
   WPN.trMat=new THREE.MeshBasicMaterial({color:0xffe6a0,transparent:true,opacity:0.75,blending:THREE.AdditiveBlending,depthWrite:false});
   WPN.spMat=new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
   var css='#wpn-ch{position:fixed;left:50%;top:50%;width:0;height:0;z-index:30;pointer-events:none;display:none;--g:6px}'+
@@ -1422,7 +1426,7 @@ function wpnEnsure(){
 
 // ---------- model broni w dłoni: kopia obiektu ze świata, obrócona do układu "prawo +X, góra +Y, przód -Z" ----------
 function wpnBuild(po,scale,hold,fps){
-  var V=THREE.Vector3,m=po.gr.clone(true),drop=[],muzzle=null,grip=null;
+  var V=THREE.Vector3,m=po.gr.clone(true),drop=[],muzzle=null,grip=null,laser=null;
   m.position.set(0,0,0);m.rotation.set(0,0,0);m.scale.set(1,1,1);m.visible=true;
   m.traverse(function(o){
     if(o===m)return;
@@ -1431,7 +1435,7 @@ function wpnBuild(po,scale,hold,fps){
       if(o.material&&o.material.wireframe){drop.push(o);return;}
       o.material=o.material.clone();if(o.material.emissive)o.material.emissive.setHex(0);
       o.visible=true;o.castShadow=!fps;o.receiveShadow=!fps;
-      var r=o.userData&&o.userData._role;if(r==='muzzle')muzzle=o;else if(r==='grip')grip=o;
+      var r=o.userData&&o.userData._role;if(r==='muzzle')muzzle=o;else if(r==='grip')grip=o;else if(r==='laser')laser=o;
     }
   });
   drop.forEach(function(o){if(o.parent)o.parent.remove(o);});
@@ -1452,7 +1456,7 @@ function wpnBuild(po,scale,hold,fps){
   var f2=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0xfff3cf,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));
   f1.visible=f2.visible=false;f1.userData._wfx=f2.userData._wfx=true;mz.add(f1);mz.add(f2);
   std.scale.setScalar(scale);
-  return {g:std,mz:mz,ej:ej,f1:f1,f2:f2,top:bb.max.y,sc:scale};
+  return {g:std,mz:mz,ej:ej,f1:f1,f2:f2,top:bb.max.y,sc:scale,laser:laser};
 }
 
 // ---------- podniesienie / odłożenie ----------
@@ -1480,6 +1484,52 @@ function wpnPickup(po){
   WPN.ui.n.textContent='🔫 '+wpnName(po);
   wpnSnd('pick');
 }
+function wpnRefreshHeld(){
+  var po=WPN.po;if(!po)return;var a=WPN.act||{};
+  [['tps','tpsH',drvNum(a.holdScale,1.1),false],['fps','fpsH',drvNum(a.fpsScale,0.75),true]].forEach(function(q){
+    var old=WPN[q[0]],h=WPN[q[1]];if(!old||!h)return;
+    h.remove(old.g);old.g.traverse(function(o){if((o.isMesh||o.isSprite)&&o.material)o.material.dispose();});
+    var nb=wpnBuild(po,q[2],a.hold,q[3]);h.add(nb.g);WPN[q[0]]=nb;
+    if(!q[3]&&camStyle==='fps')nb.g.traverse(function(o){if(o.isMesh)o.visible=false;});
+  });
+}
+// ---------- dodatki do broni (np. celownik laserowy): E przy dodatku, gdy trzymasz broń ----------
+function wpnHasLaser(po){var f=false;if(po&&po.gr)po.gr.traverse(function(o){if(o.userData&&o.userData._role==='laser')f=true;});return f;}
+function wpnAttachLabel(po){var a=po.action||{};if(!WPN.po)return 'Najpierw weź broń';if(wpnHasLaser(WPN.po))return 'Broń ma już '+(a.name||'dodatek').toLowerCase();return 'E — zamontuj '+(a.name||'dodatek');}
+function wpnAttach(po){
+  var W=WPN.po;if(!W||!po||!po.gr||wpnHasLaser(W))return;
+  var V=THREE.Vector3,wa=W.action||{},up=wa.hold==='upright'?new V(0,1,0):new V(0,0,1),fw=wa.hold==='upright'?new V(0,0,-1):new V(1,0,0),sd=new V().crossVectors(fw,up);
+  // bryły broni w jej własnym układzie (bez dodatków)
+  var parts=[],muz=null,grp=null;
+  W.gr.children.forEach(function(c){if(!c.isMesh||!c.geometry||(c.userData&&c.userData._mount))return;
+    if(!c.geometry.boundingBox)c.geometry.computeBoundingBox();var b=c.geometry.boundingBox.clone().applyMatrix4(c.matrix);parts.push({b:b,c:c});
+    var r=c.userData&&c.userData._role;if(r==='muzzle')muz=b;if(r==='grip')grp=b;});
+  if(!parts.length)return;
+  var all=new THREE.Box3();parts.forEach(function(p){all.union(p.b);});
+  function along(b,v){var c=new V();b.getCenter(c);return c.dot(v);}
+  function lo(b,v){return Math.min(b.min.dot(v)*(v.x+v.y+v.z>0?1:0)+b.max.dot(v)*(v.x+v.y+v.z<0?1:0),b.min.x*v.x+b.min.y*v.y+b.min.z*v.z);}
+  // punkt montażu: pod lufą, trochę za wylotem
+  var fMax=muz?along(muz,fw):Math.max(all.min.dot(fw),all.max.dot(fw));
+  // model dodatku: kopia jego brył, ułożona tak, by przód = lufa, góra = góra broni
+  var src=po.gr,mg=new THREE.Group(),inner=new THREE.Group();mg.userData._mount=true;
+  src.children.forEach(function(c){if(c.isMesh){var k=c.clone();k.material=c.material.clone();k.userData=JSON.parse(JSON.stringify(c.userData||{}));inner.add(k);}});
+  var ib=new THREE.Box3();inner.children.forEach(function(k){if(!k.geometry.boundingBox)k.geometry.computeBoundingBox();ib.union(k.geometry.boundingBox.clone().applyMatrix4(k.matrix));});
+  var ic=new V();ib.getCenter(ic);inner.position.set(-ic.x,-ib.max.y,-ic.z); // środek, górna krawędź w 0
+  var len=ib.max.x-ib.min.x,fC=fMax-len/2-0.03;
+  // spód broni nad punktem montażu (tylko bryły, które tam sięgają, bez rękojeści)
+  var uLow=Infinity;parts.forEach(function(p){if(p.b===grp)return;var a0=Math.min(p.b.min.dot(fw),p.b.max.dot(fw)),a1=Math.max(p.b.min.dot(fw),p.b.max.dot(fw));
+    if(a1<fC-len/2||a0>fC+len/2)return;var u0=Math.min(p.b.min.dot(up),p.b.max.dot(up));if(u0<uLow)uLow=u0;});
+  if(!isFinite(uLow))uLow=Math.min(all.min.dot(up),all.max.dot(up));
+  var ac=new V();all.getCenter(ac);var sC=ac.dot(sd);
+  mg.add(inner);mg.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(fw,up,sd));
+  mg.position.copy(fw.clone().multiplyScalar(fC)).addScaledVector(up,uLow+0.004).addScaledVector(sd,sC);
+  mg.traverse(function(o){if(o.isMesh){o.castShadow=true;}});
+  W.gr.add(mg);
+  WPN.mounts.push({gr:W.gr,mg:mg,src:po});
+  if(WPN.touched.indexOf(po)<0){po.gr.userData._wpnHome={p:po.gr.position.clone(),r:po.gr.rotation.clone()};WPN.touched.push(po);}
+  po.gr.visible=false;
+  wpnRefreshHeld();wpnSnd('pick');
+}
 function wpnUnmount(){
   if(!WPN.po)return;
   [WPN.tpsH,WPN.fpsH].forEach(function(h){if(!h)return;if(h.parent)h.parent.remove(h);h.traverse(function(o){if((o.isMesh||o.isSprite)&&o.material)o.material.dispose();if(o.userData&&o.userData._own&&o.geometry)o.geometry.dispose();});});
@@ -1489,6 +1539,7 @@ function wpnUnmount(){
   if(WPN.fov0){cam.fov=WPN.fov0;cam.updateProjectionMatrix();}
   if(WPN.readyOn&&camStyle!=='fps')camPitch=WPN.walkPitch;
   WPN.readyOn=false;WPN.rdy=0;
+  if(WPN.beam){WPN.beam.visible=false;WPN.dot.visible=false;}
   WPN.po=null;WPN.act=null;WPN.lmb=WPN.rmb=false;WPN.aimT=0;WPN.camT=0;WPN.kick=0;WPN.flashT=0;
   if(WPN.light)WPN.light.intensity=0;
   wpnHud(false);
@@ -1508,6 +1559,7 @@ function wpnDrop(quiet){
 // powrót broni i śladów po strzałach do stanu z edytora (Odbuduj zniszczone / eksport)
 function wpnRestoreAll(){
   if(WPN.po)wpnUnmount();
+  WPN.mounts.forEach(function(m){if(m.mg.parent)m.mg.parent.remove(m.mg);m.mg.traverse(function(o){if(o.isMesh&&o.material)o.material.dispose();});});WPN.mounts=[];
   WPN.touched.forEach(function(po){var h=po.gr&&po.gr.userData._wpnHome;if(h){po.gr.position.copy(h.p);po.gr.rotation.copy(h.r);delete po.gr.userData._wpnHome;}if(po.gr)po.gr.visible=true;});
   WPN.touched=[];
   WPN.fx.forEach(function(f){if(f.type!=='dr'&&f.m.parent)f.m.parent.remove(f.m);if(f.own&&f.m.material)f.m.material.dispose();});WPN.fx=[];
@@ -1537,7 +1589,7 @@ function wpnFire(){
   cam.updateMatrixWorld(true);if(charGroup)charGroup.updateMatrixWorld(true);
   var mz=new V();B.mz.getWorldPosition(mz);
   var o=new V(),d=new V();cam.getWorldPosition(o);cam.getWorldDirection(d);
-  var spr=(0.003+(isMov?(isRun?0.03:0.014):0)+(onGr?0:0.03)+WPN.spread*0.0012)*(1-WPN.aimT*0.75);
+  var spr=(0.003+(isMov?(isRun?0.03:0.014):0)+(onGr?0:0.03)+WPN.spread*0.0012)*(1-WPN.aimT*0.75)*(B.laser?0.5:1);
   d.x+=(Math.random()-0.5)*spr;d.y+=(Math.random()-0.5)*spr;d.z+=(Math.random()-0.5)*spr;d.normalize();
   var list=wpnTargets(),rc=WPN.rc;
   // 1) promień z celownika wyznacza punkt celowania (pomija to, co jest między kamerą a bronią)
@@ -1668,7 +1720,7 @@ function wpnUpdate(dt,offs){
   if(!WPN.po)return;
   var drv=!!DRV.t,fps=camStyle==='fps';
   WPN.tpsH.visible=!drv;WPN.fpsH.visible=fps&&!drv;
-  if(drv){wpnHud(false);return;}
+  if(drv){wpnHud(false);if(WPN.beam){WPN.beam.visible=false;WPN.dot.visible=false;}return;}
   WPN.kick*=Math.exp(-dt*11);WPN.spread*=Math.exp(-dt*8);
   WPN.aimT+=(((WPN.rmb&&pLock)?1:0)-WPN.aimT)*Math.min(1,dt*12);
   WPN.mv+=((isMov?1:0)-WPN.mv)*Math.min(1,dt*8);
@@ -1720,9 +1772,25 @@ function wpnUpdate(dt,offs){
     h.position.x+=(tx-h.position.x)*lf;h.position.y+=(ty-h.position.y)*Math.min(1,dt*(h.position.y<-0.3?8:18));h.position.z+=(tz-h.position.z)*lf;
     h.rotation.set(k*0.22+WPN.swY*1.1*(1-a*0.7),WPN.swX*1.1*(1-a*0.7),bbx*1.5);
   }
+  wpnLaser(fps);
   var tf=WPN.fov0*(1-WPN.aimT*(fps?0.3:0.1));
   if(Math.abs(cam.fov-tf)>0.01){cam.fov=tf;cam.updateProjectionMatrix();}
   wpnHud(true);
+}
+// czerwony promień z soczewki do miejsca, w które poleci kula (tylko w gotowości)
+function wpnLaser(fps){
+  var B=fps?WPN.fps:WPN.tps,on=!!(B&&B.laser&&(fps||WPN.readyOn)&&pLock);
+  if(!on){WPN.beam.visible=false;WPN.dot.visible=false;return;}
+  var now=(DRV.time||0);if(!WPN.tg||now-WPN.tgT>0.4||now<WPN.tgT){WPN.tg=wpnTargets();WPN.tgT=now;}
+  cam.updateMatrixWorld(true);if(charGroup)charGroup.updateMatrixWorld(true);
+  var V=THREE.Vector3,o=new V(),d=new V(),lp=new V();cam.getWorldPosition(o);cam.getWorldDirection(d);B.laser.getWorldPosition(lp);
+  var rc=WPN.rc,range=drvNum(WPN.act&&WPN.act.range,90);rc.set(o,d);rc.near=0;rc.far=range;
+  var t0=Math.max(0,lp.clone().sub(o).dot(d)),hs=rc.intersectObjects(WPN.tg,false),hp=null;
+  for(var i=0;i<hs.length;i++){if(hs[i].distance>t0-0.05&&hs[i].object.visible){hp=hs[i].point;break;}}
+  var end=hp||o.clone().addScaledVector(d,range);
+  var L=lp.distanceTo(end);if(L<0.05){WPN.beam.visible=false;WPN.dot.visible=false;return;}
+  WPN.beam.visible=true;WPN.beam.position.copy(lp).lerp(end,0.5);WPN.beam.scale.set(0.012,0.012,L);WPN.beam.lookAt(end);
+  WPN.dot.visible=!!hp;if(hp){WPN.dot.position.copy(hp).addScaledVector(d,-0.04);WPN.dot.scale.setScalar(0.16+Math.min(0.3,L*0.006));}
 }
 function wpnFxTick(dt){
   if(WPN.light&&WPN.light.intensity>0){WPN.light.intensity*=Math.exp(-dt*35);if(WPN.light.intensity<0.05)WPN.light.intensity=0;}
@@ -1896,6 +1964,7 @@ function update(dt){
       else if(a.type==='drive')label='E — jedz';
       else if(a.type==='fuse')label=placedObjs[nearIdx].gr.userData._fuse?'Uciekaj!':'E — odpal';
       else if(a.type==='weapon')label=(WPN.po?'E — zamień na ':'E — podnieś ')+wpnName(placedObjs[nearIdx]);
+      else if(a.type==='attach')label=wpnAttachLabel(placedObjs[nearIdx]);
       document.getElementById('interact-prompt').textContent=label;
     }
   }else{
@@ -1915,6 +1984,9 @@ function triggerAction(){
       break;
     case'weapon':
       wpnPickup(po);
+      break;
+    case'attach':
+      wpnAttach(po);
       break;
     case'text':
       document.getElementById('tp-text').textContent=a.message||'...';
@@ -3256,6 +3328,8 @@ var AI_PROMPT = [
 '   UKLAD: bron lezy na boku — lufa w kierunku +X, gora broni (celownik) w kierunku +Z, grubosc w osi Y (od 0 w gore).',
 '   ROLE: "role": "muzzle" na czesci przy wylocie lufy (stad leci strzal), "role": "grip" na rekojesci (tu trzyma dlon).',
 '   Trafiony obiekt reaguje wedlug swojego "veh": explode — wybucha, destroy — rozpada sie, knock — odlatuje.',
+'   Dodatek do broni: "action": {"type": "attach", "kind": "laser", "name": "Celownik laserowy"} — gracz z bronia w reku montuje go klawiszem E.',
+'   Dodatek stoi prosto: przod w +X, gora w +Y; czesc z soczewka ma "role": "laser" (stad leci czerwony promien przy celowaniu).',
 '',
 '   Czesc z "col": true jest widoczna i ma wlasna kolizje (sciany, podlogi i schody budynkow z Tabby budynki).',
 '   Czesc z "role": "bud" to czesc budynku: gdy ludzik jest w srodku, pietra nad jego glowa robia sie przezroczyste; "role": "roof" (dach) znika calkiem.',
@@ -4730,6 +4804,7 @@ function triggerAction(pa){
   else if(a.type==='drive'){enterVehicle(pa);}
   else if(a.type==='fuse'){drvFuseStart(pa.gr);}
   else if(a.type==='weapon'){wpnPickup(pa);}
+  else if(a.type==='attach'){wpnAttach(pa);}
 }
 function checkInteract(){
   if(driveTarget)return;
@@ -4741,7 +4816,7 @@ function checkInteract(){
   }
   var ip=document.getElementById('interact-prompt');
   if(!ip.dataset.def)ip.dataset.def=ip.textContent;
-  if(nearIdx>=0){var na=placedActions[nearIdx];ip.textContent=na.action.type==='fuse'?(na.gr.userData._fuse?'Uciekaj!':'E — odpal'):(na.action.type==='weapon'?(WPN.po?'E — zamień na ':'E — podnieś ')+wpnName(na):ip.dataset.def);}
+  if(nearIdx>=0){var na=placedActions[nearIdx];ip.textContent=na.action.type==='fuse'?(na.gr.userData._fuse?'Uciekaj!':'E — odpal'):(na.action.type==='weapon'?(WPN.po?'E — zamień na ':'E — podnieś ')+wpnName(na):(na.action.type==='attach'?wpnAttachLabel(na):ip.dataset.def));}
   if(nearIdx>=0&&!textPopupOpen){ip.style.display='block';}else if(!textPopupOpen){ip.style.display='none';}
 }
 

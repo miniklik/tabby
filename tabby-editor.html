@@ -2159,11 +2159,13 @@ function drnLights(on){
   if(!u._nl){ // tworzone raz, przy pierwszym nocnym locie
     var L={lamps:[],pool:null},tex=drvGlow();
     DRN.props.forEach(function(p){
-      var bulb=new THREE.Mesh(new THREE.SphereGeometry(0.028,8,6),new THREE.MeshBasicMaterial({color:0xfff4d6}));
+      // kolory jak w samolotach: przód-lewy czerwony, przód-prawy zielony, tył niebieski (przód drona = -Z)
+      var col=p.position.z<0?(p.position.x<0?0xff2a2a:0x2aff5a):0x3a8cff;
+      var bulb=new THREE.Mesh(new THREE.SphereGeometry(0.028,8,6),new THREE.MeshBasicMaterial({color:col}));
       bulb.position.set(p.position.x,0.19,p.position.z);bulb.userData._wfx=true;g.add(bulb);
-      var gl=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0xffe7b0,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));
+      var gl=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));
       gl.position.copy(bulb.position);gl.userData._wfx=true;gl.scale.setScalar(0.4);g.add(gl);L.lamps.push({b:bulb,g:gl});});
-    var pool=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tex,color:0xfff0c8,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));
+    var pool=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tex,color:0xc8dcff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0}));
     pool.rotation.x=-Math.PI/2;pool.userData._wfx=true;scene.add(pool);L.pool=pool;u._nl=L;
   }
   var L2=u._nl;

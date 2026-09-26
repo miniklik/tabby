@@ -224,6 +224,23 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <input type="range" id="dn-fog-slider" min="0" max="100" step="1" value="0" style="flex:1;accent-color:#9fb4c8;cursor:pointer">
         <span id="dn-fog-label" style="font-family:monospace;font-size:11px;color:#aaa;min-width:32px;text-align:right">0%</span>
       </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
+        <span style="font-size:11px;color:#888;flex:1">Pora roku:</span>
+        <button id="dn-sum" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(210,153,34,.35);color:#fff;font-size:11px;cursor:pointer">☀ Lato</button>
+        <button id="dn-win" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;font-size:11px;cursor:pointer">❄ Zima</button>
+      </div>
+      <div id="dn-winrow" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <span style="font-size:11px;color:#888">❄ Opady:</span>
+          <input type="range" id="dn-snow-slider" min="0" max="100" step="1" value="50" style="flex:1;accent-color:#bcd3ea;cursor:pointer">
+          <span id="dn-snow-label" style="font-family:monospace;font-size:11px;color:#aaa;min-width:32px;text-align:right">50%</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+          <span style="font-size:11px;color:#888">Śnieg:</span>
+          <input type="range" id="dn-snowh-slider" min="0" max="50" step="1" value="20" style="flex:1;accent-color:#bcd3ea;cursor:pointer">
+          <span id="dn-snowh-label" style="font-family:monospace;font-size:11px;color:#aaa;min-width:40px;text-align:right">20 cm</span>
+        </div>
+      </div>
 </div>
 <button id="rebuild-btn" style="display:none;position:fixed;bottom:44px;left:50%;transform:translateX(-50%);z-index:35;background:rgba(63,185,80,0.95);color:#06200d;border:none;padding:10px 20px;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;font-family:sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.35)">♻ Odbuduj zniszczone</button>
 <style>
@@ -1783,7 +1800,7 @@ function wpnHud(on){
 }
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){
-  drnTick(dt);fogTick(dt);
+  drnTick(dt);fogTick(dt);winTick(dt);
   WPN.cd=Math.max(0,WPN.cd-dt);
   if(onGr)WPN.floor=charY;
   wpnFxTick(dt);
@@ -2246,12 +2263,13 @@ function fogTick(dt){
   if(!scene.background.equals(F.last))F.base.copy(scene.background);
   if(!scene.fog.color.equals(F.flast))F.fbase.copy(scene.fog.color);
   var lum=Math.max(F.base.r,F.base.g,F.base.b),milk=new THREE.Color(0.86,0.88,0.9).multiplyScalar(Math.min(1,0.25+lum*1.15));
-  var fc=F.fbase.clone().lerp(milk,Math.min(1,v*0.85));
+  var wv=(typeof TBWIN!=='undefined'&&TBWIN.on)?0.3+TBWIN.fall*0.25:0;
+  var fc=F.fbase.clone().lerp(milk,Math.min(1,v*0.85+wv));
   scene.fog.color.copy(fc);F.flast.copy(fc);
-  scene.fog.near=0.008+0.018*v;          // gęstość tła
+  scene.fog.near=0.008+0.018*v+((typeof TBWIN!=='undefined'&&TBWIN.on)?0.012*TBWIN.fall:0);          // gęstość tła (+ zadymka zimą)
   scene.fog.far=0.26*Math.pow(v,1.4);    // gęstość przy ziemi
   // niebo: im głębiej w mgle kamera, tym bardziej mleczne
-  var cy=cam?cam.position.y:2,k=Math.min(1,v*1.15*Math.exp(-Math.max(0,cy)/14));
+  var cy=cam?cam.position.y:2,k=Math.min(1,v*1.15*Math.exp(-Math.max(0,cy)/14)+wv*0.55); // zimą niebo bardziej szare
   var bg=F.base.clone().lerp(fc,k);scene.background.copy(bg);F.last.copy(bg);
   fogPuffs(dt,fc);fogHalos(dt,lum);
 }
@@ -2288,6 +2306,127 @@ function fogHalos(dt,lum){
   F.halos.forEach(function(h){var on=h.l.visible&&h.l.intensity>0.05;
     h.s.material.opacity=on?Math.min(0.85,F.v*0.9*(0.06+night)*Math.min(1,h.l.intensity)):0; // w dzień prawie niewidoczna, w nocy pełna
     var sc=2.2+F.v*4;h.s.scale.set(sc,sc,1);});
+}
+// ===== ❄ ZIMA: przełącznik Lato/Zima w panelu pory dnia • białe wierzchy wszystkiego • warstwa śniegu (0–50 cm) • opady • ślady butów i kolein =====
+var TBWIN={on:false,fall:0.5,depth:0.2,life:60,layer:null,holes:null,holeT:0,flakes:null,fv:null,tracks:[],stepAcc:0,foot:0,lastX:null,lastZ:null,vLast:null,vAcc:0,t:0,shaderOn:false};
+var WIN_SNOW='#if defined( STANDARD ) && defined( TB_SNOW )\n'+
+  '\tvec3 snN = normalize( ( vec4( normal, 0.0 ) * viewMatrix ).xyz );\n'+           // normalna w świecie
+  '\tfloat snK = smoothstep( 0.42, 0.78, snN.y );\n'+                                // tylko to, co patrzy w górę
+  '\tvec3 snL = ( reflectedLight.directDiffuse + reflectedLight.indirectDiffuse ) / max( diffuseColor.rgb, vec3( 0.06 ) );\n'+
+  '\tfloat snB = clamp( dot( snL, vec3( 0.3333 ) ), 0.0, 1.6 );\n'+                  // śnieg oświetlony jak reszta sceny (w nocy ciemny)
+  '\tgl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( 0.92, 0.95, 1.0 ) * snB, snK * 0.93 );\n'+
+  '#endif\n';
+// kod śniegu siedzi w cieniowaniu na stałe, a włącza go znacznik TB_SNOW w materiale (wtedy three.js na pewno przebuduje cieniowanie)
+THREE.ShaderChunk.fog_fragment=WIN_SNOW+THREE.ShaderChunk.fog_fragment;
+function winMat(m,on){if(!m||!m.isMaterial)return;var has=!!(m.defines&&('TB_SNOW' in m.defines));if(has===on)return;
+  if(on){m.defines=m.defines||{};m.defines.TB_SNOW='';}else delete m.defines.TB_SNOW;m.needsUpdate=true;}
+function winShader(on){
+  if(TBWIN.shaderOn===on&&!on)return;TBWIN.shaderOn=on;
+  if(typeof scene!=='undefined'&&scene)scene.traverse(function(o){if(!o.material)return;
+    var ok=on&&!(o.userData&&o.userData._role==='bud'); // wnętrza budynków bez śniegu (dach — tak)
+    if(ok)for(var p=o;p;p=p.parent){if(p===charGroup||p===cam){ok=false;break;}} // ludzik i broń w rękach — bez śniegu
+    (Array.isArray(o.material)?o.material:[o.material]).forEach(function(m){winMat(m,ok);});});
+}
+function winSet(on,fall,depth){
+  TBWIN.on=!!on;if(fall!==undefined)TBWIN.fall=Math.max(0,Math.min(1,+fall||0));if(depth!==undefined)TBWIN.depth=Math.max(0,Math.min(0.5,+depth||0));
+  winShader(TBWIN.on);
+  if(!TBWIN.on){if(TBWIN.layer)TBWIN.layer.visible=false;if(TBWIN.flakes)TBWIN.flakes.visible=false;winClearTracks();}
+}
+function winSlow(){ // wolniej w głębokim śniegu (tylko na gruncie, nie w budynkach i na podestach)
+  if(!TBWIN.on||TBWIN.depth<0.02)return 1;
+  if(typeof charY!=='undefined'&&charY>0.05)return 1;
+  return 1-TBWIN.depth*0.9;
+}
+// warstwa śniegu: płaszczyzna na wysokości śniegu, z "dziurami" pod budynkami (żeby śnieg nie wchodził do środka)
+function winLayer(){
+  if(TBWIN.layer)return TBWIN.layer;
+  var mat=new THREE.MeshStandardMaterial({color:0xf2f5fa,roughness:0.95});
+  var holes=[];for(var i=0;i<16;i++)holes.push(new THREE.Vector4(1e6,1e6,-1e6,-1e6));
+  TBWIN.holes={value:holes};TBWIN.holeN={value:0};
+  mat.onBeforeCompile=function(sh){
+    sh.uniforms.snHoles=TBWIN.holes;sh.uniforms.snHoleN=TBWIN.holeN;
+    sh.vertexShader='varying vec3 vSnWP;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n\tvSnWP = ( modelMatrix * vec4( position, 1.0 ) ).xyz;');
+    sh.fragmentShader='varying vec3 vSnWP;\nuniform vec4 snHoles[16];\nuniform int snHoleN;\n'+sh.fragmentShader.replace('void main() {','void main() {\n\tfor ( int i = 0; i < 16; i ++ ) { if ( i >= snHoleN ) break; vec4 h = snHoles[ i ]; if ( vSnWP.x > h.x && vSnWP.x < h.z && vSnWP.z > h.y && vSnWP.z < h.w ) discard; }');
+  };
+  var m=new THREE.Mesh(new THREE.PlaneGeometry(400,400,1,1),mat);m.rotation.x=-Math.PI/2;m.receiveShadow=true;m.userData._snow=true;
+  scene.add(m);TBWIN.layer=m;return m;
+}
+function winHoles(dt){
+  TBWIN.holeT-=dt;if(TBWIN.holeT>0)return;TBWIN.holeT=2;
+  var boxes=[],idx=new Map();
+  scene.traverse(function(o){if(!o.isMesh||!o.userData||(o.userData._role!=='bud'&&o.userData._role!=='roof'))return;
+    var g=o;while(g.parent&&g.parent!==scene)g=g.parent;if(idx.has(g))return;idx.set(g,1);
+    var b=new THREE.Box3().setFromObject(g);boxes.push(new THREE.Vector4(b.min.x+0.2,b.min.z+0.2,b.max.x-0.2,b.max.z-0.2));});
+  var H=TBWIN.holes.value;for(var i=0;i<16;i++){if(i<boxes.length)H[i].copy(boxes[i]);else H[i].set(1e6,1e6,-1e6,-1e6);}
+  TBWIN.holeN.value=Math.min(16,boxes.length);
+}
+// padający śnieg wokół kamery
+function winFlakes(dt){
+  var N=4000;
+  if(!TBWIN.flakes){
+    var g=new THREE.BufferGeometry(),p=new Float32Array(N*3),v=new Float32Array(N*2);
+    for(var i=0;i<N;i++){p[i*3]=(Math.random()-0.5)*60;p[i*3+1]=Math.random()*28;p[i*3+2]=(Math.random()-0.5)*60;v[i*2]=Math.random()*6.28;v[i*2+1]=0.7+Math.random()*0.6;}
+    g.setAttribute('position',new THREE.BufferAttribute(p,3));
+    var m=new THREE.PointsMaterial({color:0xffffff,size:0.13,map:drvGlow(),transparent:true,opacity:0.9,depthWrite:false});
+    TBWIN.flakes=new THREE.Points(g,m);TBWIN.flakes.frustumCulled=false;TBWIN.flakes.userData._wfx=true;TBWIN.fv=v;scene.add(TBWIN.flakes);
+  }
+  var f=TBWIN.flakes,n=Math.round(N*TBWIN.fall);f.visible=n>0;f.geometry.setDrawRange(0,n);if(!n)return;
+  var P=f.geometry.attributes.position.array,V=TBWIN.fv,cx=cam.position.x,cy=cam.position.y,cz=cam.position.z,t=TBWIN.t;
+  var wind=0.6+TBWIN.fall*2.2,fallSp=1.1+TBWIN.fall*1.4;
+  for(var i=0;i<n;i++){var k=i*3,ph=V[i*2],s=V[i*2+1];
+    P[k]+=(Math.sin(t*0.9+ph)*0.35+wind*0.6)*dt*s;P[k+1]-=fallSp*s*dt;P[k+2]+=Math.cos(t*0.7+ph)*0.3*dt*s;
+    // zawijanie wokół kamery
+    var dx=P[k]-cx,dz=P[k+2]-cz,dy=P[k+1]-cy;
+    if(dy<-8||P[k+1]<TBWIN.depth){P[k+1]=cy+14+Math.random()*6;}
+    if(dx>30)P[k]-=60;else if(dx<-30)P[k]+=60;if(dz>30)P[k+2]-=60;else if(dz<-30)P[k+2]+=60;}
+  f.geometry.attributes.position.needsUpdate=true;
+  f.material.size=0.1+TBWIN.fall*0.08;
+}
+// ślady: buty ludzika i koleiny pojazdów, powoli zasypywane
+function winMark(x,z,ang,w,l,op){
+  var d=TBWIN.depth,y=d>0.02?d+0.004:0.012;
+  if(!TBWIN.markGeo)TBWIN.markGeo=new THREE.PlaneGeometry(1,1);
+  var m=new THREE.Mesh(TBWIN.markGeo,new THREE.MeshBasicMaterial({color:0x8e9aae,transparent:true,opacity:op,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
+  m.userData._wfx=true;m.rotation.set(-Math.PI/2,0,ang);m.position.set(x,y,z);m.scale.set(w,l,1);scene.add(m);
+  TBWIN.tracks.push({m:m,age:0,op:op});
+  if(TBWIN.tracks.length>420){var o=TBWIN.tracks.shift();winKill(o);}
+}
+function winKill(o){if(o.m.parent)o.m.parent.remove(o.m);o.m.material.dispose();}
+function winClearTracks(){TBWIN.tracks.forEach(winKill);TBWIN.tracks=[];}
+function winTracks(dt){
+  var life=TBWIN.life/(1+TBWIN.fall*1.5),dop=0.3+TBWIN.depth*0.9;
+  // ludzik: odciski na zmianę lewy/prawy
+  var onSnow=typeof charX!=='undefined'&&onGr&&charY<0.05&&!DRV.t&&!drnFlying();
+  if(onSnow&&TBWIN.lastX!==null){
+    var dx=charX-TBWIN.lastX,dz=charZ-TBWIN.lastZ,d=Math.sqrt(dx*dx+dz*dz);
+    if(d<2){TBWIN.stepAcc+=d;var stride=isRun?1.05:0.62;
+      if(TBWIN.stepAcc>=stride){TBWIN.stepAcc=0;TBWIN.foot=1-TBWIN.foot;
+        var s=TBWIN.foot?1:-1,rx=Math.cos(charAng)*0.13*s,rz=-Math.sin(charAng)*0.13*s;
+        winMark(charX+rx,charZ+rz,charAng,0.17,0.3,Math.min(0.75,dop));}}
+  }
+  if(typeof charX!=='undefined'){TBWIN.lastX=charX;TBWIN.lastZ=charZ;}
+  // pojazd: dwa pasy kolein (czołg — szerokie gąsienice)
+  if(DRV.t&&DRV.t.gr){var g=DRV.t.gr,p=g.position,yaw=g.rotation.y;
+    if(p.y<0.3){
+      if(TBWIN.vLast){var ddx=p.x-TBWIN.vLast.x,ddz=p.z-TBWIN.vLast.z,dd=Math.sqrt(ddx*ddx+ddz*ddz);TBWIN.vAcc+=dd<3?dd:0;}
+      if(TBWIN.vAcc>=0.4){TBWIN.vAcc=0;var hw=Math.max(0.4,(DRV.hw||1)*0.78),tw=Math.min(0.9,Math.max(0.28,(DRV.hw||1)*0.28));
+        var c=Math.cos(yaw),s2=Math.sin(yaw),cxl=DRV.cx||0,czl=DRV.cz||0;
+        [-1,1].forEach(function(side){var lx=cxl+side*hw,lz=czl;var wx=p.x+lx*c+lz*s2,wz=p.z-lx*s2+lz*c;winMark(wx,wz,yaw,tw,0.5,Math.min(0.8,dop+0.1));});}
+    }
+    TBWIN.vLast=p.clone();
+  }else TBWIN.vLast=null;
+  // zasypywanie
+  for(var i=TBWIN.tracks.length-1;i>=0;i--){var o=TBWIN.tracks[i];o.age+=dt;var k=1-o.age/life;
+    if(k<=0){winKill(o);TBWIN.tracks.splice(i,1);continue;}o.m.material.opacity=o.op*Math.min(1,k*1.6);}
+}
+function winTick(dt){
+  if(!TBWIN.on)return;
+  if(!scene)return;
+  TBWIN.t+=dt;TBWIN.matT=(TBWIN.matT||0)-dt;if(TBWIN.matT<=0){TBWIN.matT=2;TBWIN.shaderOn=false;winShader(true);}
+  var L=winLayer();L.visible=TBWIN.depth>0.01;L.position.y=TBWIN.depth;
+  winHoles(dt);winFlakes(dt);winTracks(dt);
+  // lżejsza jazda w głębokim śniegu
+  if(DRV.t&&TBWIN.depth>0.05&&DRV.speed)DRV.speed*=Math.max(0,1-TBWIN.depth*0.5*dt);
 }
 //@@WEAPON_CORE_END
 
@@ -2380,7 +2519,7 @@ function update(dt){
       if(keys.a){mx-=Math.cos(camYaw);mz+=Math.sin(camYaw);}
       if(keys.d){mx+=Math.cos(camYaw);mz-=Math.sin(camYaw);}
       var len=Math.sqrt(mx*mx+mz*mz);isMov=len>0.01;isRun=keys.sh&&isMov;
-      var sp=(isRun?RSP:WSP)*(WPN.po?1-WPN.aimT*0.3:1);
+      var sp=(isRun?RSP:WSP)*(WPN.po?1-WPN.aimT*0.3:1)*winSlow();
       if(isMov){mx/=len;mz/=len;tgtAng=Math.atan2(-mx,-mz);
         var res=collide(charX+mx*sp*dt,charZ+mz*sp*dt);charX=res[0];charZ=res[1];var floorY=res[2];}else{var fres=collide(charX,charZ);var floorY=fres[2];}
       var faceCam=camStyle==='fps'||wpnReady(); // z bronią postać zawsze patrzy tam, gdzie celownik
@@ -3543,6 +3682,7 @@ function doExportHTML(opts){
   var wCalls=[];wCols.forEach(function(w){if(!w._poRef)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(wCalls.length>0)inject+='// sciany kolizji\n'+wCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
+  inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
   inject+='\n// day-night cycle (ustawienia z edytora)\nvar dnTime='+(+dnTime).toFixed(2)+',dnSpeed='+(+dnSpeed)+',dnPaused='+(dnPaused?'true':'false')+',dnDirty=true;\nvar dnAmbient,dnSun,dnHemi,dnStars;\nvar dnC={night:{sky:new THREE.Color(0x0a0e1a),fog:new THREE.Color(0x0a0e1a),amb:new THREE.Color(0x112244),sun:0,hemi:0.05,gnd:new THREE.Color(0x1a2211)},dawn:{sky:new THREE.Color(0xd4734a),fog:new THREE.Color(0xc47755),amb:new THREE.Color(0x886655),sun:0.4,hemi:0.2,gnd:new THREE.Color(0x445533)},day:{sky:new THREE.Color(0x6699cc),fog:new THREE.Color(0x667799),amb:new THREE.Color(0x8899aa),sun:0.85,hemi:0.35,gnd:new THREE.Color(0x556644)},dusk:{sky:new THREE.Color(0xcc6644),fog:new THREE.Color(0xaa6655),amb:new THREE.Color(0x775544),sun:0.3,hemi:0.15,gnd:new THREE.Color(0x443322)}};\nfunction lerpC(a,b,t){return a.clone().lerp(b,t);}\n(function(){var ls=scene.children;for(var i=0;i<ls.length;i++){if(ls[i].isAmbientLight)dnAmbient=ls[i];if(ls[i].isDirectionalLight)dnSun=ls[i];if(ls[i].isHemisphereLight)dnHemi=ls[i];}})();\nvar stG=new THREE.BufferGeometry();var stV=[];for(var si=0;si<600;si++){var th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*0.8+0.2),r=90;stV.push(Math.sin(ph)*Math.cos(th)*r,Math.cos(ph)*r,Math.sin(ph)*Math.sin(th)*r);}stG.setAttribute(\'position\',new THREE.Float32BufferAttribute(stV,3));dnStars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.4,transparent:true,opacity:0}));scene.add(dnStars);\nfunction dnUpdate(dt){if(dnPaused){if(!dnDirty)return;dnDirty=false;}else{dnTime+=dt*dnSpeed;if(dnTime>=24)dnTime-=24;}var t=dnTime,s,f,a,si,hi,so,g,sy,sx,d=dnC;if(t>=22||t<4){s=d.night.sky;f=d.night.fog;a=d.night.amb;si=0;hi=d.night.hemi;so=0.9;g=d.night.gnd;sy=-10;sx=0;}else if(t<7){var p=(t-4)/3;s=lerpC(d.night.sky,d.dawn.sky,p);f=lerpC(d.night.fog,d.dawn.fog,p);a=lerpC(d.night.amb,d.dawn.amb,p);si=p*d.dawn.sun;hi=d.night.hemi+(d.dawn.hemi-d.night.hemi)*p;so=0.9*(1-p);g=lerpC(d.night.gnd,d.dawn.gnd,p);sy=p*15;sx=-20+p*10;}else if(t<10){var p=(t-7)/3;s=lerpC(d.dawn.sky,d.day.sky,p);f=lerpC(d.dawn.fog,d.day.fog,p);a=lerpC(d.dawn.amb,d.day.amb,p);si=d.dawn.sun+(d.day.sun-d.dawn.sun)*p;hi=d.dawn.hemi+(d.day.hemi-d.dawn.hemi)*p;so=0;g=lerpC(d.dawn.gnd,d.day.gnd,p);sy=15+p*20;sx=-10+p*30;}else if(t<17){s=d.day.sky;f=d.day.fog;a=d.day.amb;si=d.day.sun;hi=d.day.hemi;so=0;g=d.day.gnd;sy=35;sx=20-(t-10)/7*10;}else if(t<20){var p=(t-17)/3;s=lerpC(d.day.sky,d.dusk.sky,p);f=lerpC(d.day.fog,d.dusk.fog,p);a=lerpC(d.day.amb,d.dusk.amb,p);si=d.day.sun+(d.dusk.sun-d.day.sun)*p;hi=d.day.hemi+(d.dusk.hemi-d.day.hemi)*p;so=0;g=lerpC(d.day.gnd,d.dusk.gnd,p);sy=35-p*20;sx=10+p*10;}else{var p=(t-20)/2;s=lerpC(d.dusk.sky,d.night.sky,p);f=lerpC(d.dusk.fog,d.night.fog,p);a=lerpC(d.dusk.amb,d.night.amb,p);si=d.dusk.sun*(1-p);hi=d.dusk.hemi+(d.night.hemi-d.dusk.hemi)*p;so=p*0.9;g=lerpC(d.dusk.gnd,d.night.gnd,p);sy=15-p*25;sx=20;}scene.background.copy(s);scene.fog.color.copy(f);if(dnAmbient)dnAmbient.color.copy(a);if(dnSun){dnSun.intensity=si;dnSun.position.y=sy;dnSun.position.x=sx;}if(dnHemi)dnHemi.intensity=hi;if(dnStars)dnStars.material.opacity=so;var gm=scene.children.find(function(c){return c.isMesh&&c.geometry&&c.geometry.type===\'PlaneGeometry\'&&c.rotation.x<-1;});if(gm)gm.material.color.copy(g);}\n';
   inject+='dnTick=dnUpdate;\n';
   inject+='camOff.aim='+JSON.stringify(edCamOff.aim||{y:0,angle:0,dist:0})+';\n';
@@ -3655,6 +3795,7 @@ function doExportZIP(opts){
   var zWCalls=[];wCols.forEach(function(w){if(!w._poRef)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(zWCalls.length>0)inject+='// sciany kolizji\n'+zWCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
+  inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
   inject+='\n// day-night cycle (ustawienia z edytora)\nvar dnTime='+(+dnTime).toFixed(2)+',dnSpeed='+(+dnSpeed)+',dnPaused='+(dnPaused?'true':'false')+',dnDirty=true;\nvar dnAmbient,dnSun,dnHemi,dnStars;\nvar dnC={night:{sky:new THREE.Color(0x0a0e1a),fog:new THREE.Color(0x0a0e1a),amb:new THREE.Color(0x112244),sun:0,hemi:0.05,gnd:new THREE.Color(0x1a2211)},dawn:{sky:new THREE.Color(0xd4734a),fog:new THREE.Color(0xc47755),amb:new THREE.Color(0x886655),sun:0.4,hemi:0.2,gnd:new THREE.Color(0x445533)},day:{sky:new THREE.Color(0x6699cc),fog:new THREE.Color(0x667799),amb:new THREE.Color(0x8899aa),sun:0.85,hemi:0.35,gnd:new THREE.Color(0x556644)},dusk:{sky:new THREE.Color(0xcc6644),fog:new THREE.Color(0xaa6655),amb:new THREE.Color(0x775544),sun:0.3,hemi:0.15,gnd:new THREE.Color(0x443322)}};\nfunction lerpC(a,b,t){return a.clone().lerp(b,t);}\n(function(){var ls=scene.children;for(var i=0;i<ls.length;i++){if(ls[i].isAmbientLight)dnAmbient=ls[i];if(ls[i].isDirectionalLight)dnSun=ls[i];if(ls[i].isHemisphereLight)dnHemi=ls[i];}})();\nvar stG=new THREE.BufferGeometry();var stV=[];for(var si=0;si<600;si++){var th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*0.8+0.2),r=90;stV.push(Math.sin(ph)*Math.cos(th)*r,Math.cos(ph)*r,Math.sin(ph)*Math.sin(th)*r);}stG.setAttribute(\'position\',new THREE.Float32BufferAttribute(stV,3));dnStars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.4,transparent:true,opacity:0}));scene.add(dnStars);\nfunction dnUpdate(dt){if(dnPaused){if(!dnDirty)return;dnDirty=false;}else{dnTime+=dt*dnSpeed;if(dnTime>=24)dnTime-=24;}var t=dnTime,s,f,a,si,hi,so,g,sy,sx,d=dnC;if(t>=22||t<4){s=d.night.sky;f=d.night.fog;a=d.night.amb;si=0;hi=d.night.hemi;so=0.9;g=d.night.gnd;sy=-10;sx=0;}else if(t<7){var p=(t-4)/3;s=lerpC(d.night.sky,d.dawn.sky,p);f=lerpC(d.night.fog,d.dawn.fog,p);a=lerpC(d.night.amb,d.dawn.amb,p);si=p*d.dawn.sun;hi=d.night.hemi+(d.dawn.hemi-d.night.hemi)*p;so=0.9*(1-p);g=lerpC(d.night.gnd,d.dawn.gnd,p);sy=p*15;sx=-20+p*10;}else if(t<10){var p=(t-7)/3;s=lerpC(d.dawn.sky,d.day.sky,p);f=lerpC(d.dawn.fog,d.day.fog,p);a=lerpC(d.dawn.amb,d.day.amb,p);si=d.dawn.sun+(d.day.sun-d.dawn.sun)*p;hi=d.dawn.hemi+(d.day.hemi-d.dawn.hemi)*p;so=0;g=lerpC(d.dawn.gnd,d.day.gnd,p);sy=15+p*20;sx=-10+p*30;}else if(t<17){s=d.day.sky;f=d.day.fog;a=d.day.amb;si=d.day.sun;hi=d.day.hemi;so=0;g=d.day.gnd;sy=35;sx=20-(t-10)/7*10;}else if(t<20){var p=(t-17)/3;s=lerpC(d.day.sky,d.dusk.sky,p);f=lerpC(d.day.fog,d.dusk.fog,p);a=lerpC(d.day.amb,d.dusk.amb,p);si=d.day.sun+(d.dusk.sun-d.day.sun)*p;hi=d.day.hemi+(d.dusk.hemi-d.day.hemi)*p;so=0;g=lerpC(d.day.gnd,d.dusk.gnd,p);sy=35-p*20;sx=10+p*10;}else{var p=(t-20)/2;s=lerpC(d.dusk.sky,d.night.sky,p);f=lerpC(d.dusk.fog,d.night.fog,p);a=lerpC(d.dusk.amb,d.night.amb,p);si=d.dusk.sun*(1-p);hi=d.dusk.hemi+(d.night.hemi-d.dusk.hemi)*p;so=p*0.9;g=lerpC(d.dusk.gnd,d.night.gnd,p);sy=15-p*25;sx=20;}scene.background.copy(s);scene.fog.color.copy(f);if(dnAmbient)dnAmbient.color.copy(a);if(dnSun){dnSun.intensity=si;dnSun.position.y=sy;dnSun.position.x=sx;}if(dnHemi)dnHemi.intensity=hi;if(dnStars)dnStars.material.opacity=so;var gm=scene.children.find(function(c){return c.isMesh&&c.geometry&&c.geometry.type===\'PlaneGeometry\'&&c.rotation.x<-1;});if(gm)gm.material.color.copy(g);}\n';
   inject+='dnTick=dnUpdate;\n';
   inject+='camOff.aim='+JSON.stringify(edCamOff.aim||{y:0,angle:0,dist:0})+';\n';
@@ -4103,7 +4244,7 @@ function tabbyWallExtra(w){
 }
 // === PROJEKT: zbieranie danych (wspólne dla zapisu projektu, autozapisu i zapisu gry) ===
 function tabbyCollectProject(){
-  var d={objects:[],placed:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused,fog:+(+TBFOG.v).toFixed(2)}};
+  var d={objects:[],placed:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused,fog:+(+TBFOG.v).toFixed(2),season:TBWIN.on?'winter':'summer',snow:+(+TBWIN.fall).toFixed(2),snowH:+(+TBWIN.depth).toFixed(2)}};
   loadedObjs.forEach(function(ob){
     if(ob.type==='glb'){d.objects.push({name:ob.name,parts:[]});return;}
     var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;d.objects.push(eo);
@@ -4267,7 +4408,7 @@ function tabbyApplyDn(dn){
   if(typeof dn.time==='number')dnTime=Math.max(0,Math.min(24,dn.time));
   if(typeof dn.speed==='number')dnSpeed=dn.speed;
   dnPaused=!dn.auto;dnDirty=true;
-  fogSet(dn.fog||0);var fs=document.getElementById('dn-fog-slider'),fl=document.getElementById('dn-fog-label');if(fs)fs.value=Math.round(TBFOG.v*100);if(fl)fl.textContent=Math.round(TBFOG.v*100)+'%';
+  fogSet(dn.fog||0);winSet(dn.season==='winter',dn.snow===undefined?0.5:dn.snow,dn.snowH===undefined?0.2:dn.snowH);if(window.tabbyWinUI)window.tabbyWinUI();var fs=document.getElementById('dn-fog-slider'),fl=document.getElementById('dn-fog-label');if(fs)fs.value=Math.round(TBFOG.v*100);if(fl)fl.textContent=Math.round(TBFOG.v*100)+'%';
   var sl=document.getElementById('dn-slider'),au=document.getElementById('dn-auto'),sp=document.getElementById('dn-speed-slider');
   if(sl)sl.value=dnTime;if(au)au.checked=!!dn.auto;
   if(sp){sp.value=dnSpeed;var spl=document.getElementById('dn-speed-label');if(spl)spl.textContent=(+dnSpeed).toFixed(2);}
@@ -4467,6 +4608,15 @@ function init(){
   document.getElementById('dn-auto').addEventListener('change',function(){
     dnPaused=!this.checked;
   });
+  function winUI(){var on=TBWIN.on;document.getElementById('dn-winrow').style.display=on?'block':'none';
+    document.getElementById('dn-sum').style.background=on?'rgba(255,255,255,.06)':'rgba(210,153,34,.35)';document.getElementById('dn-win').style.background=on?'rgba(120,170,230,.45)':'rgba(255,255,255,.06)';
+    var ss=document.getElementById('dn-snow-slider'),sh=document.getElementById('dn-snowh-slider');ss.value=Math.round(TBWIN.fall*100);sh.value=Math.round(TBWIN.depth*100);
+    document.getElementById('dn-snow-label').textContent=ss.value+'%';document.getElementById('dn-snowh-label').textContent=sh.value+' cm';}
+  window.tabbyWinUI=winUI;
+  document.getElementById('dn-sum').addEventListener('click',function(){winSet(false);winUI();});
+  document.getElementById('dn-win').addEventListener('click',function(){winSet(true);winUI();});
+  document.getElementById('dn-snow-slider').addEventListener('input',function(){winSet(true,this.value/100);winUI();});
+  document.getElementById('dn-snowh-slider').addEventListener('input',function(){winSet(true,undefined,this.value/100);winUI();});
   document.getElementById('dn-fog-slider').addEventListener('input',function(){
     fogSet(this.value/100);document.getElementById('dn-fog-label').textContent=this.value+'%';
   });
@@ -5403,7 +5553,7 @@ function update(dt){
       if(keys.a){mx-=Math.cos(camYaw);mz+=Math.sin(camYaw);}
       if(keys.d){mx+=Math.cos(camYaw);mz-=Math.sin(camYaw);}
       var len=Math.sqrt(mx*mx+mz*mz);isMov=len>0.01;isRun=keys.sh&&isMov;
-      var sp=(isRun?RSP:WSP)*(WPN.po?1-WPN.aimT*0.3:1);
+      var sp=(isRun?RSP:WSP)*(WPN.po?1-WPN.aimT*0.3:1)*winSlow();
       if(isMov){mx/=len;mz/=len;tgtAng=Math.atan2(-mx,-mz);
         var res=collide(charX+mx*sp*dt,charZ+mz*sp*dt);charX=res[0];charZ=res[1];var floorY=res[2];}else{var fres=collide(charX,charZ);var floorY=fres[2];}
       var faceCam=camStyle==='fps'||wpnReady();

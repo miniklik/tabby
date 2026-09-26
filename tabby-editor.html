@@ -1485,7 +1485,7 @@ function wpnBuild(po,scale,hold,fps){
 // ---------- podniesienie / odłożenie ----------
 function wpnPickup(po){
   if(!po||!po.gr)return;
-  if(DRN.stage==='carry'||drnFlying())return; // najpierw odłóż drona
+  if(drnFlying())return; // w locie działa tylko dron
   wpnEnsure();
   if(WPN.po)wpnDrop(true); // zamiana broni
   for(var i=WPN.fx.length-1;i>=0;i--)if(WPN.fx[i].m===po.gr)WPN.fx.splice(i,1);
@@ -1516,7 +1516,7 @@ function wpnPickup(po){
   WPN.ui.n.textContent='🔫 '+wpnName(po);WPN.rl=0;WPN.autoRl=0;wpnHint();
   wpnSnd('pick');
 }
-function wpnHint(){var k=WPN.ui.hud&&WPN.ui.hud.querySelector('.k');if(k)k.textContent='PPM celuj • LPM strzał'+(wpnAmmo(WPN.po)?' • R przeładuj':'')+(WPN.tps&&WPN.tps.laser?' • L laser':'')+' • G odłóż';WPN.amTxt='';}
+function wpnHint(){var k=WPN.ui.hud&&WPN.ui.hud.querySelector('.k');if(k)k.textContent='PPM celuj • LPM strzał'+(wpnAmmo(WPN.po)?' • R przeładuj':'')+(WPN.tps&&WPN.tps.laser?' • L laser':'')+' • G odłóż'+(typeof DRN!=='undefined'&&DRN.stage==='carry'?' • F dron':'');WPN.amTxt='';}
 // ---------- amunicja: "mag" (naboje w magazynku) i "ammo" (zapas) w action broni; bez "mag" = strzelanie bez końca ----------
 function wpnAmmo(po){var a=po&&po.action;if(!a||!a.mag)return null;var u=po.gr.userData;
   if(!u._ammo)u._ammo={cur:drvNum(a.mag,15),res:drvNum(a.ammo,drvNum(a.mag,15)*3)};return u._ammo;}
@@ -1648,7 +1648,7 @@ function wpnTargets(){
   return out;
 }
 function wpnFire(){
-  if(!WPN.po||WPN.cd>0||DRV.t)return;
+  if(!WPN.po||WPN.cd>0||DRV.t||drnFlying())return;
   if(camStyle!=='fps'&&!WPN.readyOn)return; // broń opuszczona — najpierw PPM
   if(WPN.rl>0)return; // przeładowanie
   var am=wpnAmmo(WPN.po);
@@ -1791,7 +1791,7 @@ function wpnUpdate(dt,offs){
   if(!WPN.po)return;
   var drv=!!DRV.t,fps=camStyle==='fps';
   WPN.tpsH.visible=!drv;WPN.fpsH.visible=fps&&!drv;
-  if(drv){wpnHud(false);if(WPN.beam){WPN.beam.visible=false;WPN.dot.visible=false;}return;}
+  if(drv||drnFlying()){wpnHud(false);if(WPN.beam){WPN.beam.visible=false;WPN.dot.visible=false;}WPN.rmb=false;WPN.lmb=false;return;} // w locie drona broń odpoczywa
   WPN.kick*=Math.exp(-dt*11);WPN.spread*=Math.exp(-dt*8);
   WPN.aimT+=(((WPN.rmb&&pLock&&!(WPN.rl>0))?1:0)-WPN.aimT)*Math.min(1,dt*12);
   var rk=wpnReloadTick(dt);
@@ -1935,25 +1935,31 @@ function drnFlying(){return DRN.stage==='takeoff'||DRN.stage==='fly'||DRN.stage=
 function drnAct(){return (DRN.po&&DRN.po.action)||{};}
 function drnLabel(po){
   if(DRN.stage==='placed'&&DRN.po===po)return 'E — zwiń drona • F — start';
-  if(WPN.po)return 'Najpierw odłóż broń (G)';
-  if(DRN.stage==='carry')return 'Niesiesz już drona';
+  if(DRN.stage==='carry')return 'Masz już drona na plecach';
   return 'E — podnieś '+((po.action&&po.action.name)||'drona');
 }
 function drnHome(po){if(!po.gr.userData._drnHome){po.gr.userData._drnHome={p:po.gr.position.clone(),r:po.gr.rotation.clone()};DRN.touched.push(po);}}
 function drnParts(po){DRN.props=[];DRN.leds=[];po.gr.traverse(function(o){var r=o.userData&&o.userData._role;if(r==='prop')DRN.props.push(o);else if(r==='led')DRN.leds.push(o);});}
 // E przy dronie: podnieś (albo zwiń z lądowiska)
 function drnPickup(po){
-  if(WPN.po||drnFlying())return;
+  if(drnFlying())return;
   if(DRN.stage==='placed'&&DRN.po!==po)return;
   if(DRN.stage==='carry')return;
   drnEnsure();drnHome(po);
   if(DRN.pad){scene.remove(DRN.pad);DRN.pad=null;}
   DRN.po=po;DRN.stage='carry';po.gr.visible=false;
   // model w rękach ludzika
-  var c=po.gr.clone(true);c.position.set(0,1.02,-0.46);c.rotation.set(0,0,0);c.scale.setScalar(0.8);c.visible=true;
+  var c=po.gr.clone(true);c.position.set(0,1.45,0.3);c.rotation.set(Math.PI/2,0,0);c.scale.setScalar(0.62);c.visible=true; // na plecach, jak plecak
   c.traverse(function(o){if(o.isMesh)o.visible=!(o.userData&&o.userData._hidden);});
   charGroup.add(c);DRN.carry=c;
-  wpnSnd('pick');
+  if(camStyle==='fps')c.traverse(function(o){if(o.isMesh)o.visible=false;});
+  wpnHint();wpnSnd('pick');
+}
+function drnPutDown(){ // G: dron na ziemię przed ludzikiem, koniec trybu drona
+  if(DRN.stage!=='carry'||!DRN.po)return;
+  var fx=-Math.sin(charAng),fz=-Math.cos(charAng),g=DRN.po.gr;
+  drnDropCarry();g.visible=true;g.position.set(charX+fx*1.1,onGr?charY:0,charZ+fz*1.1);g.rotation.set(0,charAng,0);
+  DRN.stage='none';DRN.po=null;drnHud(false);wpnHint();wpnSnd('drop',0.6);
 }
 function drnDropCarry(){if(DRN.carry){if(DRN.carry.parent)DRN.carry.parent.remove(DRN.carry);DRN.carry=null;}}
 // F: rozstaw lądowisko i startuj / startuj z lądowiska / wracaj
@@ -1972,6 +1978,7 @@ function drnStart(){
   var g=DRN.po.gr,a=drnAct();drnParts(DRN.po);
   DRN.x=g.position.x;DRN.y=g.position.y;DRN.z=g.position.z;DRN.vx=DRN.vy=DRN.vz=0;DRN.yaw=g.rotation.y;DRN.tp=DRN.tr=0;
   if(!DRN.batSet){DRN.bat=drvNum(a.battery,90);DRN.batSet=true;}
+  if(camStyle==='fps'&&typeof cycleCam==='function')cycleCam();
   DRN.sv={yaw:camYaw,pitch:camPitch,style:camStyle};
   DRN.cam0={p:cam.position.clone(),q:cam.quaternion.clone()};DRN.camT=0;DRN.t=0;DRN.own=false;
   camYaw=DRN.yaw;camPitch=0.85; // kamera za dronem, patrzy tam, gdzie jego przód
@@ -2024,6 +2031,10 @@ function drnEnsure(){
   window.addEventListener('keydown',function(e){
     if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;
     if(e.code==='KeyF'&&!e.repeat&&DRN.stage!=='none'){if(drnKeyF()){e.preventDefault();e.stopImmediatePropagation();}return;}
+    if(e.code==='KeyG'&&!e.repeat&&!drnFlying()){
+      if(DRN.stage==='placed'&&DRN.pad){var pp=DRN.pad.position,gx=charX-pp.x,gz=charZ-pp.z;if(gx*gx+gz*gz<16){e.preventDefault();e.stopImmediatePropagation();drnPickup(DRN.po);return;}}
+      if(DRN.stage==='carry'&&!WPN.po){e.preventDefault();e.stopImmediatePropagation();drnPutDown();return;}
+    }
     if(drnFlying()){
       if(e.code==='Tab'){e.preventDefault();e.stopImmediatePropagation();if(DRN.stage==='fly')drnOwn(!DRN.own);return;}
       if(e.code==='KeyE'||e.code==='KeyG'||e.code==='KeyR'||e.code==='KeyL'){e.stopImmediatePropagation();return;}
@@ -2144,7 +2155,11 @@ function drnStep(dt){
 }
 // co klatkę (także bez lotu): ręce niosą drona, panel znika po lądowaniu
 function drnTick(dt){
-  if(DRN.stage==='carry'&&DRN.carry&&bp.armR){bp.armR.rotation.set(1.2,0,-0.25);bp.armL.rotation.set(1.2,0,0.25);}
+  if(DRN.stage==='carry'&&DRN.carry){
+    if(DRN.ui&&WPN.po){if(DRN.ui.hudOn)drnHud(false);DRN.ui.mode='';return;}
+    if(DRN.ui){drnHud(true);if(DRN.ui.mode!=='carry'){DRN.ui.mode='carry';var a=drnAct();DRN.ui.n.textContent='🛸 '+(a.name||'Dron');DRN.ui.bar.parentNode.style.display='none';
+      DRN.ui.s.textContent='Dron na plecach';DRN.ui.hud.querySelector('.k').textContent='F rozstaw i startuj • G odłóż';}}return;}
+  if(DRN.ui&&DRN.ui.mode==='carry'){DRN.ui.mode='';DRN.ui.bar.parentNode.style.display='';DRN.ui.hud.querySelector('.k').textContent='WASD lot • Spacja/Shift góra/dół • Tab kamera drona • F powrót';}
   if(DRN.stage==='placed'&&DRN.po){var a=drnAct(),full=drvNum(a.battery,90);DRN.bat=Math.min(full,DRN.bat+dt*full/20);} // ładowanie na lądowisku
   if(!drnFlying()&&DRN.ui&&DRN.ui.hudOn)drnHud(false);
 }

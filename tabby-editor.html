@@ -1469,8 +1469,11 @@ function wpnDrop(quiet){
   var g=po.gr,fx=-Math.sin(charAng),fz=-Math.cos(charAng),home=g.userData._wpnHome;
   g.visible=true;
   g.rotation.set(home?home.r.x:0,charAng+Math.PI/2+(Math.random()-0.5)*0.7,home?home.r.z:0);
-  if(quiet){g.position.set(charX+fx*0.8,WPN.floor,charZ+fz*0.8);}
-  else{g.position.set(charX+fx*0.8,charY+1.05,charZ+fz*0.8);WPN.fx.push({type:'dr',m:g,vy:1.4,floor:WPN.floor,age:0,life:4});}
+  // spód modelu (nie punkt obiektu) ląduje na podłodze — działa też dla broni leżącej wcześniej na stole
+  g.position.set(charX+fx*0.8,0,charZ+fz*0.8);g.updateMatrixWorld(true);
+  var off=new THREE.Box3().setFromObject(g).min.y-g.position.y,fy=WPN.floor-off;
+  if(quiet){g.position.y=fy;}
+  else{g.position.y=charY+1.05-off;WPN.fx.push({type:'dr',m:g,vy:1.4,floor:fy,age:0,life:4});}
 }
 // powrót broni i śladów po strzałach do stanu z edytora (Odbuduj zniszczone / eksport)
 function wpnRestoreAll(){

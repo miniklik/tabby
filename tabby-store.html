@@ -706,6 +706,109 @@ var ASSETS = [
     veh:{"slow":1}
   },
   {
+    name:"M9",
+    category:["militaria","interaktywny"],
+    desc:"Pistolet do podniesienia. Podejdź i naciśnij E, LPM strzela, PPM celuje, G odkłada. Tab przełącza widok z oczu. Trafienia uruchamiają efekty celu: Zniszcz, Odrzuć, Wybuch.",
+    parts:[
+      {"shape": "box", "size": [0.45, 0.048, 0.075], "color": "#34373d", "position": [0.0, 0.0255, 0.15]},
+      {"shape": "cylinder", "size": [0.02, 0.02, 0.14, 12], "color": "#aab0b8", "position": [0.115, 0.0255, 0.188], "rotation": [0, 0, 1.5708]},
+      {"shape": "box", "size": [0.0075, 0.0518, 0.063], "color": "#141516", "position": [-0.195, 0.0255, 0.15]},
+      {"shape": "box", "size": [0.0075, 0.0518, 0.063], "color": "#141516", "position": [-0.1785, 0.0255, 0.15]},
+      {"shape": "box", "size": [0.0075, 0.0518, 0.063], "color": "#141516", "position": [-0.162, 0.0255, 0.15]},
+      {"shape": "box", "size": [0.0075, 0.0518, 0.063], "color": "#141516", "position": [-0.1455, 0.0255, 0.15]},
+      {"shape": "box", "size": [0.0075, 0.0518, 0.063], "color": "#141516", "position": [-0.129, 0.0255, 0.15]},
+      {"shape": "box", "size": [0.0675, 0.0503, 0.024], "color": "#141516", "position": [0.0675, 0.0255, 0.1545]},
+      {"shape": "cylinder", "size": [0.018, 0.018, 0.03, 12], "color": "#b8bec6", "position": [0.2325, 0.0255, 0.15], "rotation": [0, 0, 1.5708], "role": "muzzle"},
+      {"shape": "box", "size": [0.39, 0.051, 0.048], "color": "#1d1f22", "position": [0.0225, 0.0255, 0.0975]},
+      {"shape": "box", "size": [0.135, 0.045, 0.018], "color": "#1d1f22", "position": [0.15, 0.0255, 0.0675]},
+      {"shape": "box", "size": [0.09, 0.051, 0.21], "color": "#1d1f22", "position": [-0.1575, 0.0255, 0.0], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.072, 0.0528, 0.165], "color": "#5a3a24", "position": [-0.156, 0.0255, 0.0045], "rotation": [0, 0.26, 0], "role": "grip"},
+      {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1424, 0.0255, 0.06], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1513, 0.0255, 0.0255], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1603, 0.0255, -0.009], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1693, 0.0255, -0.0435], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.105, 0.051, 0.021], "color": "#141516", "position": [-0.183, 0.0255, -0.108], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.105, 0.036, 0.0135], "color": "#1d1f22", "position": [-0.045, 0.0255, 0.0345]},
+      {"shape": "box", "size": [0.0135, 0.036, 0.057], "color": "#1d1f22", "position": [0.006, 0.0255, 0.06]},
+      {"shape": "box", "size": [0.0135, 0.018, 0.042], "color": "#9aa0a8", "position": [-0.051, 0.0255, 0.0645], "rotation": [0, -0.3, 0]},
+      {"shape": "box", "size": [0.0135, 0.015, 0.018], "color": "#e8e8e8", "position": [0.21, 0.0255, 0.1965]},
+      {"shape": "box", "size": [0.024, 0.045, 0.0195], "color": "#2e3035", "position": [-0.207, 0.0255, 0.198]},
+      {"shape": "box", "size": [0.0195, 0.018, 0.027], "color": "#9aa0a8", "position": [-0.237, 0.0255, 0.174], "rotation": [0, 0.35, 0]}
+    ],
+    action:{"type": "weapon", "name": "M9", "rate": 0.16, "range": 90, "recoil": 1, "power": 1}
+  },
+  {
+    name:"Puszka",
+    category:["militaria","dekoracja"],
+    desc:"Cel na strzelnicę — trafiona odlatuje z brzękiem. Ustaw kilka w rzędzie na płocie albo skrzyni.",
+    parts:[
+      {"shape": "cylinder", "size": [0.09, 0.09, 0.24, 16], "color": "#c9302c", "position": [0, 0.12, 0]},
+      {"shape": "cylinder", "size": [0.092, 0.092, 0.07, 16], "color": "#f1f1f1", "position": [0, 0.12, 0]},
+      {"shape": "cylinder", "size": [0.085, 0.09, 0.015, 16], "color": "#b8bec6", "position": [0, 0.2475, 0]},
+      {"shape": "cylinder", "size": [0.09, 0.085, 0.015, 16], "color": "#b8bec6", "position": [0, 0.0075, 0]}
+    ],
+    veh:{"knock":1,"sound":1}
+  },
+  {
+    name:"Butelka",
+    category:["militaria","dekoracja"],
+    desc:"Zielona szklana butelka — po trafieniu rozpryskuje się na kawałki.",
+    parts:[
+      {"shape": "cylinder", "size": [0.075, 0.075, 0.26, 14], "color": "#2f7d3a", "position": [0, 0.13, 0]},
+      {"shape": "cone", "size": [0.075, 0.06, 14], "color": "#2f7d3a", "position": [0, 0.29, 0]},
+      {"shape": "cylinder", "size": [0.028, 0.03, 0.12, 10], "color": "#2f7d3a", "position": [0, 0.37, 0]},
+      {"shape": "cylinder", "size": [0.032, 0.032, 0.02, 10], "color": "#d4a93a", "position": [0, 0.435, 0]},
+      {"shape": "box", "size": [0.11, 0.08, 0.01], "color": "#efe3c2", "position": [0, 0.14, 0.074]}
+    ],
+    veh:{"destroy":1,"sound":1}
+  },
+  {
+    name:"Tarcza strzelecka",
+    category:["militaria","dekoracja"],
+    desc:"Tarcza na drewnianym stojaku. Wytrzymuje kilka trafień, potem przewraca się i odlatuje. Front tarczy na +Z.",
+    parts:[
+      {"shape": "box", "size": [0.08, 1.3, 0.08], "color": "#8b5a2b", "position": [-0.42, 0.65, 0]},
+      {"shape": "box", "size": [0.08, 1.3, 0.08], "color": "#8b5a2b", "position": [0.42, 0.65, 0]},
+      {"shape": "box", "size": [0.95, 0.08, 0.08], "color": "#7a4e24", "position": [0, 0.35, 0]},
+      {"shape": "cylinder", "size": [0.45, 0.45, 0.05, 24], "color": "#f4f1e8", "position": [0, 1.1, 0.06], "rotation": [1.5708, 0, 0]},
+      {"shape": "cylinder", "size": [0.34, 0.34, 0.056, 24], "color": "#d6332a", "position": [0, 1.1, 0.06], "rotation": [1.5708, 0, 0]},
+      {"shape": "cylinder", "size": [0.23, 0.23, 0.062, 24], "color": "#f4f1e8", "position": [0, 1.1, 0.06], "rotation": [1.5708, 0, 0]},
+      {"shape": "cylinder", "size": [0.12, 0.12, 0.068, 20], "color": "#d6332a", "position": [0, 1.1, 0.06], "rotation": [1.5708, 0, 0]},
+      {"shape": "cylinder", "size": [0.045, 0.045, 0.074, 16], "color": "#1a1a1a", "position": [0, 1.1, 0.06], "rotation": [1.5708, 0, 0]}
+    ],
+    veh:{"knock":1,"sound":1}
+  },
+  {
+    name:"Pistolet",
+    category:["militaria","dekoracja"],
+    desc:"Stylizowany pistolet z 23 brył, leżący na boku — dekoracja na stół w bazie albo obok skrzyni z amunicją.",
+    parts:[
+      {"shape":"box","size":[0.45,0.048,0.075],"color":"#2e3035","position":[0.0,0.0255,0.15]},
+      {"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.195,0.0255,0.15]},
+      {"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.1785,0.0255,0.15]},
+      {"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.162,0.0255,0.15]},
+      {"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.1455,0.0255,0.15]},
+      {"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.129,0.0255,0.15]},
+      {"shape":"box","size":[0.0675,0.0503,0.024],"color":"#141516","position":[0.0675,0.0255,0.1545]},
+      {"shape":"cylinder","size":[0.018,0.018,0.03,12],"color":"#9aa0a8","position":[0.2325,0.0255,0.15],"rotation":[0,0,1.5708]},
+      {"shape":"box","size":[0.39,0.051,0.048],"color":"#1d1f22","position":[0.0225,0.0255,0.0975]},
+      {"shape":"box","size":[0.135,0.045,0.018],"color":"#1d1f22","position":[0.15,0.0255,0.0675]},
+      {"shape":"box","size":[0.09,0.051,0.21],"color":"#1d1f22","position":[-0.1575,0.0255,0.0],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.072,0.0528,0.165],"color":"#26221f","position":[-0.156,0.0255,0.0045],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.075,0.0534,0.006],"color":"#141516","position":[-0.1424,0.0255,0.06],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.075,0.0534,0.006],"color":"#141516","position":[-0.1513,0.0255,0.0255],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.075,0.0534,0.006],"color":"#141516","position":[-0.1603,0.0255,-0.009],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.075,0.0534,0.006],"color":"#141516","position":[-0.1693,0.0255,-0.0435],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.105,0.051,0.021],"color":"#141516","position":[-0.183,0.0255,-0.108],"rotation":[0,0.26,0]},
+      {"shape":"box","size":[0.105,0.036,0.0135],"color":"#1d1f22","position":[-0.045,0.0255,0.0345]},
+      {"shape":"box","size":[0.0135,0.036,0.057],"color":"#1d1f22","position":[0.006,0.0255,0.06]},
+      {"shape":"box","size":[0.0135,0.018,0.042],"color":"#9aa0a8","position":[-0.051,0.0255,0.0645],"rotation":[0,-0.3,0]},
+      {"shape":"box","size":[0.0135,0.015,0.018],"color":"#e8e8e8","position":[0.21,0.0255,0.1965]},
+      {"shape":"box","size":[0.024,0.045,0.0195],"color":"#2e3035","position":[-0.207,0.0255,0.198]},
+      {"shape":"box","size":[0.0195,0.018,0.027],"color":"#9aa0a8","position":[-0.237,0.0255,0.174],"rotation":[0,0.35,0]}
+    ]
+  },
+  {
     name:"Skrzynia skarbów",
     category:["interaktywny","dekoracja"],
     desc:"Drewniana skrzynia. Naciśnij E aby otworzyć — wieko unosi się.",
@@ -1466,7 +1569,7 @@ function renderCards(){
     meta.className = 'card-meta';
     meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
     if(asset.action){
-      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s'};
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
     if(asset.parts.some(function(q){return q.hidden;})) meta.innerHTML += '<span>👻 Niewidoczna w grze</span>';

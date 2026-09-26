@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tabby budynki</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1333;--card:#171c47;--border:rgba(255,243,212,.14);--text:#e6e0f0;--text-dim:#a59fbf;--text-bright:#fff3d4;--accent:#d29922}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Nunito','Segoe UI',system-ui,sans-serif}
+body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(210,153,34,.18),transparent 60%),linear-gradient(#0a0e2a,#141a44 60%,#231d4a) fixed}
+.header{padding:28px 24px 0;max-width:1320px;margin:0 auto}
+.header h1{font-family:'Fredoka','Trebuchet MS',system-ui,sans-serif;font-size:40px;font-weight:600;color:var(--text-bright);letter-spacing:-0.5px}
+.header h1 span{color:var(--accent)}
+.header p{color:var(--text-dim);font-size:14px;margin-top:6px;line-height:1.5;max-width:560px}
+.back{display:inline-block;margin-bottom:16px;text-decoration:none;font-size:14px;color:var(--text);border:1px solid var(--border);border-radius:999px;padding:8px 16px}
+.back:hover{border-color:rgba(255,243,212,.5)}
+.back:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.empty{max-width:1320px;margin:40px auto;padding:0 24px}
+.empty div{background:var(--card);border:1px dashed var(--border);border-radius:10px;padding:48px 24px;text-align:center;color:var(--text-dim);font-size:15px;line-height:1.6}
+.empty b{display:block;color:var(--text-bright);font-family:'Fredoka',system-ui,sans-serif;font-weight:500;font-size:20px;margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back" href="index.html">← Menu</a>
+  <h1>Tabby <span>budynki</span></h1>
+  <p>Gotowe budynki do Tabby.</p>
+</div>
+<div class="empty"><div><b>Budynki pojawią się tutaj wkrótce</b>Strona jest gotowa i podłączona do edytora.</div></div>
+</body>
+</html>

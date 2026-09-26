@@ -708,7 +708,7 @@ var ASSETS = [
   {
     name:"M9",
     category:["militaria","interaktywny"],
-    desc:"Pistolet z celownikiem laserowym pod lufą. Podejdź i naciśnij E, PPM celuje, LPM strzela, L włącza laser, G odkłada. Tab przełącza widok z oczu. Trafienia uruchamiają efekty celu: Zniszcz, Odrzuć, Wybuch.",
+    desc:"Pistolet z celownikiem laserowym pod lufą i magazynkiem na 15 naboi (+45 w zapasie). E podnosi, PPM celuje, LPM strzela, R przeładowuje, L włącza laser, G odkłada.",
     parts:[
       {"shape": "box", "size": [0.45, 0.048, 0.075], "color": "#34373d", "position": [0.0, 0.0255, 0.15]},
       {"shape": "cylinder", "size": [0.02, 0.02, 0.14, 12], "color": "#aab0b8", "position": [0.115, 0.0255, 0.188], "rotation": [0, 0, 1.5708]},
@@ -727,7 +727,7 @@ var ASSETS = [
       {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1513, 0.0255, 0.0255], "rotation": [0, 0.26, 0]},
       {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1603, 0.0255, -0.009], "rotation": [0, 0.26, 0]},
       {"shape": "box", "size": [0.075, 0.0534, 0.006], "color": "#3e2716", "position": [-0.1693, 0.0255, -0.0435], "rotation": [0, 0.26, 0]},
-      {"shape": "box", "size": [0.105, 0.051, 0.021], "color": "#141516", "position": [-0.183, 0.0255, -0.108], "rotation": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.105, 0.051, 0.021], "color": "#141516", "position": [-0.183, 0.0255, -0.108], "rotation": [0, 0.26, 0], "role": "mag"},
       {"shape": "box", "size": [0.105, 0.036, 0.0135], "color": "#1d1f22", "position": [-0.045, 0.0255, 0.0345]},
       {"shape": "box", "size": [0.0135, 0.036, 0.057], "color": "#1d1f22", "position": [0.006, 0.0255, 0.06]},
       {"shape": "box", "size": [0.0135, 0.018, 0.042], "color": "#9aa0a8", "position": [-0.051, 0.0255, 0.0645], "rotation": [0, -0.3, 0]},
@@ -758,7 +758,25 @@ var ASSETS = [
       {"shape": "cylinder", "size": [0.0051, 0.0051, 0.0034, 8], "color": "#00ff00", "position": [-0.132, -0.017, -0.0347], "rotation": [-3.1416, 0, 0]},
       {"shape": "box", "size": [0.017, 0.017, 0.0085], "color": "#1c1e22", "position": [-0.1575, -0.034, -0.0908], "rotation": [1.5708, 0, 0]}
     ],
-    action:{"type": "weapon", "name": "M9", "rate": 0.16, "range": 90, "recoil": 1, "power": 1}
+    action:{"type": "weapon", "name": "M9", "rate": 0.16, "range": 90, "recoil": 1, "power": 1, "mag": 15, "ammo": 45}
+  },
+  {
+    name:"Amunicja 9 mm",
+    category:["militaria","interaktywny"],
+    desc:"Metalowa skrzynka z nabojami do pistoletu. Trzymając M9 podejdź i naciśnij E — dostajesz 45 naboi do zapasu.",
+    parts:[
+      {"shape": "box", "size": [0.36, 0.2, 0.18], "color": "#4b5320", "position": [0, 0.1, 0]},
+      {"shape": "box", "size": [0.372, 0.035, 0.192], "color": "#3a4118", "position": [0, 0.2175, 0]},
+      {"shape": "box", "size": [0.362, 0.032, 0.182], "color": "#d4a93a", "position": [0, 0.13, 0]},
+      {"shape": "box", "size": [0.14, 0.018, 0.022], "color": "#23251c", "position": [0, 0.26, 0]},
+      {"shape": "box", "size": [0.018, 0.03, 0.022], "color": "#23251c", "position": [-0.06, 0.245, 0]},
+      {"shape": "box", "size": [0.018, 0.03, 0.022], "color": "#23251c", "position": [0.06, 0.245, 0]},
+      {"shape": "box", "size": [0.03, 0.06, 0.012], "color": "#8a8f78", "position": [0.18, 0.19, 0]},
+      {"shape": "box", "size": [0.1, 0.04, 0.004], "color": "#1b1d17", "position": [-0.08, 0.07, 0.091]},
+      {"shape": "cylinder", "size": [0.012, 0.012, 0.045, 8], "color": "#d9a93c", "position": [0.1, 0.258, 0.05]},
+      {"shape": "cylinder", "size": [0.012, 0.012, 0.045, 8], "color": "#d9a93c", "position": [0.13, 0.258, 0.03]}
+    ],
+    action:{"type": "ammo", "amount": 45, "name": "Amunicja 9 mm"}
   },
   {
     name:"Puszka",
@@ -1592,7 +1610,7 @@ function renderCards(){
     meta.className = 'card-meta';
     meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
     if(asset.action){
-      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni'};
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni', ammo:'📦 Amunicja'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
     if(asset.parts.some(function(q){return q.hidden;})) meta.innerHTML += '<span>👻 Niewidoczna w grze</span>';

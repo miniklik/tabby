@@ -738,6 +738,37 @@ var ASSETS = [
     action:{"type": "weapon", "name": "M9", "rate": 0.16, "range": 90, "recoil": 1, "power": 1}
   },
   {
+    name:"Celownik laserowy",
+    category:["militaria","interaktywny"],
+    desc:"Dodatek do broni. Trzymając M9 (albo inną broń) podejdź i naciśnij E — celownik montuje się pod lufą. Przy celowaniu świeci czerwony promień i kropka tam, gdzie poleci kula.",
+    parts:[
+      {"shape": "box", "size": [0.136, 0.0595, 0.0595], "color": "#1c1e22", "position": [0.0, 0.068, 0.0]},
+      {"shape": "box", "size": [0.034, 0.0595, 0.0595], "color": "#1c1e22", "position": [0.0765, 0.068, 0.0], "rotation": [0, 0.2, 0]},
+      {"shape": "box", "size": [0.0085, 0.0646, 0.0646], "color": "#2a2d33", "position": [0.0935, 0.068, 0.0]},
+      {"shape": "cylinder", "size": [0.0204, 0.0204, 0.0051, 16], "color": "#ff1a1a", "position": [0.0986, 0.068, 0.0], "rotation": [0, 0, 1.5708], "role": "laser"},
+      {"shape": "cylinder", "size": [0.0068, 0.0068, 0.0068, 16], "color": "#ff4d4d", "position": [0.1003, 0.068, 0.0], "rotation": [0, 0, 1.5708]},
+      {"shape": "cylinder", "size": [0.0289, 0.0289, 0.0204, 16], "color": "#2a2d33", "position": [-0.0765, 0.068, 0.0], "rotation": [0, 0, 1.5708]},
+      {"shape": "box", "size": [0.0034, 0.0425, 0.0068], "color": "#0a0b0d", "position": [-0.0884, 0.068, 0.0]},
+      {"shape": "box", "size": [0.119, 0.0255, 0.051], "color": "#111214", "position": [0.0, 0.034, 0.0]},
+      {"shape": "box", "size": [0.0255, 0.034, 0.0136], "color": "#111214", "position": [0.0, 0.017, 0.0255]},
+      {"shape": "box", "size": [0.0255, 0.034, 0.0136], "color": "#111214", "position": [0.0, 0.017, -0.0255]},
+      {"shape": "cylinder", "size": [0.0068, 0.0068, 0.034, 12], "color": "#555a63", "position": [0.0, 0.0085, 0.0], "rotation": [1.5708, 0, 0]},
+      {"shape": "cylinder", "size": [0.0102, 0.0102, 0.0051, 12], "color": "#777d87", "position": [0.0, 0.0085, 0.0204], "rotation": [1.5708, 0, 0]},
+      {"shape": "box", "size": [0.051, 0.0085, 0.034], "color": "#2e3238", "position": [0.017, 0.102, 0.0]},
+      {"shape": "box", "size": [0.0085, 0.0102, 0.0374], "color": "#1a1c20", "position": [0.0, 0.102, 0.0]},
+      {"shape": "box", "size": [0.0085, 0.0102, 0.0374], "color": "#1a1c20", "position": [0.034, 0.102, 0.0]},
+      {"shape": "box", "size": [0.068, 0.0034, 0.0034], "color": "#0d0e10", "position": [0.0, 0.068, 0.0306]},
+      {"shape": "box", "size": [0.068, 0.0034, 0.0034], "color": "#0d0e10", "position": [0.0, 0.0595, 0.0306]},
+      {"shape": "box", "size": [0.068, 0.0034, 0.0034], "color": "#0d0e10", "position": [0.0, 0.0765, 0.0306]},
+      {"shape": "box", "size": [0.068, 0.0034, 0.0034], "color": "#0d0e10", "position": [0.0, 0.068, -0.0306]},
+      {"shape": "box", "size": [0.068, 0.0034, 0.0034], "color": "#0d0e10", "position": [0.0, 0.0595, -0.0306]},
+      {"shape": "box", "size": [0.068, 0.0034, 0.0034], "color": "#0d0e10", "position": [0.0, 0.0765, -0.0306]},
+      {"shape": "cylinder", "size": [0.0051, 0.0051, 0.0034, 8], "color": "#00ff00", "position": [-0.034, 0.0986, 0.017], "rotation": [1.5708, 0, 0]},
+      {"shape": "box", "size": [0.017, 0.017, 0.0085], "color": "#1c1e22", "position": [-0.0595, 0.0425, 0.034]}
+    ],
+    action:{"type":"attach","kind":"laser","name":"Celownik laserowy"}
+  },
+  {
     name:"Puszka",
     category:["militaria","dekoracja"],
     desc:"Cel na strzelnicę — trafiona odlatuje z brzękiem. Ustaw kilka w rzędzie na płocie albo skrzyni.",
@@ -1569,7 +1600,7 @@ function renderCards(){
     meta.className = 'card-meta';
     meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
     if(asset.action){
-      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia'};
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
     if(asset.parts.some(function(q){return q.hidden;})) meta.innerHTML += '<span>👻 Niewidoczna w grze</span>';

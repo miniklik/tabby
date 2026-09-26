@@ -1937,12 +1937,12 @@ function drnFlying(){return DRN.stage==='takeoff'||DRN.stage==='fly'||DRN.stage=
 function drnAct(){return (DRN.po&&DRN.po.action)||{};}
 function drnLabel(po){
   if(DRN.po===po){
-    if(DRN.stage==='placed')return 'E — weź drona • F — start • T — zostaw drona';
-    if(DRN.stage==='toBase')return 'Dron wraca do bazy…';
+    if(DRN.stage==='placed')return 'E — weź drona z lądowiskiem • F — start • T — zakończ';
+    if(DRN.stage==='toBase')return 'Dron wraca na lądowisko…';
     if(DRN.stage==='carry')return 'Masz drona na plecach';
   }
   if(DRN.stage==='carry'||drnFlying()||DRN.stage==='placed')return 'Masz już drona w użyciu (T — zostaw)';
-  return 'E — weź drona';
+  return 'E — weź drona z lądowiskiem • F — start';
 }
 function drnHome(po){if(!po.gr.userData._drnHome){po.gr.userData._drnHome={p:po.gr.position.clone(),r:po.gr.rotation.clone()};DRN.touched.push(po);}}
 function drnParts(po){DRN.props=[];DRN.leds=[];po.gr.traverse(function(o){var r=o.userData&&o.userData._role;if(r==='prop')DRN.props.push(o);else if(r==='led')DRN.leds.push(o);});}
@@ -1953,21 +1953,21 @@ function drnScanBases(dt){
     if(!po.action||po.action.type!=='drone'||!po.gr)return;
     var busy=DRN.po===po&&DRN.stage!=='none';
     var u=po.gr.userData;
-    if(!u._drnBase){var b=drnMakePad(true);scene.add(b);u._drnBase=b;DRN.bases.push(b);}
+    if(!u._drnBase){var b=drnMakePad(true);scene.add(b);u._drnBase=b;DRN.bases.push(b);drnEnsure();} // klawisze drona gotowe od razu
     if(!busy){var b2=u._drnBase,g=po.gr,bx=g.position.x,bz=g.position.z;
       if(Math.abs(b2.position.x-bx)>0.05||Math.abs(b2.position.z-bz)>0.05||!u._drnLift){ // obiekt przesunięty w edytorze — baza idzie za nim
         var base=u._drnLift?g.position.y-0.06:g.position.y;b2.position.set(bx,base,bz);if(!u._drnLift){g.position.y=base+0.06;u._drnLift=true;}}}
   });
   DRN.bases=DRN.bases.filter(function(b){var ok=wpnPlaced().some(function(po){return po.gr&&po.gr.userData._drnBase===b;});if(!ok&&b.parent)b.parent.remove(b);return ok;});
 }
-function drnBasePos(po){var b=po.gr.userData._drnBase;return b?b.position:po.gr.position;}
+function drnBasePos(po){var b=po.gr.userData._drnBase;if(b&&!b.visible)b.visible=true;return b?b.position:po.gr.position;}
 // E: z bazy albo z lądowiska przed tobą — dron na plecy
 function drnPickup(po){
   if(drnFlying()||DRN.stage==='toBase')return;
   if(DRN.po&&DRN.po!==po&&DRN.stage!=='none')return;
   if(DRN.stage==='carry')return;
   drnEnsure();drnHome(po);
-  if(DRN.pad){scene.remove(DRN.pad);DRN.pad=null;}
+  DRN.pad=po.gr.userData._drnBase||null;if(DRN.pad)DRN.pad.visible=false; // lądowisko zabierasz ze sobą
   DRN.po=po;DRN.stage='carry';po.gr.visible=false;
   if(!DRN.batSet){DRN.bat=drvNum((po.action||{}).battery,90);DRN.batSet=true;}
   drnMakeCarry();
@@ -1981,11 +1981,22 @@ function drnMakeCarry(){
 }
 function drnDropCarry(){if(DRN.carry){if(DRN.carry.parent)DRN.carry.parent.remove(DRN.carry);DRN.carry=null;}}
 // F
+function drnPlacePad(){ // lądowisko drona kładziesz przed sobą — od teraz to jego baza
+  var fx=-Math.sin(charAng),fz=-Math.cos(charAng),px=charX+fx*1.8,pz=charZ+fz*1.8,py=onGr?charY:0;
+  if(!DRN.pad){DRN.pad=drnMakePad(true);scene.add(DRN.pad);DRN.po.gr.userData._drnBase=DRN.pad;DRN.bases.push(DRN.pad);}
+  DRN.pad.visible=true;DRN.pad.position.set(px,py,pz);return DRN.pad.position;
+}
 function drnKeyF(){
+  if(DRN.stage==='none'){ // start z lądowiska, przy którym stoisz
+    var best=null,bd=16;wpnPlaced().forEach(function(po){var b=po.action&&po.action.type==='drone'&&po.gr&&po.gr.userData._drnBase;if(!b||!b.visible||!po.gr.visible)return;
+      var dx=charX-b.position.x,dz=charZ-b.position.z,d=dx*dx+dz*dz;if(d<bd){bd=d;best=po;}});
+    if(!best)return false;drnEnsure();drnHome(best);DRN.po=best;DRN.pad=best.gr.userData._drnBase;
+    if(!DRN.batSet){DRN.bat=drvNum(best.action.battery,90);DRN.batSet=true;}
+    DRN.stage='placed';drnStart();return true;
+  }
   if(DRN.stage==='carry'){
-    var fx=-Math.sin(charAng),fz=-Math.cos(charAng),px=charX+fx*1.8,pz=charZ+fz*1.8,py=onGr?charY:0;
-    drnDropCarry();DRN.pad=drnMakePad(false);DRN.pad.position.set(px,py,pz);scene.add(DRN.pad);
-    var g=DRN.po.gr;g.visible=true;g.position.set(px,py+0.06,pz);g.rotation.set(0,charAng,0);
+    var pp=drnPlacePad();drnDropCarry();
+    var g=DRN.po.gr;g.visible=true;g.position.set(pp.x,pp.y+0.06,pp.z);g.rotation.set(0,charAng,0);
     DRN.stage='placed';drnStart();return true;
   }
   if(DRN.stage==='placed'&&DRN.pad){var p=DRN.pad.position,dx=charX-p.x,dz=charZ-p.z;if(dx*dx+dz*dz<16){drnStart();return true;}return false;}
@@ -1996,18 +2007,16 @@ function drnKeyF(){
 function drnKeyT(){
   if(DRN.stage==='none'||DRN.stage==='toBase'||!DRN.po)return false;
   var bp0=drnBasePos(DRN.po),g=DRN.po.gr;
-  if(DRN.stage==='carry'){ // startuje z pleców i leci do bazy
-    drnDropCarry();DRN.x=charX;DRN.y=charY+1.9;DRN.z=charZ;DRN.yaw=charAng;g.visible=true;
+  if(DRN.stage==='carry'){ // kładziesz lądowisko przed sobą, dron sam przelatuje z pleców i na nim ląduje
+    bp0=drnPlacePad();drnDropCarry();DRN.x=charX;DRN.y=charY+1.9;DRN.z=charZ;DRN.yaw=charAng;g.visible=true;
     DRN.vx=DRN.vy=DRN.vz=0;drnParts(DRN.po);drnHum(true);drnAutoTo(bp0,'toBase');
-  }else if(DRN.stage==='placed'){
-    DRN.x=g.position.x;DRN.y=g.position.y;DRN.z=g.position.z;DRN.yaw=g.rotation.y;DRN.vx=DRN.vy=DRN.vz=0;drnParts(DRN.po);drnHum(true);drnAutoTo(bp0,'toBase');
-    if(DRN.pad){scene.remove(DRN.pad);DRN.pad=null;}
+  }else if(DRN.stage==='placed'){ // dron już stoi na swoim lądowisku — koniec operacji
+    DRN.stage='none';DRN.po=null;drnHud(false);drnToast('Dron zostaje na lądowisku');wpnHint();return true;
   }else{ // w locie: kamera płynnie wraca do ludzika, dron leci do bazy sam
     drnAutoTo(bp0,'toBase');DRN.after='toBase';DRN.stage='landed';DRN.camT=0;DRN.cam0={p:cam.position.clone(),q:cam.quaternion.clone()};drnOwn(false);
-    if(DRN.pad){scene.remove(DRN.pad);DRN.pad=null;}
   }
   if(DRN.stage!=='landed')DRN.stage='toBase';
-  drnToast('Dron wraca do bazy');wpnHint();return true;
+  drnToast('Dron wraca na lądowisko');wpnHint();return true;
 }
 function drnStart(){
   var g=DRN.po.gr;drnParts(DRN.po);
@@ -2049,9 +2058,10 @@ function drnAutoStep(dt){
 }
 // wszystko do stanu z edytora (Odbuduj / eksport)
 function drnRestoreAll(){
-  drnHum(false);drnDropCarry();if(DRN.pad){scene.remove(DRN.pad);DRN.pad=null;}
+  drnHum(false);drnDropCarry();DRN.pad=null;
   if(drnFlying()&&DRN.sv){camYaw=DRN.sv.yaw;camPitch=DRN.sv.pitch;}
-  DRN.touched.forEach(function(po){var h=po.gr.userData._drnHome;if(h){po.gr.position.copy(h.p);po.gr.rotation.copy(h.r);delete po.gr.userData._drnHome;}po.gr.visible=true;});
+  DRN.touched.forEach(function(po){var h=po.gr.userData._drnHome;if(h){po.gr.position.copy(h.p);po.gr.rotation.copy(h.r);delete po.gr.userData._drnHome;}po.gr.visible=true;
+    var b=po.gr.userData._drnBase;if(b){b.visible=true;b.position.set(po.gr.position.x,po.gr.position.y-0.06,po.gr.position.z);}});
   DRN.touched=[];DRN.po=null;DRN.stage='none';DRN.batSet=false;DRN.noise=0;drnNoise(0);drnOwn(false);drnHud(false);
 }
 // ---------- UI ----------
@@ -2077,7 +2087,7 @@ function drnEnsure(){
   window.addEventListener('keydown',function(e){
     if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;
     if(e.code==='KeyT'&&!e.repeat&&DRN.stage!=='none'){if(drnKeyT()){e.preventDefault();e.stopImmediatePropagation();}return;}
-    if(e.code==='KeyF'&&!e.repeat&&DRN.stage!=='none'){if(drnKeyF()){e.preventDefault();e.stopImmediatePropagation();}return;}
+    if(e.code==='KeyF'&&!e.repeat){if(drnKeyF()){e.preventDefault();e.stopImmediatePropagation();}return;}
     if(drnFlying()){
       if(e.code==='Tab'){e.preventDefault();e.stopImmediatePropagation();if(DRN.stage==='fly')drnOwn(!DRN.own);return;}
       if(e.code==='KeyE'||e.code==='KeyG'||e.code==='KeyR'||e.code==='KeyL'){e.stopImmediatePropagation();return;}
@@ -2090,8 +2100,8 @@ function drnEnsure(){
 function drnToast(t){if(!DRN.ui)return;var el=DRN.ui.toast;el.textContent=t;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(function(){el.style.display='none';},1800);}
 function drnHud(on){if(!DRN.ui)return;if(DRN.ui.hudOn!==on){DRN.ui.hudOn=on;DRN.ui.hud.style.display=on?'block':'none';}}
 function drnHudMode(m){var u=DRN.ui;if(!u||u.mode===m)return;u.mode=m;var a=drnAct();u.n.textContent='🛸 '+(a.name||'Dron');
-  if(m==='carry'){u.barW.style.display='none';u.s.textContent='Dron na plecach';u.k.innerHTML='F rozstaw lądowisko i startuj • <b>T zostaw drona</b>';}
-  else if(m==='placed'){u.barW.style.display='';u.s.textContent='Dron na lądowisku';u.k.innerHTML='E weź na plecy • F start • <b>T zostaw drona</b>';}
+  if(m==='carry'){u.barW.style.display='none';u.s.textContent='Dron na plecach';u.k.innerHTML='F połóż lądowisko i startuj • <b>T zostaw drona</b>';}
+  else if(m==='placed'){u.barW.style.display='';u.s.textContent='Dron na lądowisku';u.k.innerHTML='E weź z lądowiskiem • F start • <b>T zakończ</b>';}
   else{u.barW.style.display='';u.k.innerHTML='WASD lot • Spacja/Shift góra/dół • Tab kamera • F powrót • <b>T zostaw drona</b>';}}
 function drnOwn(on){DRN.own=!!on;if(DRN.ui)DRN.ui.own.style.display=DRN.own?'block':'none';}
 function drnNoise(v){
@@ -3808,7 +3818,7 @@ var AI_PROMPT = [
 '   Skrzynka z nabojami: "action": {"type": "ammo", "amount": 45, "name": "Amunicja 9 mm"} — E dodaje naboje do zapasu trzymanej broni.',
 '   Karabin: "stance": "rifle" (kolba przy barku, czesc kolby z "role": "stock"), "auto": true (seria przy trzymaniu LPM), "sound": "rifle".',
 '   Kaliber: "caliber": "7.62" w broni i w skrzynce z amunicja — skrzynka pasuje tylko do broni o tym samym kalibrze (domyslnie 9 mm).',
-'10. "drone" — dron: stoi na swoim ladowisku (baza). E bierze na plecy, F rozstawia ladowisko przed graczem i startuje, WASD lot, Spacja/Shift gora/dol, Tab kamera drona, F powrot na to ladowisko, T zostaw drona (sam wraca do bazy)',
+'10. "drone" — dron z wlasnym ladowiskiem: E bierze drona razem z ladowiskiem, F kladzie ladowisko przed graczem i startuje, WASD lot, Spacja/Shift gora/dol, Tab kamera drona, F powrot na ladowisko, T zostaw drona (sam wraca na ladowisko)',
 '   "action": {"type": "drone", "name": "Dron zwiadowczy", "speed": 9, "range": 80, "battery": 90}; smigla z "role": "prop" (kreca sie), diody z "role": "led" (mrugaja); przod drona w -Z.',
 '',
 '   Czesc z "col": true jest widoczna i ma wlasna kolizje (sciany, podlogi i schody budynkow z Tabby budynki).',

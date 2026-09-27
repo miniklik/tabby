@@ -1265,9 +1265,12 @@ function drvRider(g,a){
   if(!u._seatP){var st=null;g.traverse(function(o){if(o.userData&&o.userData._role==='seat')st=o;});
     if(st&&st.geometry){if(!st.geometry.boundingBox)st.geometry.computeBoundingBox();var bb=st.geometry.boundingBox;u._seatP=[st.position.x,st.position.y+bb.max.y,st.position.z];}
     else u._seatP=[0,1,0.2];}
-  var P=u._seatP,w=new THREE.Vector3(P[0],P[1]-0.7,P[2]+0.06);g.updateMatrixWorld(true);g.localToWorld(w);
-  charGroup.visible=true;charGroup.position.copy(w);charGroup.quaternion.copy(g.quaternion);charGroup.rotateX(-0.22); // lekko pochylony jak na ścigaczu
-  if(bp.legL){bp.legL.rotation.set(0.95,0,0.14);bp.legR.rotation.set(0.95,0,-0.14);bp.armL.rotation.set(1.05,0,0.22);bp.armR.rotation.set(1.05,0,-0.22);bp.head.rotation.x=0.25;}
+  var stand=a.rider==='stand'; // hulajnoga: ludzik stoi na desce ("seat" = deska)
+  var P=u._seatP,w=new THREE.Vector3(P[0],P[1]+(stand?0.01:-0.7),P[2]+(stand?0.12:0.06));g.updateMatrixWorld(true);g.localToWorld(w);
+  charGroup.visible=true;charGroup.position.copy(w);charGroup.quaternion.copy(g.quaternion);charGroup.rotateX(stand?-0.06:-0.22); // na ścigaczu mocniej pochylony
+  if(bp.legL){
+    if(stand){bp.legL.rotation.set(-0.12,0,0.03);bp.legR.rotation.set(0.18,0,-0.03);bp.armL.rotation.set(0.95,0,0.3);bp.armR.rotation.set(0.95,0,-0.3);bp.head.rotation.x=0.05;} // jedna noga z przodu, druga z tyłu, ręce na kierownicy
+    else{bp.legL.rotation.set(0.95,0,0.14);bp.legR.rotation.set(0.95,0,-0.14);bp.armL.rotation.set(1.05,0,0.22);bp.armR.rotation.set(1.05,0,-0.22);bp.head.rotation.x=0.25;}}
   DRV._rider=true;
 }
 function drvStep(dt,camOff,camMode){
@@ -4000,7 +4003,7 @@ var AI_PROMPT = [
 '   speed — predkosc maks.; turnSpeed — skret (szybkie pojazdy: mniejszy, np. 0.2 przy speed 20)',
 '   grip: 0.04=drift, 0.07=normalny, 0.15=sztywny; lean: przechyl w zakretach (0 = brak)',
 '   pivot: true — obrot w miejscu (czolg, gasienice); wtedy daj lean: 0',
-'   rider: true — jednoslad (motocykl, rower): widac jezdzca na czesci z "role": "seat"; lean ok. 2.5 = mocny przechyl do srodka zakretu',
+'   rider: true — jednoslad (motocykl, rower): widac jezdzca na czesci z "role": "seat"; lean ok. 2.5 = mocny przechyl do srodka zakretu; "rider": "stand" — jezdziec stoi (hulajnoga, deska z "role": "seat")',
 '   PRZOD POJAZDU = kierunek -Z (swiatla przednie na ujemnym Z).',
 '   KOLA: czesc cylinder z "rotation": [0,0,1.5708] i "role":',
 '     wheel_fl / wheel_fr (przednie — skrecaja), wheel_rl / wheel_rr (tylne), wheel (tylko sie kreca, np. kola jezdne czolgu)',

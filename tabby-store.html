@@ -380,6 +380,34 @@ var ASSETS = [
     action:{"type": "drive", "speed": 15, "turnSpeed": 0.2, "grip": 0.1, "steerSpeed": 3, "lean": 1.1, "rider": true}
   },
   {
+    name:"Hulajnoga elektryczna",
+    category:["pojazd","interaktywny"],
+    desc:"Elektryczna hulajnoga z turkusowymi dodatkami. E wsiada — ludzik stoi na desce i trzyma kierownicę. Jeździ jak motocykl: szybko, skręca łagodnie i lekko przechyla się w zakrętach.",
+    parts:[
+      {"shape": "cylinder", "size": [0.13, 0.13, 0.07, 16], "color": "#151515", "position": [0, 0.13, -0.46], "rotation": [0, 0, 1.5708], "role": "wheel_fl"},
+      {"shape": "cylinder", "size": [0.075, 0.075, 0.075, 16], "color": "#5a5f66", "position": [0, 0.13, -0.46], "rotation": [0, 0, 1.5708], "role": "wheel_fl"},
+      {"shape": "box", "size": [0.08, 0.2, 0.03], "color": "#18c8c0", "position": [0, 0.13, -0.46], "role": "wheel_fl"},
+      {"shape": "cylinder", "size": [0.13, 0.13, 0.07, 16], "color": "#151515", "position": [0, 0.13, 0.46], "rotation": [0, 0, 1.5708], "role": "wheel_rl"},
+      {"shape": "cylinder", "size": [0.075, 0.075, 0.075, 16], "color": "#5a5f66", "position": [0, 0.13, 0.46], "rotation": [0, 0, 1.5708], "role": "wheel_rl"},
+      {"shape": "box", "size": [0.08, 0.2, 0.03], "color": "#18c8c0", "position": [0, 0.13, 0.46], "role": "wheel_rl"},
+      {"shape": "box", "size": [0.2, 0.05, 0.82], "color": "#2d3036", "position": [0, 0.17, 0], "role": "seat"},
+      {"shape": "box", "size": [0.17, 0.012, 0.7], "color": "#111214", "position": [0, 0.2, 0.02]},
+      {"shape": "box", "size": [0.205, 0.02, 0.82], "color": "#18c8c0", "position": [0, 0.15, 0]},
+      {"shape": "box", "size": [0.12, 0.03, 0.22], "color": "#1c1d20", "position": [0, 0.28, 0.5], "rotation": [-0.35, 0, 0]},
+      {"shape": "box", "size": [0.06, 0.03, 0.02], "color": "#ff3333", "position": [0, 0.3, 0.6]},
+      {"shape": "box", "size": [0.02, 0.14, 0.02], "color": "#b8bec6", "position": [0.09, 0.09, 0.12], "rotation": [0.6, 0, 0]},
+      {"shape": "box", "size": [0.05, 1.02, 0.05], "color": "#2d3036", "position": [0, 0.66, -0.5], "rotation": [0.14, 0, 0]},
+      {"shape": "box", "size": [0.08, 0.07, 0.1], "color": "#1c1d20", "position": [0, 0.34, -0.52]},
+      {"shape": "box", "size": [0.1, 0.07, 0.03], "color": "#ffffcc", "position": [0, 0.6, -0.58]},
+      {"shape": "box", "size": [0.52, 0.035, 0.035], "color": "#1c1d20", "position": [0, 1.16, -0.57]},
+      {"shape": "box", "size": [0.09, 0.045, 0.045], "color": "#101010", "position": [-0.24, 1.16, -0.57]},
+      {"shape": "box", "size": [0.09, 0.045, 0.045], "color": "#101010", "position": [0.24, 1.16, -0.57]},
+      {"shape": "box", "size": [0.08, 0.02, 0.06], "color": "#18c8c0", "position": [0, 1.19, -0.55]},
+      {"shape": "box", "size": [0.12, 0.05, 0.08], "color": "#1a1b1e", "position": [0, 0.2, -0.48]}
+    ],
+    action:{"type": "drive", "speed": 15, "turnSpeed": 0.2, "grip": 0.1, "steerSpeed": 3, "lean": 1.1, "rider": "stand"}
+  },
+  {
     name:"Quad",
     category:["pojazd","interaktywny"],
     desc:"Czterokołowy quad terenowy — szybki, zwrotny, lekko się przechyla w zakrętach.",

@@ -1230,6 +1230,7 @@ function drvEnter(obj,others){
 }
 // przywraca wszystko, co pojazd zniszczył lub odrzucił (edytor: przycisk „Odbuduj” i zapis gry)
 function drvRestoreAll(){
+  if(typeof glsRestoreAll==='function')glsRestoreAll(); // wybite szyby wracają
   if(DRV_CUT){DRV_CUT.list.forEach(function(b){b.parts.forEach(function(p){if(p.roof)p.m.visible=true;else drvGhost(p.m,false);});});DRV_CUT=null;}
   if(typeof wpnRestoreAll==='function')wpnRestoreAll();
   DRV.fx.forEach(function(f){if(f.debris||f.spr){scene.remove(f.m);if(f.m.geometry)f.m.geometry.dispose();f.m.material.dispose();}if(f.m&&f.m.userData)f.m.userData._falling=false;});DRV.fx=[];DRV.pending=[];
@@ -1687,7 +1688,7 @@ function wpnTargets(){
   var out=[];
   scene.traverse(function(o){
     if(!o.isMesh)return;
-    var mt=o.material;if(!mt||mt.transparent||mt.wireframe)return;
+    var mt=o.material;if(!mt||(mt.transparent&&!o.userData._glass)||mt.wireframe||o.userData._broken)return;
     if(o.userData&&(o.userData._wfx||o.userData._isGlow||o.userData._hidden))return;
     for(var p=o;p;p=p.parent){if(!p.visible||p===charGroup||p===cam)return;}
     out.push(o);
@@ -1792,7 +1793,7 @@ function wpnImpact(h,dir){
     n.applyMatrix3(new THREE.Matrix3().getNormalMatrix(mw)).normalize();
   }
   if(n.dot(dir)>0)n.negate();
-  var res=wpnReact(obj,dir);if(!res&&typeof rngImpact==='function'&&rngImpact(obj,h))res='hit'; // stalowy cel strzelnicy
+  var res=obj.userData&&obj.userData._glass?(glsBreak(obj,dir)?'gone':''):wpnReact(obj,dir);if(!res&&typeof rngImpact==='function'&&rngImpact(obj,h))res='hit'; // szyba pęka od strzału // stalowy cel strzelnicy
   var col=new THREE.Color(0x8a8a8a);if(obj.material&&obj.material.color&&!obj.material.vertexColors)col.copy(obj.material.color);
   col.lerp(new THREE.Color(0xd8d0c0),0.35);
   // iskry
@@ -1831,7 +1832,7 @@ function wpnHud(on){
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){
   if(DRV._rider&&!DRV.t){DRV._rider=false;charGroup.rotation.x=0;charGroup.rotation.z=0;['legL','legR','armL','armR'].forEach(function(n){if(bp[n])bp[n].rotation.set(0,0,0);});if(bp.head)bp.head.rotation.x=0;}
-  drnTick(dt);fogTick(dt);winTick(dt);perfTick(dt);raceTick(dt);drnTricksTick();rngTick(dt);
+  drnTick(dt);fogTick(dt);winTick(dt);perfTick(dt);raceTick(dt);drnTricksTick();rngTick(dt);liftTick(dt);
   WPN.cd=Math.max(0,WPN.cd-dt);
   if(onGr)WPN.floor=charY;
   wpnFxTick(dt);
@@ -2939,6 +2940,131 @@ function camClip(px,py,pz,aim){
   CCL.k+=(k-CCL.k)*(1-Math.exp(-dt*(k<CCL.k?12:2.5)));if(CCL.k>f&&f>=MIN/L)CCL.k=f; // do ściany szybko, od ściany powoli; nigdy w mur
   cam.position.set(px+p[0]*CCL.k,py+p[1]*CCL.k,pz+p[2]*CCL.k);
 }
+//@@LIFT_CORE_START
+// ===== 🪟 SZYBY DO WYBICIA: części z "glass": true pękają od strzału — dopiero wtedy da się wyskoczyć przez okno =====
+var GLS={broken:[],fx:[]};
+function glsBreak(m,dir){
+  if(!m||m.userData._broken)return false;m.userData._broken=true;m.visible=false;
+  m.updateMatrixWorld(true);var bb=new THREE.Box3().setFromObject(m),c=new THREE.Vector3();bb.getCenter(c);
+  var rem=[];for(var i=wCols.length-1;i>=0;i--){var w=wCols[i];if(Math.abs(w.x-c.x)<0.2&&Math.abs(w.z-c.z)<0.2&&Math.abs((w.y||0)-bb.min.y)<0.2){rem.push(w);wCols.splice(i,1);}}
+  GLS.broken.push({m:m,cols:rem});
+  var sz=new THREE.Vector3();bb.getSize(sz);var col=m.material.color.getHex();
+  for(var k=0;k<16;k++){var s=0.06+Math.random()*0.12,sh=new THREE.Mesh(new THREE.BoxGeometry(s,s*0.8,0.012),new THREE.MeshStandardMaterial({color:col,transparent:true,opacity:0.55,depthWrite:false}));
+    sh.position.set(c.x+(Math.random()-0.5)*sz.x,c.y+(Math.random()-0.5)*sz.y,c.z+(Math.random()-0.5)*sz.z);sh.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);sh.userData._wfx=true;scene.add(sh);
+    var d=dir||new THREE.Vector3(),v=new THREE.Vector3(d.x*2.5+(Math.random()-0.5)*2,Math.random()*1.5,d.z*2.5+(Math.random()-0.5)*2);
+    GLS.fx.push({m:sh,v:v,sp:new THREE.Vector3(Math.random()*12-6,Math.random()*12-6,Math.random()*12-6),t:0});}
+  try{var ac=wpnAC(),t=ac.currentTime;wpnNoise(ac,t,0.35,'highpass',2500,6000,0.2,ac.destination);for(var j=0;j<6;j++)wpnTone(ac,t+0.02+j*0.04,0.2,'sine',2800+Math.random()*3500,0,0.04,ac.destination);}catch(e){}
+  return true;
+}
+function glsTick(dt){
+  for(var i=GLS.fx.length-1;i>=0;i--){var f=GLS.fx[i];f.t+=dt;
+    if(!f.rest){f.v.y-=9.8*dt;f.m.position.addScaledVector(f.v,dt);f.m.rotation.x+=f.sp.x*dt;f.m.rotation.z+=f.sp.z*dt;
+      if(f.m.position.y<0.01){f.m.position.y=0.01;f.rest=true;}}
+    if(f.t>6){scene.remove(f.m);f.m.geometry.dispose();f.m.material.dispose();GLS.fx.splice(i,1);}}
+}
+function glsRestoreAll(){GLS.broken.forEach(function(b){b.m.visible=true;b.m.userData._broken=false;b.cols.forEach(function(w){wCols.push(w);});});GLS.broken=[];}
+
+// ===== 🛗 WINDA: szyb z Tabby budynki (JSON budynku: "lifts"), kabina jeździ płynnie między piętrami =====
+// Przed drzwiami: E — przywołaj / otwórz. W kabinie: ↑ ↓ — wybór piętra (bez zatwierdzania), E — jazda.
+var LIFT={list:[],scanT:0,ui:null,near:null,last:''};
+function liftScan(dt){
+  LIFT.scanT-=dt;if(LIFT.scanT>0)return;LIFT.scanT=1;
+  LIFT.list=LIFT.list.filter(function(L){if(L.g.parent)return true;liftDrop(L);return false;});
+  scene.children.forEach(function(g){
+    if(!g.userData||!g.userData.lifts||g.userData._liftOn)return;g.userData._liftOn=true;
+    g.userData.lifts.forEach(function(d){LIFT.list.push(liftMake(g,d));});
+  });
+}
+function liftDrop(L){for(var i=wCols.length-1;i>=0;i--)if(wCols[i]._lift===L)wCols.splice(i,1);}
+function liftBox(L,sx,sy,sz,x,y,z,col,parent){var m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.2}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;(parent||L.root).add(m);return m;}
+function liftMake(g,d){
+  var L={g:g,d:d,lv:d.levels,cur:0,sel:0,y:d.levels[0],y0:0,y1:0,t:0,T:1,state:'idle',doors:[],wait:0,hum:null};
+  var dir=[[0,-1],[1,0],[0,1],[-1,0]][d.d],w=d.w||5,h=Math.min(d.h||3,3.2),cw=w-0.55;L.dir=dir;L.w=w;
+  // wszystko jako dzieci budynku — obrót i przesunięcie budynku działają same
+  L.root=new THREE.Group();L.root.position.set(d.x,0,d.z);L.root.rotation.y=Math.atan2(dir[0],dir[1]);g.add(L.root); // lokalne +Z = w stronę drzwi
+  L.cab=new THREE.Group();L.root.add(L.cab);
+  liftBox(L,cw,0.12,cw,0,-0.04,0,'#6d737a',L.cab);                                   // podłoga (2 cm nad posadzką)
+  liftBox(L,cw,0.08,cw,0,h,0,'#c9ced4',L.cab);                                        // sufit kabiny
+  liftBox(L,1.2,0.04,1.2,0,h-0.05,0,'#fff6d8',L.cab).material.emissive=new THREE.Color('#fff2c0'); // lampa
+  liftBox(L,0.06,h,cw,-cw/2+0.03,h/2,0,'#9aa3ac',L.cab);liftBox(L,0.06,h,cw,cw/2-0.03,h/2,0,'#9aa3ac',L.cab);liftBox(L,cw,h,0.06,0,h/2,-cw/2+0.03,'#9aa3ac',L.cab);
+  liftBox(L,cw-0.2,0.06,0.08,0,1.0,-cw/2+0.1,'#d9dde1',L.cab);                       // poręcz
+  var pn=liftBox(L,0.4,0.7,0.05,cw/2-0.4,1.4,cw/2-0.12,'#2b2f33',L.cab);            // panel z przyciskami (przy drzwiach, w środku)
+  L.cab.position.y=L.y;
+  var dw=d.dw||1.9,dh=Math.min(d.dh||2.6,h);
+  L.lv.forEach(function(y,i){
+    if(d.doors&&!d.doors[i]){L.doors.push(null);return;}
+    var D={o:0,tg:0,y:y,panels:[]};
+    [-1,1].forEach(function(s){var p=liftBox(L,dw/2+0.05,dh,0.07,s*(dw/4),y+dh/2,w/2-0.12,'#b8c2cc');D.panels.push({m:p,s:s});});
+    L.doors.push(D);
+  });
+  liftCols(L);return L;
+}
+function liftW(L,lx,ly,lz){return L.root.localToWorld(new THREE.Vector3(lx,ly,lz));}
+function liftCols(L){ // kolizje ruchome: podłoga i sufit kabiny, zamknięte drzwi
+  liftDrop(L);L.root.updateMatrixWorld(true);
+  var cw=L.w-0.55,c=liftW(L,0,L.y,0),hw=cw/2;
+  wCols.push({x:c.x,z:c.z,hw:hw,hd:hw,y:c.y-0.12,h:0.12,_lift:L});
+  wCols.push({x:c.x,z:c.z,hw:hw,hd:hw,y:c.y+Math.min(L.d.h||3,3.2),h:0.1,_lift:L});
+  L.doors.forEach(function(D){if(!D||D.o>0.85)return;var p=liftW(L,0,D.y,L.w/2-0.12),a=Math.abs(Math.sin(L.root.rotation.y+L.g.rotation.y)),e=0.95*(1-a)+0.08*a,f=0.08*(1-a)+0.95*a;
+    wCols.push({x:p.x,z:p.z,hw:e,hd:f,y:p.y,h:2.6,_lift:L});});
+}
+// gdzie jest ludzik względem windy
+function liftLocal(L){var v=L.root.worldToLocal(new THREE.Vector3(charX,charY,charZ));return v;}
+function liftInside(L){var v=liftLocal(L),hw=(L.w-0.55)/2;return Math.abs(v.x)<hw&&Math.abs(v.z)<hw&&Math.abs(v.y-L.y)<1.2;}
+function liftFront(L){var v=liftLocal(L);if(Math.abs(v.x)>1.6||v.z<L.w/2-0.2||v.z>L.w/2+2.6)return -1;
+  for(var i=0;i<L.lv.length;i++)if(L.doors[i]&&Math.abs(v.y-L.lv[i])<1.2)return i;return -1;}
+function liftName(i){return i===0?'P':String(i);}
+function liftGo(L,k){ // jazda na piętro k (najpierw zamknięcie drzwi)
+  if(k===L.cur&&L.state==='idle'){liftDoor(L,k,1);return;}
+  L.target=k;L.state='closing';L.doors.forEach(function(D){if(D)D.tg=0;});
+}
+function liftDoor(L,k,v){var D=L.doors[k];if(D){D.tg=v;if(v)L.wait=7;liftSnd(v?'open':'close');}}
+function liftSnd(k){try{var ac=wpnAC(),t=ac.currentTime,d=ac.destination;
+  if(k==='ding'){wpnTone(ac,t,0.6,'sine',1320,0,0.06,d);wpnTone(ac,t+0.18,0.8,'sine',1046,0,0.06,d);}
+  else wpnNoise(ac,t,0.5,'lowpass',500,250,0.05,d);}catch(e){}}
+function liftTick(dt){
+  if(!scene)return;liftScan(dt);glsTick(dt);if(!LIFT.list.length)return;
+  var near=null,mode='';
+  LIFT.list.forEach(function(L){
+    // drzwi
+    var moved=false;L.doors.forEach(function(D){if(!D)return;var o=D.o;D.o+=Math.max(-dt*1.6,Math.min(dt*1.6,D.tg-D.o));if(o!==D.o){moved=true;
+      var e=D.o*D.o*(3-2*D.o);D.panels.forEach(function(p){p.m.position.x=p.s*((L.d.dw||1.9)/4+e*((L.d.dw||1.9)/2-0.05));});}});
+    if(L.state==='closing'&&L.doors.every(function(D){return !D||D.o<=0.001;})){L.state='moving';L.y0=L.y;L.y1=L.lv[L.target];L.t=0;L.T=Math.max(1.6,Math.abs(L.y1-L.y0)/1.8);}
+    if(L.state==='moving'){
+      L.t+=dt;var s=Math.min(1,L.t/L.T),e=s*s*(3-2*s),prevY=L.y;L.y=L.y0+(L.y1-L.y0)*e;L.cab.position.y=L.y;moved=true;
+      if(liftInside({root:L.root,w:L.w,y:prevY,d:L.d})&&!(typeof DRV!=='undefined'&&DRV.t)){charY=liftW(L,0,L.y,0).y;velY=0;onGr=true;} // jedziesz razem z kabiną
+      if(s>=1){L.state='idle';L.cur=L.target;L.sel=L.cur;liftSnd('ding');liftDoor(L,L.cur,1);}
+    }
+    var ins=liftInside(L),fr=liftFront(L);
+    if(L.state==='idle'&&L.doors[L.cur]&&L.doors[L.cur].tg>0&&!ins&&fr!==L.cur){L.wait-=dt;if(L.wait<=0)liftDoor(L,L.cur,0);} // same się zamykają
+    if(moved)liftCols(L);
+    if(ins){near=L;mode='in';}else if(fr>=0&&!near){near=L;mode='front';L.fr=fr;}
+  });
+  LIFT.near=near;LIFT.mode=mode;liftHud();
+}
+function liftHud(){
+  if(!LIFT.ui){var d=document.createElement('div');d.id='lift-hud';d.style.cssText='position:fixed;left:50%;bottom:17%;transform:translateX(-50%);z-index:24;pointer-events:none;display:none;background:rgba(8,10,14,.8);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:8px 18px;color:#e6edf3;font:14px/1.5 sans-serif;text-align:center';
+    document.body.appendChild(d);LIFT.ui=d;}
+  var L=LIFT.near,h='';
+  if(L&&LIFT.mode==='in'){
+    if(L.state==='moving'||L.state==='closing')h='🛗 Jedziemy na piętro <b>'+liftName(L.target)+'</b>…';
+    else{var fl='';for(var i=0;i<L.lv.length;i++)fl+='<span style="display:inline-block;min-width:26px;margin:0 2px;padding:1px 6px;border-radius:6px;'+(i===L.sel?'background:#ffcc33;color:#111;font-weight:bold':(i===L.cur?'border:1px solid #ffcc33':'border:1px solid rgba(255,255,255,.25)'))+'">'+liftName(i)+'</span>';
+      h='🛗 Winda • jesteś na: <b>'+liftName(L.cur)+'</b><br>'+fl+'<br><span style="font-size:12px;color:#9aa4b2"><b style="color:#ffd24a">↑ ↓</b> wybierz piętro • <b style="color:#ffd24a">E</b> '+(L.sel===L.cur?'otwórz / zamknij drzwi':'jedź')+'</span>';}
+  }else if(L&&LIFT.mode==='front'){
+    var here=L.cur===L.fr&&L.state==='idle';h='🛗 <b style="color:#ffd24a">E</b> — '+(here?(L.doors[L.fr].tg>0?'zamknij windę':'otwórz windę'):(L.state==='idle'?'przywołaj windę':'winda jedzie…'));
+  }
+  if(h!==LIFT.last){LIFT.last=h;LIFT.ui.innerHTML=h;LIFT.ui.style.display=h?'block':'none';}
+}
+window.addEventListener('keydown',function(e){
+  var L=LIFT.near;if(!L||e.repeat)return;if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;
+  if(LIFT.mode==='in'&&L.state==='idle'&&(e.code==='ArrowUp'||e.code==='ArrowDown')){L.sel=Math.max(0,Math.min(L.lv.length-1,L.sel+(e.code==='ArrowUp'?1:-1)));e.preventDefault();e.stopImmediatePropagation();return;}
+  if(e.code!=='KeyE')return;
+  if(LIFT.mode==='in'){if(L.state==='idle'){if(L.sel===L.cur)liftDoor(L,L.cur,L.doors[L.cur]&&L.doors[L.cur].tg>0?0:1);else liftGo(L,L.sel);}}
+  else if(LIFT.mode==='front'){if(L.state!=='idle')return e.stopImmediatePropagation();if(L.cur===L.fr)liftDoor(L,L.fr,L.doors[L.fr].tg>0?0:1);else liftGo(L,L.fr);}
+  e.preventDefault();e.stopImmediatePropagation();
+},true);
+//@@LIFT_CORE_END
+
 //@@RANGE_CORE_START
 // ===== 🎯 STRZELNICA: jedno uniwersalne stanowisko, które samo buduje swój tor =====
 // Asset stanowiska: action {type:"range", targets:5, dist:25, weapon:"M9"} — w edytorze zmieniasz to w panelu Edycja.
@@ -3559,15 +3685,19 @@ function buildObj(data,x,z){
         case'plane':geo=new THREE.PlaneGeometry(s[0],s[1]);break;
         default:geo=new THREE.BoxGeometry(1,1,1);
       }
+      if(!p.hidden&&p.opacity!==undefined&&p.opacity<1){mat.transparent=true;mat.opacity=+p.opacity;mat.depthWrite=false;} // szyba
       var m=new THREE.Mesh(geo,mat);if(p.hidden){m.userData._hidden=true;m.renderOrder=2;}
+      if(p.shadow===false||(p.opacity!==undefined&&p.opacity<1))m.userData._ns=1; // nie rzuca cienia (sufit, szyba)
+      if(p.glass)m.userData._glass=1;
       if(p.position)m.position.set(p.position[0],p.position[1],p.position[2]);
       if(p.rotation)m.rotation.set(p.rotation[0],p.rotation[1],p.rotation[2]);
       if(p.role)m.userData._role=p.role;
       g.add(m);
     });
   }
+  if(data.lifts)g.userData.lifts=JSON.parse(JSON.stringify(data.lifts)); // windy z Tabby budynki
   g.position.set(x,0,z);
-  g.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});
+  g.traverse(function(c){if(c.isMesh){c.castShadow=!c.userData._ns;c.receiveShadow=true;}});
   scene.add(g);
   return g;
 }
@@ -4488,14 +4618,18 @@ function doExportHTML(opts){
           case'plane':geo='new THREE.PlaneGeometry('+s.join(',')+')';break;
           default:geo='new THREE.BoxGeometry(1,1,1)';
         }
-        code+='  var m=new THREE.Mesh('+geo+',new THREE.MeshStandardMaterial({color:"'+p.color+'",roughness:0.7}));\n';
+        var glass=p.opacity!==undefined&&p.opacity<1;
+        code+='  var m=new THREE.Mesh('+geo+',new THREE.MeshStandardMaterial({color:"'+p.color+'",roughness:0.7'+(glass?',transparent:true,opacity:'+(+p.opacity)+',depthWrite:false':'')+'}));\n';
+        if(p.shadow===false||glass)code+='  m.userData._ns=1;\n';
+        if(p.glass)code+='  m.userData._glass=1;\n';
         if(p.position)code+='  m.position.set('+p.position.join(',')+');\n';
         if(p.rotation)code+='  m.rotation.set('+p.rotation.join(',')+');\n';
         if(p.role)code+='  m.userData._role="'+p.role+'";\n';
         if(p.hidden)code+='  m.visible=false;m.userData._hidden=true;\n'; // strefa kolizji — niewidoczna w grze
         code+='  g.add(m);\n';
       });
-      code+='  g.userData._tb="'+fn+'";\n  g.position.set(x,0,z);\n  g.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});\n  scene.add(g);\n  return g;\n}\n';
+      if(ob.lifts)code+='  g.userData.lifts='+JSON.stringify(ob.lifts)+';\n';
+      code+='  g.userData._tb="'+fn+'";\n  g.position.set(x,0,z);\n  g.traverse(function(c){if(c.isMesh){c.castShadow=!c.userData._ns;c.receiveShadow=true;}});\n  scene.add(g);\n  return g;\n}\n';
       funcs[fn]=code;
     }
     if(po.action){
@@ -4514,7 +4648,7 @@ function doExportHTML(opts){
   var inject='\n// === OBIEKTY ===\n';
   for(var fn in funcs)inject+=funcs[fn]+'\n';
   if(calls.length>0)inject+='// pozycje\n'+calls.join('\n')+'\n';
-  var wCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate&&!w._rng)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
+  var wCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate&&!w._rng&&!w._lift)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(wCalls.length>0)inject+='// sciany kolizji\n'+wCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
@@ -4609,16 +4743,17 @@ function doExportZIP(opts){
     inject+='      case"plane":geo=new THREE.PlaneGeometry(s[0],s[1]);break;\n';
     inject+='      default:geo=new THREE.BoxGeometry(1,1,1);\n';
     inject+='    }\n';
-    inject+='    var m=new THREE.Mesh(geo,mat);\n';
+    inject+='    if(!p.hidden&&p.opacity!==undefined&&p.opacity<1){mat.transparent=true;mat.opacity=+p.opacity;mat.depthWrite=false;}\n';
+    inject+='    var m=new THREE.Mesh(geo,mat);if(p.shadow===false||(p.opacity!==undefined&&p.opacity<1))m.userData._ns=1;if(p.glass)m.userData._glass=1;\n';
     inject+='    if(p.position)m.position.set(p.position[0],p.position[1],p.position[2]);\n';
     inject+='    if(p.rotation)m.rotation.set(p.rotation[0],p.rotation[1],p.rotation[2]);\n';
     inject+='    if(p.role)m.userData._role=p.role;\n';
     inject+='    if(p.hidden){m.visible=false;m.userData._hidden=true;}\n';
     inject+='    g.add(m);\n';
     inject+='  });\n';
-    inject+='  g.userData._tb=data.name||"obj";\n';
+    inject+='  g.userData._tb=data.name||"obj";if(data.lifts)g.userData.lifts=data.lifts;\n';
     inject+='  g.position.set(x,0,z);\n';
-    inject+='  g.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});\n';
+    inject+='  g.traverse(function(c){if(c.isMesh){c.castShadow=!c.userData._ns;c.receiveShadow=true;}});\n';
     inject+='  scene.add(g);\n  return g;\n}\n';
     inject+='var __tbPend=0;\n';
     inject+='function loadJSON(path,x,z,ry,action,y){\n  __tbPend++;\n';
@@ -4628,7 +4763,7 @@ function doExportZIP(opts){
     inject+='// pozycje JSON\n'+jsonCalls.join('\n')+'\n';
     if(intCalls.length>0)inject+='// interaktywne\n'+intCalls.join('\n')+'\n';
   }
-  var zWCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate&&!w._rng)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
+  var zWCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate&&!w._rng&&!w._lift)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(zWCalls.length>0)inject+='// sciany kolizji\n'+zWCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';

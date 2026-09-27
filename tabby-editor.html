@@ -1819,7 +1819,7 @@ function wpnHud(on){
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){
   if(DRV._rider&&!DRV.t){DRV._rider=false;charGroup.rotation.x=0;charGroup.rotation.z=0;['legL','legR','armL','armR'].forEach(function(n){if(bp[n])bp[n].rotation.set(0,0,0);});if(bp.head)bp.head.rotation.x=0;}
-  drnTick(dt);fogTick(dt);winTick(dt);
+  drnTick(dt);fogTick(dt);winTick(dt);perfTick(dt);
   WPN.cd=Math.max(0,WPN.cd-dt);
   if(onGr)WPN.floor=charY;
   wpnFxTick(dt);
@@ -2345,7 +2345,7 @@ function fogTick(dt){
 // płynące kłęby mgły wokół kamery
 function fogPuffs(dt,fc){
   var F=TBFOG,v=F.v,N=36;
-  if(v<0.02){F.puffs.forEach(function(p){p.s.visible=false;});return;}
+  if(v<0.02||(typeof TBPERF!=='undefined'&&TBPERF.eco)){F.puffs.forEach(function(p){p.s.visible=false;});return;}
   if(!F.puffs.length){
     var tex=drvGlow();
     for(var i=0;i<N;i++){var s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,color:0xffffff,transparent:true,opacity:0,depthWrite:false}));
@@ -2373,7 +2373,7 @@ function fogHalos(dt,lum){
     F.halos=F.halos.filter(function(h){if(!h.l.parent){if(h.s.parent)h.s.parent.remove(h.s);return false;}return true;});}
   var night=Math.max(0,1-lum*1.6);
   F.halos.forEach(function(h){var on=h.l.visible&&h.l.intensity>0.05;
-    h.s.material.opacity=on?Math.min(0.85,F.v*0.9*(0.06+night)*Math.min(1,h.l.intensity)):0; // w dzień prawie niewidoczna, w nocy pełna
+    h.s.material.opacity=(on&&!(typeof TBPERF!=='undefined'&&TBPERF.eco))?Math.min(0.85,F.v*0.9*(0.06+night)*Math.min(1,h.l.intensity)):0; // w dzień prawie niewidoczna, w nocy pełna
     var sc=2.2+F.v*4;h.s.scale.set(sc,sc,1);});
 }
 // ===== ❄ ZIMA: przełącznik Lato/Zima w panelu pory dnia • białe wierzchy wszystkiego • warstwa śniegu (0–50 cm) • opady • ślady butów i kolein =====
@@ -2439,7 +2439,7 @@ function winFlakes(dt){
     var m=new THREE.PointsMaterial({color:0xffffff,size:0.13,map:drvGlow(),transparent:true,opacity:0.9,depthWrite:false});
     TBWIN.flakes=new THREE.Points(g,m);TBWIN.flakes.frustumCulled=false;TBWIN.flakes.userData._wfx=true;TBWIN.fv=v;scene.add(TBWIN.flakes);
   }
-  var f=TBWIN.flakes,n=Math.round(N*TBWIN.fall);f.visible=n>0;f.geometry.setDrawRange(0,n);if(!n)return;
+  var f=TBWIN.flakes,n=Math.round(N*TBWIN.fall*((typeof TBPERF!=='undefined'&&TBPERF.eco)?0.35:1));f.visible=n>0;f.geometry.setDrawRange(0,n);if(!n)return;
   var P=f.geometry.attributes.position.array,V=TBWIN.fv,cx=cam.position.x,cy=cam.position.y,cz=cam.position.z,t=TBWIN.t;
   var wind=0.6+TBWIN.fall*2.2,fallSp=1.1+TBWIN.fall*1.4;
   for(var i=0;i<n;i++){var k=i*3,ph=V[i*2],s=V[i*2+1];
@@ -2496,6 +2496,95 @@ function winTick(dt){
   winHoles(dt);winFlakes(dt);winTracks(dt);
   // lżejsza jazda w głębokim śniegu
   if(DRV.t&&TBWIN.depth>0.05&&DRV.speed)DRV.speed*=Math.max(0,1-TBWIN.depth*0.5*dt);
+}
+// ===== ⚡ WYDAJNOŚĆ: FPS + obciążenie sceny • edytor: plakietka zawsze widoczna • gra: F3 • tryb oszczędny, gdy komputer nie nadąża =====
+var TBPERF={ready:false,times:[],last:0,fps:60,low:60,t:0,scanT:0,load:0,parts:null,eco:false,slow:0,ui:null,open:false,
+  B:{calls:450,tris:400000,lights:10,cols:1200,meshes:5000}}; // budżety słabego laptopa
+function perfIsEditor(){return typeof edDriveTarget!=='undefined';}
+function perfEnsure(){
+  if(TBPERF.ready)return;TBPERF.ready=true;
+  var css='#tb-perf{position:fixed;left:12px;top:12px;z-index:45;white-space:nowrap;font:bold 12px sans-serif;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:7px 11px;cursor:pointer;user-select:none;display:none}'+
+    '#tb-perf .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}'+
+    '#tb-perf-p{position:fixed;left:12px;top:48px;z-index:45;width:300px;background:rgba(12,14,26,.94);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:12px 14px;color:#e6edf3;font:12px/1.45 sans-serif;display:none}'+
+    '#tb-perf-p h4{margin:0 0 8px;font-size:13px}#tb-perf-p .r{margin:6px 0}#tb-perf-p .l{display:flex;justify-content:space-between;color:#c9d1d9}'+
+    '#tb-perf-p .b{height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;margin-top:3px}#tb-perf-p .b i{display:block;height:100%;border-radius:3px}'+
+    '#tb-perf-p .tip{margin-top:10px;padding:8px;border-radius:6px;background:rgba(255,255,255,.06);color:#aeb7c2;font-size:11px}'+
+    '#tb-perf-p button{margin-top:8px;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:11px;cursor:pointer}'+
+    '#tb-perf-t{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:46;background:rgba(0,0,0,.72);color:#fff;padding:8px 16px;border-radius:8px;font:bold 12px sans-serif;display:none;pointer-events:none}';
+  var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  var b=document.createElement('div');b.id='tb-perf';b.title='Wydajność — kliknij, żeby zobaczyć szczegóły (F3)';document.body.appendChild(b);
+  var p=document.createElement('div');p.id='tb-perf-p';document.body.appendChild(p);
+  var t=document.createElement('div');t.id='tb-perf-t';document.body.appendChild(t);
+  TBPERF.ui={b:b,p:p,t:t};
+  b.addEventListener('click',function(e){e.stopPropagation();TBPERF.open=!TBPERF.open;perfDraw(true);});
+  p.addEventListener('click',function(e){e.stopPropagation();if(e.target&&e.target.id==='tb-perf-eco'){perfEco(!TBPERF.eco,true);}});
+  window.addEventListener('keydown',function(e){if(e.code!=='F3')return;e.preventDefault();
+    if(perfIsEditor()){TBPERF.open=!TBPERF.open;}else{TBPERF.show=!TBPERF.show;TBPERF.open=TBPERF.show;}perfDraw(true);},true);
+  TBPERF.show=perfIsEditor();b.style.display=TBPERF.show?'block':'none';
+  if(perfIsEditor())setTimeout(function(){window.dispatchEvent(new Event('resize'));},50); // ustaw w rzędzie przycisków
+}
+function perfCol(v){return v<0.6?'#3fb950':(v<0.85?'#d29922':'#f85149');}
+function perfFpsCol(f){return f>=55?'#3fb950':(f>=30?'#d29922':'#f85149');}
+// obciążenie sceny: każdy element względem budżetu; wynik = najbardziej zapchany element (tam jest wąskie gardło)
+function perfScan(){
+  var B=TBPERF.B,info=(typeof renderer!=='undefined'&&renderer.info)?renderer.info.render:{calls:0,triangles:0};
+  var lights=0,meshes=0;
+  scene.traverse(function(o){if((o.isPointLight||o.isSpotLight)&&o.visible&&o.intensity>0.01)lights++;if(o.isMesh)meshes++;});
+  var cols=(typeof wCols!=='undefined')?wCols.length:0;
+  var fx=0.12+(TBFOG&&TBFOG.v>0?0.08+TBFOG.v*0.07:0)+(TBWIN&&TBWIN.on?0.18+TBWIN.fall*0.22:0);
+  if(TBPERF.eco)fx*=0.5;
+  var P=[
+    {k:'calls',n:'Wywołania rysowania',v:info.calls,b:B.calls,tip:'Za dużo osobnych obiektów na raz — w grze powtarzalne obiekty (np. drzewa) łączą się same i będzie lżej.'},
+    {k:'tris',n:'Trójkąty',v:info.triangles,b:B.tris,tip:'Bardzo szczegółowe obiekty (np. dużo walców z wieloma ściankami).'},
+    {k:'lights',n:'Światła',v:lights,b:B.lights,tip:'Każda lampa, ognisko i pochodnia to duży koszt. Zostaw tylko te najważniejsze.'},
+    {k:'cols',n:'Kolizje',v:cols,b:B.cols,tip:'Dużo ścian i stref kolizji — silnik sprawdza je przy każdym kroku.'},
+    {k:'meshes',n:'Obiekty i części',v:meshes,b:B.meshes,tip:'Scena ma bardzo dużo brył.'},
+    {k:'fx',n:'Efekty (mgła, zima, cienie)',v:Math.round(fx*100),b:100,tip:'Zima z mocnymi opadami i gęsta mgła kosztują najwięcej.'}];
+  var mx=0,worst=null;P.forEach(function(q){q.u=q.v/q.b;if(q.u>mx){mx=q.u;worst=q;}});
+  TBPERF.parts=P;TBPERF.load=mx;TBPERF.worst=worst;
+}
+function fmtN(v){return v>=10000?(Math.round(v/1000)+' tys.'):String(v);}
+function perfDraw(force){
+  var u=TBPERF.ui;if(!u)return;
+  u.b.style.display=TBPERF.show?'block':'none';
+  var f=Math.round(TBPERF.fps),L=Math.round(TBPERF.load*100);
+  u.b.innerHTML='<span class="d" style="background:'+perfFpsCol(f)+'"></span>⚡ '+f+' FPS • '+(perfIsEditor()?'scena ':'')+L+'%'+(TBPERF.eco?' • oszczędny':'');
+  u.b.style.borderColor=perfCol(TBPERF.load);
+  if(!TBPERF.open||!TBPERF.show){u.p.style.display='none';return;}
+  u.p.style.display='block';var rb=u.b.getBoundingClientRect();u.p.style.left=Math.max(8,Math.min(innerWidth-310,rb.left))+'px';u.p.style.top=(rb.bottom+8)+'px';
+  var h='<h4>⚡ Wydajność</h4><div class="r"><div class="l"><span>Płynność</span><span style="color:'+perfFpsCol(f)+'">'+f+' FPS (najgorsza klatka '+Math.round(1000/Math.max(1,TBPERF.low))+' ms)</span></div></div>';
+  h+='<div class="r"><div class="l"><b>Obciążenie sceny</b><b style="color:'+perfCol(TBPERF.load)+'">'+L+'%</b></div><div class="b"><i style="width:'+Math.min(100,L)+'%;background:'+perfCol(TBPERF.load)+'"></i></div></div>';
+  (TBPERF.parts||[]).forEach(function(q){var pc=Math.round(q.u*100);
+    h+='<div class="r"><div class="l"><span>'+q.n+'</span><span>'+fmtN(q.v)+' / '+fmtN(q.b)+'</span></div><div class="b"><i style="width:'+Math.min(100,pc)+'%;background:'+perfCol(q.u)+'"></i></div></div>';});
+  var tip=TBPERF.load<0.6?'Scena pójdzie płynnie nawet na słabszym laptopie.':(TBPERF.load<0.85?'Dobry komputer uciągnie ją bez problemu. Najbardziej obciąża: '+TBPERF.worst.n.toLowerCase()+'.':'Uwaga, możliwe przycięcia na słabszych komputerach. '+TBPERF.worst.tip);
+  if(perfIsEditor())tip+='<br>W wyeksportowanej grze scena jest lżejsza niż w edytorze (powtarzalne obiekty łączą się w jedno).';
+  h+='<div class="tip">'+tip+'</div>';
+  h+='<button id="tb-perf-eco">'+(TBPERF.eco?'Włącz pełną jakość':'Włącz tryb oszczędny')+'</button>';
+  u.p.innerHTML=h;
+}
+// tryb oszczędny: bez cieni, niższa rozdzielczość, mniej płatków i kłębów mgły, bez poświat
+function perfEco(on,manual){
+  if(TBPERF.eco===on)return;TBPERF.eco=on;
+  if(typeof renderer!=='undefined'){
+    if(on){TBPERF.pr=renderer.getPixelRatio();renderer.setPixelRatio(1);}else if(TBPERF.pr)renderer.setPixelRatio(TBPERF.pr);
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  }
+  scene.traverse(function(o){if(o.isDirectionalLight){if(on){o.userData._sh=o.castShadow;o.castShadow=false;}else if(o.userData._sh!==undefined)o.castShadow=o.userData._sh;}});
+  if(on&&!manual){var t=TBPERF.ui.t;t.textContent='Włączono tryb oszczędny — F3, żeby zobaczyć szczegóły';t.style.display='block';setTimeout(function(){t.style.display='none';},3500);}
+  perfDraw(true);
+}
+function perfTick(dt){
+  if(typeof scene==='undefined'||!scene||typeof document==='undefined')return;
+  perfEnsure();
+  var now=performance.now();if(TBPERF.last){var ft=now-TBPERF.last;TBPERF.times.push({t:now,ft:ft});}TBPERF.last=now;
+  while(TBPERF.times.length&&now-TBPERF.times[0].t>1000)TBPERF.times.shift();
+  if(now-(TBPERF.upd||0)<500)return;TBPERF.upd=now; // co pół sekundy prawdziwego czasu
+  var n=TBPERF.times.length,sum=0,worst=0;TBPERF.times.forEach(function(q){sum+=q.ft;if(q.ft>worst)worst=q.ft;});
+  if(n){TBPERF.fps=Math.min(60,1000/(sum/n));TBPERF.low=1000/Math.max(1,worst);}
+  TBPERF.scanT-=0.5;if(TBPERF.scanT<=0){TBPERF.scanT=1;perfScan();}
+  // gra: jeśli przez ~4 s poniżej 30 FPS — sama włącza tryb oszczędny
+  if(!perfIsEditor()&&!TBPERF.eco&&document.visibilityState==='visible'){TBPERF.slow=TBPERF.fps<30?TBPERF.slow+0.5:0;if(TBPERF.slow>=4)perfEco(true,false);}
+  perfDraw(false);
 }
 //@@WEAPON_CORE_END
 
@@ -5786,13 +5875,13 @@ init();
 <script>
 // Górny pasek: przyciski układają się od „Opcje” w lewo, zawsze z równym odstępem (niezależnie od czcionki i szerokości napisów)
 (function(){
-  var GAP=10,chain=['opt-btn','bud-btn','store-btn','scenes-btn','dn-btn','cam-btn'];
+  var GAP=10,chain=['opt-btn','bud-btn','store-btn','scenes-btn','dn-btn','cam-btn','tb-perf'];
   function lay(){
     var ref=document.getElementById(chain[0]);if(!ref)return;
     var left=ref.getBoundingClientRect().left;
     for(var i=1;i<chain.length;i++){
       var el=document.getElementById(chain[i]);if(!el)continue;
-      el.style.right=Math.round(innerWidth-left+GAP)+'px';
+      el.style.right=Math.round(innerWidth-left+GAP)+'px';if(el.id==='tb-perf')el.style.left='auto';
       left=el.getBoundingClientRect().left;
     }
   }

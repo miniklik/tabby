@@ -325,6 +325,9 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
       <div style="color:#888;font-size:12px;margin-bottom:10px" id="ed-select-hint">Kliknij na obiekt w grze aby go zaznaczyc</div>
       <div class="edit-box" id="edit-box">
         <div class="edit-title" id="edit-title">Edycja: ---</div>
+        <div id="eb-gate" style="display:none;border:2px solid rgba(57,255,106,0.35);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:rgba(57,255,106,0.04);align-items:center;gap:8px;font-size:13px;font-weight:600;color:#39ff6a">
+          🏁 Bramka nr <button type="button" class="edit-btn" id="eb-gate-m" style="padding:3px 11px;background:#39ff6a;color:#000">−</button><b id="eb-gate-n" style="min-width:22px;text-align:center;color:#fff;font-size:15px">1</b><button type="button" class="edit-btn" id="eb-gate-p" style="padding:3px 11px;background:#39ff6a;color:#000">+</button><span style="font-size:10px;color:#888;font-weight:400;line-height:1.3">kolejność przelotu<br>(zamienia się z bramką o tym numerze)</span>
+        </div>
 
         <div style="border:2px solid rgba(88,166,255,0.25);border-radius:10px;padding:12px;margin-bottom:10px;background:rgba(88,166,255,0.03)">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#e6edf3;user-select:none;font-weight:600">
@@ -1819,7 +1822,7 @@ function wpnHud(on){
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){
   if(DRV._rider&&!DRV.t){DRV._rider=false;charGroup.rotation.x=0;charGroup.rotation.z=0;['legL','legR','armL','armR'].forEach(function(n){if(bp[n])bp[n].rotation.set(0,0,0);});if(bp.head)bp.head.rotation.x=0;}
-  drnTick(dt);fogTick(dt);winTick(dt);perfTick(dt);
+  drnTick(dt);fogTick(dt);winTick(dt);perfTick(dt);raceTick(dt);drnTricksTick();
   WPN.cd=Math.max(0,WPN.cd-dt);
   if(onGr)WPN.floor=charY;
   wpnFxTick(dt);
@@ -2138,7 +2141,7 @@ function drnHud(on){if(!DRN.ui)return;if(DRN.ui.hudOn!==on){DRN.ui.hudOn=on;DRN.
 function drnHudMode(m){var u=DRN.ui;if(!u||u.mode===m)return;u.mode=m;var a=drnAct();u.n.textContent='🛸 '+(a.name||'Dron');
   if(m==='carry'){u.barW.style.display='none';u.s.textContent='Dron na plecach';u.k.innerHTML='F połóż lądowisko i startuj • <b>T zostaw drona</b>';}
   else if(m==='placed'){u.barW.style.display='';u.s.textContent='Dron na lądowisku';u.k.innerHTML='E weź z lądowiskiem • F start • <b>T zakończ</b>';}
-  else{u.barW.style.display='';u.k.innerHTML='WASD lot • Spacja/Shift góra/dół • Tab kamera • F powrót • <b>T zostaw drona</b>';}}
+  else{u.barW.style.display='';u.k.innerHTML='WASD lot • Spacja/Shift góra/dół'+(drvNum(a.turbo,1)>1?' • PPM turbo':'')+(a.flips?' • Q salto':'')+' • Tab kamera • F powrót • <b>T zostaw drona</b>';}}
 function drnOwn(on){DRN.own=!!on;if(DRN.ui)DRN.ui.own.style.display=DRN.own?'block':'none';}
 function drnNoise(v){
   if(!DRN.ui)return;var c=DRN.ui.nzc,cv=DRN.ui.nz;cv.style.opacity=v>0.01?String(Math.min(0.85,v)):'0';
@@ -2223,7 +2226,7 @@ function drnCrash(px,py,pz,nx,nz,power){
 }
 // klatka lotu (kamera na dronie)
 function drnStep(dt){
-  var a=drnAct(),k=DRN.keys,sp=drvNum(a.speed,9),R=drvNum(a.range,80);
+  var a=drnAct(),k=DRN.keys,sp=drvNum(a.speed,9)*drnTurboK(dt,a),R=drvNum(a.range,80);
   DRN.t+=dt;
   var pad=DRN.pad?DRN.pad.position:drnBasePos(DRN.po),pdx=DRN.x-pad.x,pdz=DRN.z-pad.z,dist=Math.sqrt(pdx*pdx+pdz*pdz);
   if(DRN.stage==='takeoff'||DRN.stage==='fly'){
@@ -2256,7 +2259,7 @@ function drnStep(dt){
     if(drnAutoStep(dt)){drnArriveBase();}
   }
   DRN.noise+=(Math.max(0,(dist-R*0.7)/(R*0.3))-DRN.noise)*Math.min(1,dt*4);
-  drnPose(dt,DRN.stage!=='landed'||DRN.after==='toBase');
+  drnPose(dt,DRN.stage!=='landed'||DRN.after==='toBase');drnFlipStep(dt);
   // kamera
   var p=camPitch,D=6.5;
   if(DRN.own&&DRN.stage==='fly'){
@@ -2266,6 +2269,7 @@ function drnStep(dt){
     cam.position.set(DRN.x+Math.sin(camYaw)*Math.cos(p)*D,DRN.y+0.2+Math.sin(p)*D,DRN.z+Math.cos(camYaw)*Math.cos(p)*D);cam.lookAt(DRN.x,DRN.y+0.2,DRN.z);
   }
   if(DRN.shake>0.002&&DRN.stage!=='landed'){var sk=DRN.shake;cam.position.x+=(Math.random()-0.5)*sk;cam.position.y+=(Math.random()-0.5)*sk;cam.position.z+=(Math.random()-0.5)*sk;DRN.shake*=Math.exp(-dt*9);}
+  drnFlipCam();
   if(DRN.stage==='landed'){ // płynny powrót kamery do ludzika
     DRN.camT=Math.min(1,DRN.camT+dt/0.9);var s=DRN.camT*DRN.camT*(3-2*DRN.camT);
     if(DRN.sv){camYaw=DRN.sv.yaw;camPitch=DRN.sv.pitch;}
@@ -2586,6 +2590,303 @@ function perfTick(dt){
   if(!perfIsEditor()&&!TBPERF.eco&&document.visibilityState==='visible'){TBPERF.slow=TBPERF.fps<30?TBPERF.slow+0.5:0;if(TBPERF.slow>=4)perfEco(true,false);}
   perfDraw(false);
 }
+
+//@@DRN_TRICKS_START
+// ===== 🛸 SZTUCZKI DRONA: ⚡ turbo (trzymaj PPM) i 🔄 salta (Q) =====
+// Z assetu drona: action.turbo = mnożnik prędkości (np. 1.8; brak/1 = bez turbo), action.flips = true → salta.
+// Turbo ma zapas energii (3 s ciągłego użycia, pełne ładowanie w 6 s). Salto: Q = w przód, S+Q = w tył, A+Q / D+Q = beczka w bok.
+var DRT={rmb:false,en:1,bst:0,fov0:0,flip:null,ui:null};
+function drnTurboK(dt,a){
+  var T=drvNum(a.turbo,1);if(T<=1){DRT.bst=0;return 1;}
+  var on=DRT.rmb&&DRN.stage==='fly'&&DRT.en>0.02&&!DRT.empty;
+  if(on){DRT.en=Math.max(0,DRT.en-dt/3);if(DRT.en<=0)DRT.empty=true;}
+  else{DRT.en=Math.min(1,DRT.en+dt/6);if(DRT.en>0.3)DRT.empty=false;}
+  DRT.bst+=((on?1:0)-DRT.bst)*Math.min(1,dt*4);
+  return 1+(T-1)*DRT.bst;
+}
+// salto: obrót modelu drona (i kamery FPV) o pełne 360°
+function drnFlipStart(){
+  var a=drnAct();if(!a.flips||DRN.stage!=='fly'||DRT.flip)return false;
+  var k=DRN.keys,ax='x',dir=-1; // domyślnie w przód (nos w dół i dookoła)
+  if(k.KeyA){ax='z';dir=1;}else if(k.KeyD){ax='z';dir=-1;}else if(k.KeyS){ax='x';dir=1;}
+  DRT.flip={t:0,len:0.55,ax:ax,dir:dir};
+  try{var ac=wpnAC();wpnNoise(ac,ac.currentTime,0.45,'bandpass',600,2400,0.18,ac.destination);}catch(e){}
+  return true;
+}
+function drnFlipS(){var f=DRT.flip;if(!f)return 0;var s=Math.min(1,f.t/f.len);return s*s*(3-2*s);}
+function drnFlipStep(dt){ // po drnPose: dokładamy obrót salta do pozy drona
+  var f=DRT.flip;if(!f||!DRN.po)return;
+  if(DRN.stage!=='fly'){DRT.flip=null;return;}
+  f.t+=dt;var ang=drnFlipS()*Math.PI*2*f.dir,g=DRN.po.gr;
+  if(f.ax==='x')g.rotation.x+=ang;else g.rotation.z+=ang;
+  DRN.vy-=dt*2.2; // w salcie śmigła nie trzymają wysokości — dron trochę opada
+  if(f.t>=f.len)DRT.flip=null;
+}
+function drnFlipCam(){ // kamera FPV kręci się razem z dronem; kamera zza drona zostaje spokojna
+  var f=DRT.flip;if(!f||!DRN.own||DRN.stage!=='fly')return;
+  var ang=drnFlipS()*Math.PI*2*f.dir;if(f.ax==='x')cam.rotateX(ang);else cam.rotateZ(ang);
+}
+function drnTricksTick(){ // FOV przy turbo + pasek energii w panelu drona
+  if(!cam)return;if(!DRT.fov0)DRT.fov0=cam.fov;
+  var fl=drnFlying()&&DRN.stage!=='landed',f=DRT.fov0+(fl?14*DRT.bst:0);
+  if(Math.abs(cam.fov-f)>0.05){cam.fov=f;cam.updateProjectionMatrix();}
+  if(!DRN.ui)return;var a=drnAct(),has=drvNum(a.turbo,1)>1;
+  if(!DRT.ui){var d=document.createElement('div');d.className='tb';d.innerHTML='⚡ Turbo <span class="tbb"><i></i></span>';
+    d.style.cssText='font-size:12px;color:#ffd24a;display:none;align-items:center;gap:6px';
+    var st=document.createElement('style');st.textContent='#drn-hud .tbb{flex:1;height:5px;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden}#drn-hud .tbb i{display:block;height:100%;background:#ffd24a;border-radius:3px}#drn-hud .tbb i.e{background:#ff5a4a}';
+    document.head.appendChild(st);DRN.ui.hud.insertBefore(d,DRN.ui.k);DRT.ui={d:d,i:d.querySelector('i')};}
+  var show=has&&fl;DRT.ui.d.style.display=show?'flex':'none';
+  if(show){DRT.ui.i.style.width=Math.round(DRT.en*100)+'%';DRT.ui.i.className=DRT.empty?'e':'';}
+}
+document.addEventListener('mousedown',function(e){if(e.button===2&&drnFlying())DRT.rmb=true;});
+document.addEventListener('mouseup',function(e){if(e.button===2)DRT.rmb=false;});
+document.addEventListener('pointerlockchange',function(){if(!document.pointerLockElement)DRT.rmb=false;});
+window.addEventListener('keydown',function(e){
+  if(e.code!=='KeyQ'||e.repeat||!drnFlying())return;
+  if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;
+  if(drnFlipStart()||drnAct().flips){e.preventDefault();e.stopImmediatePropagation();}
+},true);
+//@@DRN_TRICKS_END
+
+//@@RACE_CORE_START
+// ===== 🏁 WYŚCIG DRONÓW: bramki po kolei, czas, rekord, międzyczasy =====
+// Bramka = asset z action {type:"gate", w, h, yb, t, frame}: w/h = światło bramki (szer./wys.), yb = wysokość dolnej krawędzi
+// otworu nad środkiem obiektu, t = grubość ramy, frame:true = rama zamknięta (bramka powietrzna, bez słupków do ziemi).
+// Części z "role":"glow" świecą: zielona = następna, żółta = kolejna, pomarańczowa = dalsze, szara = zaliczona.
+// Zaliczenie: środek drona przecina płaszczyznę bramki w jej świetle (z dowolnej strony). Bramki nie po kolei się nie liczą.
+// Czas startuje razem ze startem drona z lądowiska. R = od nowa (dron wraca na lądowisko). Rekord osobno dla każdej trasy.
+// Bramki to zwykłe postawione obiekty z akcją "gate" — numer kolejności w action.n (brak/duplikat = numer nadawany sam).
+var RACE={gates:[],next:0,state:'idle',t:0,splits:[],best:null,track:'Wyścig',key:'',sig:'',scanT:0,ui:null,lp:null,stg:'',spT:0,flT:0,line:null};
+function raceKey(){return 'tabby-race:'+RACE.key;}
+function raceName(){var n=(typeof tabbyProjName!=='undefined'&&tabbyProjName)||document.title.replace(/\s*—\s*Tabby Editor$/,'');return (!n||/^Tabby( Editor)?$/.test(n))?'Wyścig':n;}
+function raceLoad(){try{var s=localStorage.getItem(raceKey());return s?JSON.parse(s):null;}catch(e){return null;}}
+function raceSave(o){try{localStorage.setItem(raceKey(),JSON.stringify(o));}catch(e){}}
+function raceFmt(t){if(t===null||t===undefined)return '--:--,--';var c=Math.floor(t*100+1e-6),m=Math.floor(c/6000),s=Math.floor(c/100)%60,h=c%100;
+  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s+','+(h<10?'0':'')+h;}
+function raceFmtD(d){var sg=d<0?'−':'+',c=Math.round(Math.abs(d)*100);return sg+Math.floor(c/100)+','+('0'+c%100).slice(-2)+' s';}
+// ---------- bramki ----------
+function raceIsGate(po){return po&&po.action&&po.action.type==='gate'&&po.gr&&po.gr.parent;}
+// co pół sekundy: lista bramek z postawionych obiektów (edytor: przesuwasz, kopiujesz, zmieniasz numer — trasa idzie za tobą)
+function raceScan(dt){
+  RACE.scanT-=dt;if(RACE.scanT>0)return;RACE.scanT=0.5;
+  var list=wpnPlaced().filter(raceIsGate),seen=[],used={},mx=0;
+  list.forEach(function(po){ // każda bramka ma swój własny, niepowtarzalny numer
+    if(seen.indexOf(po.action)>=0)po.action=JSON.parse(JSON.stringify(po.action));seen.push(po.action);
+    var n=Math.round(+po.action.n);if(!(n>0)||used[n])po.action.n=0;else{used[n]=1;mx=Math.max(mx,n);}});
+  list.forEach(function(po){if(!po.action.n)po.action.n=++mx;});
+  var sig=list.map(function(po){var p=po.gr.position,a=po.action;return [a.n,p.x.toFixed(2),p.y.toFixed(2),p.z.toFixed(2),po.gr.rotation.y.toFixed(3),a.w,a.h,a.yb,a.frame?1:0,po.gr.visible?1:0].join(',');}).sort().join('|');
+  if(sig===RACE.sig)return;RACE.sig=sig;raceBuild(list);
+}
+function raceBuild(list){
+  for(var i=wCols.length-1;i>=0;i--)if(wCols[i]._gate)wCols.splice(i,1);
+  RACE.gates.forEach(function(G){if(G.spr){scene.remove(G.spr);G.spr.material.map.dispose();G.spr.material.dispose();}});
+  RACE.gates=[];
+  list.forEach(function(po){
+    var a=po.action,gr=po.gr,G={gr:gr,po:po,n:+a.n,w:drvNum(a.w,4),h:drvNum(a.h,3),yb:drvNum(a.yb,0),t:drvNum(a.t,0.24),frame:!!a.frame,glow:[],flash:0,st:'',spr:null};
+    gr.traverse(function(c){if(c.isMesh&&c.userData._role==='glow'){if(!c.userData._rcm){c.material=c.material.clone();c.userData._rcm=1;}c.castShadow=false;G.glow.push(c);}});
+    if(gr.visible)raceGateCols(G);raceNumSprite(G);RACE.gates.push(G);
+  });
+  RACE.gates.sort(function(p,q){return p.n-q.n;});
+  var h=0;RACE.sig.split('').forEach(function(c){h=(h*31+c.charCodeAt(0))|0;});RACE.key=(h>>>0).toString(36); // rekord osobno dla każdej trasy
+  RACE.track=raceName();RACE.best=raceLoad();
+  if(RACE.state==='run'){RACE.state='idle';RACE.lp=null;}
+  raceLine();
+}
+// edytor: przerywana linia pokazuje trasę po kolei (w grze jej nie ma)
+function raceLine(){
+  if(RACE.line){scene.remove(RACE.line);RACE.line.geometry.dispose();RACE.line=null;}
+  if(typeof loadedObjs==='undefined'||RACE.gates.length<2)return;
+  var pts=RACE.gates.map(function(G){return raceCenter(G);});
+  var ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineDashedMaterial({color:0x39ff6a,dashSize:0.8,gapSize:0.6,transparent:true,opacity:0.8,depthWrite:false}));
+  ln.computeLineDistances();ln.userData._wfx=true;ln.renderOrder=998;scene.add(ln);RACE.line=ln;
+}
+// kolizja tylko na ramie: słupki + poprzeczka pocięta na krótkie kawałki (środek bramki pusty)
+function raceGateCols(G){
+  var g=G.gr,a=g.rotation.y,ca=Math.cos(a),sa=Math.sin(a),gx=g.position.x,gy=g.position.y,gz=g.position.z,t=G.t,hw=G.w/2;
+  var ext=t/2*(Math.abs(ca)+Math.abs(sa))+0.02;
+  function add(lx,y0,y1,e){wCols.push({x:gx+lx*ca,z:gz-lx*sa,hw:e,hd:e,y:y0,h:y1-y0,_gate:1});}
+  var top=gy+G.yb+G.h,bot=G.frame?gy+G.yb-t:gy;
+  add(-hw-t/2,bot,top+t,ext);add(hw+t/2,bot,top+t,ext);
+  var L=G.w,n=Math.max(2,Math.ceil(L/0.45)),e2=Math.max(ext,0.24);
+  for(var i=0;i<n;i++){var lx=-L/2+L*(i+0.5)/n;add(lx,top,top+t,e2);if(G.frame)add(lx,gy+G.yb-t,gy+G.yb,e2);}
+}
+function raceNumTex(n){
+  var c=document.createElement('canvas');c.width=c.height=128;var x=c.getContext('2d');
+  x.beginPath();x.arc(64,64,54,0,Math.PI*2);x.fillStyle='rgba(10,12,16,0.72)';x.fill();
+  x.lineWidth=8;x.strokeStyle='#ffffff';x.stroke();
+  x.fillStyle='#ffffff';x.font='bold '+(n>9?58:68)+'px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(String(n),64,68);
+  return new THREE.CanvasTexture(c);
+}
+function raceNumSprite(G){
+  var s=new THREE.Sprite(new THREE.SpriteMaterial({map:raceNumTex(G.n),transparent:true,depthWrite:false}));
+  s.renderOrder=999;s.userData._wfx=true;s.visible=G.gr.visible;var g=G.gr;G.sy=g.position.y+G.yb+G.h+G.t+1.25;
+  s.position.set(g.position.x,G.sy,g.position.z);scene.add(s);G.spr=s;
+}
+var RACE_COL={next:0x39ff6a,soon:0xffd23a,wait:0xff7a1a,done:0x50555c};
+function raceGateLook(G,st){
+  if(G.st===st)return;G.st=st;var col=RACE_COL[st],em=st==='next'?1.1:(st==='done'?0:(st==='soon'?0.5:0.3));
+  G.glow.forEach(function(m){m.material.color.setHex(col);m.material.emissive.setHex(col);m.material.emissiveIntensity=em;});
+  var sm=G.spr.material;sm.color.setHex(col);sm.opacity=st==='next'?1:0.6;sm.depthTest=st!=='next';
+  G.spr.visible=st!=='done'&&G.gr.visible;G.spr.scale.setScalar(st==='next'?2.3:1.15);
+}
+function raceGateState(i){
+  if(RACE.state!=='run')return i===0?'next':(i===1?'soon':'wait');
+  return i<RACE.next?'done':(i===RACE.next?'next':(i===RACE.next+1?'soon':'wait'));
+}
+// przelot: odcinek p0→p1 przecina płaszczyznę bramki w jej świetle
+function raceCross(G,p0,p1){
+  var g=G.gr,a=g.rotation.y,ca=Math.cos(a),sa=Math.sin(a),gx=g.position.x,gy=g.position.y,gz=g.position.z;
+  var ax=p0.x-gx,az=p0.z-gz,bx=p1.x-gx,bz=p1.z-gz;
+  var A={x:ax*ca-az*sa,z:ax*sa+az*ca,y:p0.y-gy},B={x:bx*ca-bz*sa,z:bx*sa+bz*ca,y:p1.y-gy};
+  if((A.z>0)===(B.z>0)||A.z===B.z)return false;
+  var s=A.z/(A.z-B.z),lx=A.x+(B.x-A.x)*s,ly=A.y+(B.y-A.y)*s;
+  return Math.abs(lx)<G.w/2&&ly>G.yb-0.1&&ly<G.yb+G.h;
+}
+function raceCenter(G){var g=G.gr;return new THREE.Vector3(g.position.x,g.position.y+G.yb+G.h/2,g.position.z);}
+function raceYaw(p){var G=RACE.gates[0];if(!G)return DRN.yaw;var dx=G.gr.position.x-p.x,dz=G.gr.position.z-p.z;return Math.atan2(-dx,-dz);}
+// ---------- przebieg ----------
+function raceBegin(){
+  RACE.state='run';RACE.t=0;RACE.next=0;RACE.splits=[];RACE.lp=null;RACE.best=raceLoad();
+  if(RACE.ui){RACE.ui.end.style.display='none';RACE.ui.split.style.opacity='0';}
+  camPitch=0.42; // kamera wyścigowa: niżej, żeby widzieć bramki przed dronem
+  raceSnd('go');
+}
+function racePass(G){
+  RACE.splits.push(RACE.t);G.flash=0.45;RACE.flT=0.35;
+  var i=RACE.next,b=RACE.best&&RACE.best.s&&RACE.best.s[i],u=RACE.ui;
+  u.split.innerHTML='Bramka '+G.n+' • '+raceFmt(RACE.t)+(b!==undefined&&b!==null?' <b class="'+(RACE.t-b<=0?'g':'r')+'">'+raceFmtD(RACE.t-b)+'</b>':'');
+  u.split.style.opacity='1';RACE.spT=1.8;
+  RACE.next++;
+  if(RACE.next>=RACE.gates.length)raceFinish();else raceSnd('gate');
+}
+function raceFinish(){
+  RACE.state='done';var t=RACE.t,old=RACE.best,rec=!old||t<old.t;
+  if(rec){RACE.best={t:t,s:RACE.splits.slice()};raceSave(RACE.best);}
+  var u=RACE.ui;
+  u.end.innerHTML='<div class="h">🏁 META</div><div class="tt">'+raceFmt(t)+'</div>'+
+    (rec?'<div class="nr">'+(old?'Nowy rekord! '+raceFmtD(t-old.t):'Pierwszy rekord trasy!')+'</div>':'<div class="bb">Rekord: '+raceFmt(old.t)+' <b class="r">'+raceFmtD(t-old.t)+'</b></div>')+
+    '<div class="k"><b>R</b> — jeszcze raz • dron sam wraca na lądowisko</div>';
+  u.end.style.display='block';raceSnd(rec?'record':'finish');
+  if(DRN.po&&DRN.pad){drnAutoTo(DRN.pad.position,'return');}
+}
+function raceAbort(){RACE.state='idle';RACE.lp=null;if(typeof drnToast==='function')drnToast('Wyścig przerwany • R — od nowa');}
+// R: od nowa, z lądowiska (dron w locie przenosi się od razu na lądowisko i startuje)
+function raceRestart(){
+  var st=DRN.stage,po=DRN.po;
+  if(po&&(st==='takeoff'||st==='fly'||st==='return')){raceTeleport();return true;}
+  if(po&&st==='landed'&&DRN.after==='placed'){DRN.stage='placed';raceFace();drnStart();RACE.stg='';return true;}
+  if(po&&(st==='toBase'||st==='landed')){ // dron sam leciał do bazy — stawiamy go na niej i startujemy
+    var b=drnBasePos(po);DRN.pad=po.gr.userData._drnBase||DRN.pad;po.gr.position.set(b.x,b.y+0.06,b.z);po.gr.visible=true;
+    DRN.after='placed';DRN.arrived=false;DRN.stage='placed';raceFace();drnStart();RACE.stg='';return true;}
+  if(po&&st==='placed'){raceFace();drnStart();RACE.stg='';return true;}
+  if(st==='none')return drnKeyF(); // przy lądowisku: start
+  return false;
+}
+function raceFace(){if(DRN.po&&DRN.pad)DRN.po.gr.rotation.y=raceYaw(DRN.pad.position);}
+function raceTeleport(){
+  var po=DRN.po,pad=DRN.pad?DRN.pad.position:drnBasePos(po),g=po.gr,a=drnAct();
+  DRN.auto=null;DRN.x=pad.x;DRN.y=pad.y+0.06;DRN.z=pad.z;DRN.vx=DRN.vy=DRN.vz=0;DRN.tp=DRN.tr=0;DRN.yaw=raceYaw(pad);
+  g.position.set(DRN.x,DRN.y,DRN.z);g.rotation.set(0,DRN.yaw,0);
+  camYaw=DRN.yaw;camPitch=0.42;DRN.cam0={p:cam.position.clone(),q:cam.quaternion.clone()};DRN.camT=0;DRN.t=0;
+  DRN.bat=drvNum(a.battery,90);DRN.stage='takeoff';RACE.stg='';drnHum(true);
+}
+// ---------- dźwięki ----------
+function raceSnd(k){
+  try{var ac=wpnAC(),t=ac.currentTime,d=ac.destination;
+    if(k==='gate'){wpnTone(ac,t,0.09,'square',880,0,0.05,d);wpnTone(ac,t+0.07,0.14,'square',1320,0,0.05,d);}
+    else if(k==='go'){wpnTone(ac,t,0.12,'sine',660,0,0.09,d);wpnTone(ac,t+0.13,0.2,'sine',990,0,0.09,d);}
+    else{var f=[523,659,784,1047],r=k==='record'?[523,659,784,1047,1319]:f;
+      r.forEach(function(q,i){wpnTone(ac,t+i*0.11,0.22,'triangle',q,0,0.09,d);});}
+  }catch(e){}
+}
+// ---------- panel ----------
+function raceEnsureUI(){
+  if(RACE.ui)return;
+  var css='#race-hud{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:23;pointer-events:none;background:rgba(8,10,14,.72);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:6px 18px 7px;color:#e6edf3;font:13px/1.35 sans-serif;text-align:center;min-width:300px}'+
+    '#race-hud .row{display:flex;gap:18px;justify-content:center;align-items:baseline}#race-hud .tm{font:bold 26px monospace;color:#fff;letter-spacing:1px}'+
+    '#race-hud .gt{font-weight:bold;font-size:15px;color:#39ff6a}#race-hud .bs{color:#ffd23a;font-size:13px}#race-hud .hint{font-size:11px;color:#9aa4b2;margin-top:2px}#race-hud .hint b{color:#ffd24a}'+
+    '#race-hud .tr{font-weight:bold;font-size:15px;letter-spacing:.5px}'+
+    '#race-split{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:23;pointer-events:none;background:rgba(8,10,14,.65);color:#fff;padding:5px 16px;border-radius:8px;font:bold 15px sans-serif;opacity:0;transition:opacity .25s}'+
+    '#race-split b.g,#race-end b.g{color:#39ff6a}#race-split b.r,#race-end b.r{color:#ff5a4a}'+
+    '#race-arrow{position:fixed;z-index:22;pointer-events:none;display:none;width:0;height:0}'+
+    '#race-arrow i{position:absolute;left:-22px;top:-22px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font:bold 34px sans-serif;color:#39ff6a;text-shadow:0 0 8px rgba(0,0,0,.9)}'+
+    '#race-arrow span{position:absolute;left:-40px;top:22px;width:80px;text-align:center;font:bold 12px sans-serif;color:#fff;text-shadow:0 0 4px #000}'+
+    '#race-flash{position:fixed;inset:0;z-index:17;pointer-events:none;box-shadow:inset 0 0 120px 30px rgba(57,255,106,.55);opacity:0}'+
+    '#race-end{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);z-index:26;pointer-events:none;display:none;background:rgba(8,10,14,.82);border:2px solid rgba(57,255,106,.5);border-radius:16px;padding:18px 40px;color:#e6edf3;font:15px/1.5 sans-serif;text-align:center}'+
+    '#race-end .h{font-weight:bold;font-size:22px;letter-spacing:2px}#race-end .tt{font:bold 44px monospace;color:#fff}#race-end .nr{color:#39ff6a;font-weight:bold;font-size:18px}'+
+    '#race-end .bb{color:#ffd23a}#race-end .k{font-size:12px;color:#9aa4b2;margin-top:6px}#race-end .k b{color:#ffd24a}';
+  var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+  var h=document.createElement('div');h.id='race-hud';document.body.appendChild(h);
+  var sp=document.createElement('div');sp.id='race-split';document.body.appendChild(sp);
+  var ar=document.createElement('div');ar.id='race-arrow';ar.innerHTML='<i>➤</i><span></span>';document.body.appendChild(ar);
+  var fl=document.createElement('div');fl.id='race-flash';document.body.appendChild(fl);
+  var en=document.createElement('div');en.id='race-end';document.body.appendChild(en);
+  if(typeof loadedObjs!=='undefined'){h.style.top='58px';sp.style.top='126px';} // w edytorze pod górnym paskiem przycisków
+  RACE.ui={on:true,hud:h,split:sp,arrow:ar,ai:ar.querySelector('i'),as:ar.querySelector('span'),flash:fl,end:en,last:''};
+}
+function raceHud(){
+  var u=RACE.ui,N=RACE.gates.length,b=RACE.best?raceFmt(RACE.best.t):'brak',html;
+  if(RACE.state==='run'){
+    var G=RACE.gates[RACE.next],d=G?raceCenter(G).distanceTo(new THREE.Vector3(DRN.x,DRN.y,DRN.z)):0;
+    html='<div class="row"><span class="tm">'+raceFmt(RACE.t)+'</span><span class="gt">Bramka '+(RACE.next+1)+' / '+N+'</span><span class="bs">🏆 '+b+'</span></div>'+
+      '<div class="hint">do bramki '+Math.round(d)+' m • <b>R</b> od nowa • F powrót • T zostaw drona</div>';
+  }else{
+    var fly=drnFlying()||DRN.stage==='toBase';
+    html='<div class="row"><span class="tr">🏁 '+RACE.track+'</span><span class="gt">'+N+' bramek</span><span class="bs">🏆 '+b+'</span></div>'+
+      '<div class="hint">'+(RACE.state==='done'?'<b>R</b> — jeszcze raz':(fly?'<b>R</b> — start wyścigu z lądowiska':'Stań przy lądowisku • <b>F</b> start (czas rusza ze startem drona) • <b>R</b> od nowa'))+'</div>';
+  }
+  if(html!==u.last){u.hud.innerHTML=html;u.last=html;}
+}
+function raceArrow(){
+  var u=RACE.ui,G=RACE.gates[RACE.next];
+  if(RACE.state!=='run'||!G||!drnFlying()||DRN.stage==='landed'){u.arrow.style.display='none';return;}
+  var c=raceCenter(G),v=c.clone().project(cam),behind=v.z>1;
+  var x=v.x,y=v.y;if(behind){x=-x;y=-y;}
+  if(!behind&&Math.abs(x)<0.9&&Math.abs(y)<0.85){u.arrow.style.display='none';return;}
+  var ang=Math.atan2(-y,x),W=innerWidth,H=innerHeight,cx=Math.cos(ang),cy=Math.sin(ang);
+  var k=Math.min((W*0.44)/Math.max(0.001,Math.abs(cx)),(H*0.40)/Math.max(0.001,Math.abs(cy)));
+  u.arrow.style.display='block';u.arrow.style.left=(W/2+cx*k)+'px';u.arrow.style.top=(H/2+cy*k)+'px';
+  u.ai.style.transform='rotate('+ang+'rad)';
+  u.as.textContent=G.n+' • '+Math.round(c.distanceTo(new THREE.Vector3(DRN.x,DRN.y,DRN.z)))+' m';
+}
+// ---------- co klatkę ----------
+function raceTick(dt){
+  if(!scene)return;raceScan(dt);
+  if(!RACE.gates.length){if(RACE.ui&&RACE.ui.on){RACE.ui.on=false;RACE.ui.hud.style.display='none';RACE.ui.arrow.style.display='none';RACE.ui.end.style.display='none';}return;}
+  raceEnsureUI();if(!RACE.ui.on){RACE.ui.on=true;RACE.ui.hud.style.display='block';}
+  if(RACE.line)RACE.line.visible=RACE.state!=='run';
+  var st=DRN.stage,fl=st==='takeoff'||st==='fly';
+  if(st==='takeoff'&&RACE.stg!=='takeoff')raceBegin(); // czas rusza ze startem drona
+  RACE.stg=st;
+  if(RACE.state==='run'){
+    if(!fl)raceAbort();
+    else{
+      RACE.t+=dt;var p1={x:DRN.x,y:DRN.y+0.2,z:DRN.z};
+      if(RACE.lp){var G=RACE.gates[RACE.next];if(G&&G.gr.visible&&raceCross(G,RACE.lp,p1))racePass(G);}
+      RACE.lp=p1;
+    }
+  }
+  var tt=performance.now()/1000;
+  RACE.gates.forEach(function(G,i){
+    raceGateLook(G,raceGateState(i));
+    if(G.st==='next')G.spr.position.y=G.sy+Math.sin(tt*3)*0.18;else G.spr.position.y=G.sy;
+    if(G.flash>0){G.flash=Math.max(0,G.flash-dt);var k=G.flash/0.45;
+      G.glow.forEach(function(m){m.material.emissive.setRGB(0.2+0.8*k,1,0.4+0.6*k);m.material.emissiveIntensity=1+2.5*k;});
+      if(G.flash<=0)G.st='';}
+  });
+  if(RACE.spT>0){RACE.spT-=dt;if(RACE.spT<=0)RACE.ui.split.style.opacity='0';}
+  if(RACE.flT>0){RACE.flT=Math.max(0,RACE.flT-dt);RACE.ui.flash.style.opacity=String(RACE.flT/0.35);}
+  raceHud();raceArrow();
+}
+// klawisz R przechwytujemy przed dronem (dron w locie blokuje R)
+window.addEventListener('keydown',function(e){
+  if(e.code!=='KeyR'||e.repeat||!RACE.gates.length)return;
+  if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;
+  if(typeof WPN!=='undefined'&&WPN.po&&!drnFlying())return; // z bronią w ręku R = przeładowanie
+  if(raceRestart()){e.preventDefault();e.stopImmediatePropagation();}
+},true);
+//@@RACE_CORE_END
+
 //@@WEAPON_CORE_END
 
 var OCOL=['#58a6ff','#3fb950','#f85149','#d29922','#bc8cff','#f778ba'];
@@ -2717,7 +3018,7 @@ function update(dt){
     var bestIdx=-1,bestDist=INTERACT_DIST;
     for(var pi=0;pi<placedObjs.length;pi++){
       var po=placedObjs[pi];
-      if(!po.action||!po.gr.visible)continue;
+      if(!po.action||po.action.type==='gate'||!po.gr.visible)continue;
       var dx=charX-po.gr.position.x,dz=charZ-po.gr.position.z,dist=Math.sqrt(dx*dx+dz*dz);
       if(dist<bestDist){bestDist=dist;bestIdx=pi;}
     }
@@ -3588,6 +3889,8 @@ function updateEditUI(){
   document.getElementById('edit-title').textContent='Edycja: '+ob.name;
   document.getElementById('eb-col').checked=!!po._col;
   edShowVeh();
+  var egb=document.getElementById('eb-gate'),ga=po.action&&po.action.type==='gate';egb.style.display=ga?'flex':'none';
+  if(ga){if(!po.action.n){RACE.scanT=0;raceScan(0);}document.getElementById('eb-gate-n').textContent=po.action.n||'?';}
   var rot=Math.round(po.gr.rotation.y*180/Math.PI);
   var px=Math.round(po.gr.position.x*100)/100;
   var py=Math.round(po.gr.position.y*100)/100;
@@ -3692,7 +3995,7 @@ function startMove(){
 function finishMove(sx,sz){
   if(editIdx<0)return;
   var po=placedObjs[editIdx];
-  po.gr.position.set(sx,0,sz);
+  po.gr.position.set(sx,po.y||0,sz);
   po.x=sx;po.z=sz;
   tabbySyncCols(po);
   po.gr.visible=true;
@@ -3781,6 +4084,7 @@ function tabbySlug(n){var m={'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'
 // === NAZWA ZAPISU ===
 function tabbyFileName(n){n=(n||'').trim().replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,'-');return n||'moja-gra';}
 function tabbyTitle(html,n){var t=(n||'').trim();if(!t)return html;t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');return html.replace('<title>Tabby</title>',function(){return '<title>'+t+'</title>';});}
+function tabbyYStr(po){return po.y&&Math.abs(po.y)>0.001?'o.position.y='+(+po.y).toFixed(3)+';':'';} // wysokość obiektu w eksporcie
 function doExportHTML(opts){
   opts=opts||{};
   drvRestoreAll(); // gra startuje z całymi obiektami
@@ -3822,9 +4126,9 @@ function doExportHTML(opts){
       funcs[fn]=code;
     }
     if(po.action){
-      calls.push('(function(){var o='+fn+'('+po.x+','+po.z+');'+(Math.abs(ry)>0.01?'o.rotation.y='+ry.toFixed(4)+';':'')+'placedActions.push({gr:o,action:'+JSON.stringify(po.action)+',_lightOn:true,_open:false,_baseRotY:'+(Math.abs(ry)>0.01?ry.toFixed(4):'0')+'});})();');
-    }else if(Math.abs(ry)>0.01){
-      calls.push('(function(){var o='+fn+'('+po.x+','+po.z+');o.rotation.y='+ry.toFixed(4)+';})();');
+      calls.push('(function(){var o='+fn+'('+po.x+','+po.z+');'+tabbyYStr(po)+(Math.abs(ry)>0.01?'o.rotation.y='+ry.toFixed(4)+';':'')+'placedActions.push({gr:o,action:'+JSON.stringify(po.action)+',_lightOn:true,_open:false,_baseRotY:'+(Math.abs(ry)>0.01?ry.toFixed(4):'0')+'});})();');
+    }else if(Math.abs(ry)>0.01||tabbyYStr(po)){
+      calls.push('(function(){var o='+fn+'('+po.x+','+po.z+');'+tabbyYStr(po)+(Math.abs(ry)>0.01?'o.rotation.y='+ry.toFixed(4)+';':'')+'})();');
     }else{
       calls.push(fn+'('+po.x+','+po.z+');');
     }
@@ -3837,7 +4141,7 @@ function doExportHTML(opts){
   var inject='\n// === OBIEKTY ===\n';
   for(var fn in funcs)inject+=funcs[fn]+'\n';
   if(calls.length>0)inject+='// pozycje\n'+calls.join('\n')+'\n';
-  var wCalls=[];wCols.forEach(function(w){if(!w._poRef)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
+  var wCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(wCalls.length>0)inject+='// sciany kolizji\n'+wCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
@@ -3891,14 +4195,15 @@ function doExportZIP(opts){
     {
       hasJson=true;
       var fname=tabbySlug(ob.name)+'.json';
-      var ryStr=Math.abs(ry)>0.01?','+ry.toFixed(4):'';
+      var yv=po.y&&Math.abs(po.y)>0.001?(+po.y).toFixed(3):'';
+      var ryStr=(Math.abs(ry)>0.01||yv)?','+ry.toFixed(4):'';
       if(po.action){
         if(!intFiles[fname]&&ob.jsonText)intFiles[fname]=ob.jsonText;
         var actStr=','+JSON.stringify(po.action);
-        intCalls.push('loadJSON("interaktywne/'+fname+'",'+po.x+','+po.z+ryStr+actStr+');');
+        intCalls.push('loadJSON("interaktywne/'+fname+'",'+po.x+','+po.z+ryStr+actStr+(yv?','+yv:'')+');');
       }else{
         if(!jsonFiles[fname]&&ob.jsonText)jsonFiles[fname]=ob.jsonText;
-        jsonCalls.push('loadJSON("obiekty/'+fname+'",'+po.x+','+po.z+ryStr+');');
+        jsonCalls.push('loadJSON("obiekty/'+fname+'",'+po.x+','+po.z+ryStr+(yv?',null,'+yv:'')+');');
       }
       if(po._col){
         var box=new THREE.Box3().setFromObject(po.gr);
@@ -3943,14 +4248,14 @@ function doExportZIP(opts){
     inject+='  g.traverse(function(c){if(c.isMesh){c.castShadow=true;c.receiveShadow=true;}});\n';
     inject+='  scene.add(g);\n  return g;\n}\n';
     inject+='var __tbPend=0;\n';
-    inject+='function loadJSON(path,x,z,ry,action){\n  __tbPend++;\n';
+    inject+='function loadJSON(path,x,z,ry,action,y){\n  __tbPend++;\n';
     inject+='  fetch(path).then(function(r){return r.json();}).then(function(data){\n';
-    inject+='    var g=buildFromJSON(data,x,z);if(ry)g.rotation.y=ry;if(action){g.userData.action=action;placedActions.push({gr:g,action:action,_lightOn:true,_open:false,_baseRotY:ry||0});}\n';
+    inject+='    var g=buildFromJSON(data,x,z);if(y)g.position.y=y;if(ry)g.rotation.y=ry;if(action){g.userData.action=action;placedActions.push({gr:g,action:action,_lightOn:true,_open:false,_baseRotY:ry||0});}\n';
     inject+='  }).then(function(){__tbPend--;if(__tbPend===0)tabbyInstance();},function(){__tbPend--;if(__tbPend===0)tabbyInstance();});\n}\n';
     inject+='// pozycje JSON\n'+jsonCalls.join('\n')+'\n';
     if(intCalls.length>0)inject+='// interaktywne\n'+intCalls.join('\n')+'\n';
   }
-  var zWCalls=[];wCols.forEach(function(w){if(!w._poRef)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
+  var zWCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate)zWCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(zWCalls.length>0)inject+='// sciany kolizji\n'+zWCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
@@ -4413,6 +4718,7 @@ function tabbyCollectProject(){
     var pd={oi:po.oi,x:po.x,z:po.z,rotY:po.rotY||po.gr.rotation.y||0,col:!!po._col};
     if(po.veh&&Object.keys(po.veh).length)pd.veh=po.veh;
     if(po._partCols&&Object.keys(po._partCols).length){pd.pc={};Object.keys(po._partCols).forEach(function(k){var c=po._partCols[k];pd.pc[k]=c&&c.veh?c.veh:1;});}
+    if(po.y&&Math.abs(po.y)>0.001)pd.y=po.y; // wysokość nad ziemią
     if(po.action)pd.action=po.action;
     d.placed.push(pd);
   });
@@ -4553,6 +4859,7 @@ function tabbyLoadEditorData(ed){
     var gr=buildObj(loadedObjs[pd.oi],pd.x,pd.z);
     if(pd.rotY)gr.rotation.y=pd.rotY;
     var po={oi:pd.oi,x:pd.x,z:pd.z,gr:gr,rotY:pd.rotY||0};
+    if(pd.y){gr.position.y=+pd.y;po.y=+pd.y;} // wysokość nad ziemią
     if(pd.action)po.action=pd.action;
     if(pd.veh)po.veh=pd.veh;
     if(pd.col){addCollision(po);}
@@ -4627,6 +4934,7 @@ function init(){
         var gr=buildObj(ob,sx,sz);
         gr.rotation.y=pasteRotY;
         var po={oi:pasteObjIdx,x:sx,z:sz,gr:gr,rotY:pasteRotY};
+        if(editIdx>=0&&placedObjs[editIdx]&&placedObjs[editIdx].oi===pasteObjIdx&&placedObjs[editIdx].y){po.y=placedObjs[editIdx].y;gr.position.y=po.y;} // kopia na tej samej wysokości
         if(editIdx>=0&&placedObjs[editIdx]&&placedObjs[editIdx].action)po.action=JSON.parse(JSON.stringify(placedObjs[editIdx].action));
         else if(loadedObjs[pasteObjIdx].action)po.action=JSON.parse(JSON.stringify(loadedObjs[pasteObjIdx].action));
         // kopia dostaje też kolizje oryginału: całego obiektu i części (razem z efektami pojazdu)
@@ -5021,9 +5329,18 @@ function init(){
     else if(axis==='z')po.gr.position.z+=dir*moveStep;
     po.x=Math.round(po.gr.position.x*100)/100;
     po.z=Math.round(po.gr.position.z*100)/100;
+    po.y=Math.round(po.gr.position.y*100)/100; // wysokość zapisuje się w projekcie i grze
     tabbySyncCols(po);
     updateHighlight();updateEditUI();
   }
+  function gateNum(d){ // numer bramki: zamiana miejscami z bramką, która miała ten numer
+    if(editIdx<0)return;var po=placedObjs[editIdx];if(!po.action||po.action.type!=='gate')return;
+    var old=+po.action.n||1,n=Math.max(1,old+d);if(n===old)return;
+    placedObjs.forEach(function(o){if(o!==po&&o.action&&o.action.type==='gate'&&+o.action.n===n)o.action.n=old;});
+    po.action.n=n;RACE.scanT=0;raceScan(0);updateEditUI();
+  }
+  document.getElementById('eb-gate-m').addEventListener('click',function(){gateNum(-1);});
+  document.getElementById('eb-gate-p').addEventListener('click',function(){gateNum(1);});
   document.getElementById('eb-xl').addEventListener('click',function(){nudge('x',-1);});
   document.getElementById('eb-xr').addEventListener('click',function(){nudge('x',1);});
   document.getElementById('eb-up').addEventListener('click',function(){nudge('y',1);});
@@ -5613,9 +5930,10 @@ function triggerAction(pa){
 }
 function checkInteract(){
   if(driveTarget)return;
+  if(drnFlying()||DRN.stage==='toBase'){nearIdx=-1;var ipx=document.getElementById('interact-prompt');if(ipx)ipx.style.display='none';return;}
   var oldNear=nearIdx;nearIdx=-1;
   for(var i=0;i<placedActions.length;i++){
-    var pa=placedActions[i];if(!pa.gr.visible)continue;
+    var pa=placedActions[i];if(!pa.gr.visible||pa.action.type==='gate')continue;
     var dx=charX-pa.gr.position.x,dz=charZ-pa.gr.position.z;
     if(Math.sqrt(dx*dx+dz*dz)<INTERACT_DIST){nearIdx=i;break;}
   }

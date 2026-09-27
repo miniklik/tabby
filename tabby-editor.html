@@ -1258,6 +1258,18 @@ function drvExit(){
 }
 function drvSpawnSmoke(x,y,z){var geo=new THREE.SphereGeometry(0.08+Math.random()*0.06,4,4);var mat=new THREE.MeshBasicMaterial({color:0xaaaaaa,transparent:true,opacity:0.3});var m=new THREE.Mesh(geo,mat);m.position.set(x+(Math.random()-0.5)*0.4,y+0.25,z+(Math.random()-0.5)*0.4);scene.add(m);DRV.smoke.push({mesh:m,life:0.4+Math.random()*0.25,age:0});}
 function drvUpdateSmoke(dt){for(var i=DRV.smoke.length-1;i>=0;i--){var p=DRV.smoke[i];p.age+=dt;p.mesh.position.y+=0.72*dt;var f=1-p.age/p.life;p.mesh.scale.setScalar(1+(1-f)*1.3);p.mesh.material.opacity=f*0.2;if(p.age>=p.life){scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();DRV.smoke.splice(i,1);}}}
+// 🏍 jeździec: przy "rider": true ludzik siedzi na części "seat", trzyma kierownicę i przechyla się razem z pojazdem
+function drvRider(g,a){
+  if(!a.rider||typeof charGroup==='undefined')return;
+  var u=g.userData;
+  if(!u._seatP){var st=null;g.traverse(function(o){if(o.userData&&o.userData._role==='seat')st=o;});
+    if(st&&st.geometry){if(!st.geometry.boundingBox)st.geometry.computeBoundingBox();var bb=st.geometry.boundingBox;u._seatP=[st.position.x,st.position.y+bb.max.y,st.position.z];}
+    else u._seatP=[0,1,0.2];}
+  var P=u._seatP,w=new THREE.Vector3(P[0],P[1]-0.7,P[2]+0.06);g.updateMatrixWorld(true);g.localToWorld(w);
+  charGroup.visible=true;charGroup.position.copy(w);charGroup.quaternion.copy(g.quaternion);charGroup.rotateX(-0.22); // lekko pochylony jak na ścigaczu
+  if(bp.legL){bp.legL.rotation.set(0.95,0,0.14);bp.legR.rotation.set(0.95,0,-0.14);bp.armL.rotation.set(1.05,0,0.22);bp.armR.rotation.set(1.05,0,-0.22);bp.head.rotation.x=0.25;}
+  DRV._rider=true;
+}
 function drvStep(dt,camOff,camMode){
   var o=DRV.t;if(!o)return;var a=o.action||{},g=o.gr;
   DRV.time=(DRV.time||0)+dt;
@@ -1320,6 +1332,7 @@ function drvStep(dt,camOff,camMode){
     var spin=(dir*moved+wd.px*appliedYaw)/wd.r;
     for(var ii=0;ii<wd.items.length;ii++)wd.items[ii].m.rotation.x+=spin;
   }
+  drvRider(g,a);
   // kamera
   var cx=x,cz=z,co=(camOff&&camOff[camMode])||{y:0,angle:0,dist:0};
   if(camMode==='chase'){
@@ -1802,6 +1815,7 @@ function wpnHud(on){
 }
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){
+  if(DRV._rider&&!DRV.t){DRV._rider=false;charGroup.rotation.x=0;charGroup.rotation.z=0;['legL','legR','armL','armR'].forEach(function(n){if(bp[n])bp[n].rotation.set(0,0,0);});if(bp.head)bp.head.rotation.x=0;}
   drnTick(dt);fogTick(dt);winTick(dt);
   WPN.cd=Math.max(0,WPN.cd-dt);
   if(onGr)WPN.floor=charY;
@@ -3986,6 +4000,7 @@ var AI_PROMPT = [
 '   speed — predkosc maks.; turnSpeed — skret (szybkie pojazdy: mniejszy, np. 0.2 przy speed 20)',
 '   grip: 0.04=drift, 0.07=normalny, 0.15=sztywny; lean: przechyl w zakretach (0 = brak)',
 '   pivot: true — obrot w miejscu (czolg, gasienice); wtedy daj lean: 0',
+'   rider: true — jednoslad (motocykl, rower): widac jezdzca na czesci z "role": "seat"; lean ok. 2.5 = mocny przechyl do srodka zakretu',
 '   PRZOD POJAZDU = kierunek -Z (swiatla przednie na ujemnym Z).',
 '   KOLA: czesc cylinder z "rotation": [0,0,1.5708] i "role":',
 '     wheel_fl / wheel_fr (przednie — skrecaja), wheel_rl / wheel_rr (tylne), wheel (tylko sie kreca, np. kola jezdne czolgu)',

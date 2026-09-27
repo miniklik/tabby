@@ -1787,12 +1787,12 @@ var ASSETS = [
   {
     name:"Stanowisko strzeleckie",
     category:["strzelnica","interaktywny"],
-    desc:"Uniwersalne stanowisko, które samo buduje cały tor: cele (talerzyki, poppery, gongi) ustawiają się losowo, w każdej próbie inaczej, na końcu wał ziemny, po bokach słupki co 10 m i kolorowe linie toru. Po postawieniu zaznacz je i w panelu Edycja ustaw tylko: liczbę celów, odległość i broń (M9, Ryś .45, Pantera K30). Tor biegnie przed ladą — obrotem ustawiasz kierunek. W grze: pole przed budką pokazuje opis, w budce widok z oczu, E — broń i naboje, czas rusza z pierwszym strzałem, R — nowa próba.",
+    desc:"Uniwersalne stanowisko, które samo buduje cały tor: cele ustawiają się losowo, w każdej próbie inaczej, na końcu wał ziemny, po bokach słupki co 10 m i kolorowe linie toru. Po postawieniu zaznacz je i w panelu Edycja ustaw: liczbę celów, odległość, rodzaj celów (stalowe, puszki i butelki, papierowe tarcze albo mieszane) i broń (M9, Ryś .45, Pantera K30). Tor biegnie przed ladą — obrotem ustawiasz kierunek. Lada i przegrody mają kolizję. W grze: pole przed budką pokazuje opis, w budce widok z oczu, E — broń i naboje, czas rusza z pierwszym strzałem, R — nowa próba.",
     parts:[
-      {"shape": "box", "size": [3.2, 0.06, 0.9], "color": "#8a6440", "position": [0, 0.89, 0]},
-      {"shape": "box", "size": [3.2, 0.86, 0.05], "color": "#5c4129", "position": [0, 0.43, -0.425]},
-      {"shape": "box", "size": [0.07, 2.3, 2.8], "color": "#7a5a3a", "position": [-1.95, 1.15, 0.7]},
-      {"shape": "box", "size": [0.07, 2.3, 2.8], "color": "#7a5a3a", "position": [1.95, 1.15, 0.7]},
+      {"shape": "box", "size": [3.2, 0.06, 0.9], "color": "#8a6440", "position": [0, 0.89, 0], "col": true},
+      {"shape": "box", "size": [3.2, 0.86, 0.05], "color": "#5c4129", "position": [0, 0.43, -0.425], "col": true},
+      {"shape": "box", "size": [0.07, 2.3, 2.8], "color": "#7a5a3a", "position": [-1.95, 1.15, 0.7], "col": true},
+      {"shape": "box", "size": [0.07, 2.3, 2.8], "color": "#7a5a3a", "position": [1.95, 1.15, 0.7], "col": true},
       {"shape": "box", "size": [3.1, 0.006, 0.76], "color": "#35573f", "position": [0, 0.922, 0.02]},
       {"shape": "box", "size": [3.1, 0.04, 0.7], "color": "#6b4b2f", "position": [0, 0.35, 0]},
       {"shape": "box", "size": [0.07, 0.86, 0.07], "color": "#4a3422", "position": [-1.55, 0.43, 0.41]},
@@ -1802,7 +1802,7 @@ var ASSETS = [
       {"shape": "box", "size": [3.8, 0.03, 2.6], "color": "#2b2e30", "position": [0, 0.015, 0.85]},
       {"shape": "box", "size": [3.8, 0.012, 0.09], "color": "#f2c200", "position": [0, 0.006, -0.6]}
     ],
-    action:{"type": "range", "targets": 5, "dist": 25, "weapon": "M9"}
+    action:{"type": "range", "targets": 5, "dist": 25, "weapon": "M9", "kind": "steel"}
   },
   {
     name:"Płyta z kostki",

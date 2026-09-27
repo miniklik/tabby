@@ -116,6 +116,8 @@ input[type=text]{width:100%;background:rgba(255,255,255,.06);border:1px solid rg
         <div class="sw">Podłogi <input type="color" id="c-floor" value="#8a6a48"></div>
         <div class="sw">Schody <input type="color" id="c-stairs" value="#9c7a55"></div>
         <div class="sw">Dach <input type="color" id="c-roof" value="#a94f36"></div>
+        <div class="sw">Winda (kabina) <input type="color" id="c-cab" value="#b08d57"></div>
+        <div class="sw">Drzwi windy <input type="color" id="c-door" value="#5f7f99"></div>
       </div>
       <div class="sec">
         <button class="btn go big" id="walk-btn">Przejdź się</button>
@@ -169,7 +171,7 @@ if(!B.mode)B.mode=B.floors.some(function(g){return g.some(function(r){return r.s
 function applyMode(){WH=MODE_WH[B.mode]||3.0;FH=WH+SLAB;STEPS=Math.max(12,Math.round(FH/0.27));
   document.querySelectorAll('.mode button').forEach(function(b){b.classList.toggle('on',b.dataset.mode===B.mode);});}
 var curF=0,tool='draw',step=1,lastDir=0;
-function fresh(n){return {lifts:[],mode:(typeof B!=='undefined'&&B&&B.mode)||'budynki',w:n,h:n,floors:[grid(n,n)],stairs:[],roof:true,colors:{wall:'#d9cfbd',floor:'#8a6a48',stairs:'#9c7a55',roof:'#a94f36'},name:'Budynek'};}
+function fresh(n){return {lifts:[],mode:(typeof B!=='undefined'&&B&&B.mode)||'budynki',w:n,h:n,floors:[grid(n,n)],stairs:[],roof:true,colors:{wall:'#d9cfbd',floor:'#8a6a48',stairs:'#9c7a55',roof:'#a94f36',cab:'#b08d57',door:'#5f7f99'},name:'Budynek'};}
 function grid(w,h){var g=[];for(var r=0;r<h;r++){g.push([]);for(var c=0;c<w;c++)g[r].push(0);}return g;}
 function load(){try{var j=localStorage.getItem('tabby-budynki');if(!j)return null;var d=JSON.parse(j);if(!d||!d.floors||!d.floors.length||!d.colors)return null;return d;}catch(e){return null;}}
 function save(){try{localStorage.setItem('tabby-budynki',JSON.stringify(B));}catch(e){}}
@@ -424,11 +426,12 @@ function buildParts(){
       var base2=f2*FH,lv=f2===0?GSLAB:base2,yb=f2===0?0:base2-SLAB,top=base2+WH,ccx=X(l.c)+CELL/2,ccz=Z(l.r)+CELL/2,DW=1.9,DH=Math.min(2.7,WH-0.3);
       for(var k=0;k<4;k++){var q=DIRS[k],nr=l.r+q[1],nc=l.c+q[0];if(!open(f2,nr,nc))continue; // od strony pustej jest zwykła ściana zewnętrzna
         var hz=q[1]!==0,wx=ccx+q[0]*CELL/2,wz=ccz+q[1]*CELL/2,Lw=CELL+WT;
-        function pc2(a0,a1,y0,y1,col,kind,noCol,ex){var la=a1-a0,ca=(a0+a1)/2;if(la<=0.01||y1-y0<=0.01)return;
-          if(hz)box(la,y1-y0,WT,ccx+ca,(y0+y1)/2,wz,col,f2,kind,noCol,ex);else box(WT,y1-y0,la,wx,(y0+y1)/2,ccz+ca,col,f2,kind,noCol,ex);}
+        function pc2(a0,a1,y0,y1,col,kind,noCol,ex,th){var la=a1-a0,ca=(a0+a1)/2,t=th||WT+0.02; // ściany szybu o 1 cm grubsze od zwykłych — na łączeniach nie migająif(la<=0.01||y1-y0<=0.01)return;
+          if(hz)box(la,y1-y0,t,ccx+ca,(y0+y1)/2,wz,col,f2,kind,noCol,ex);else box(t,y1-y0,la,wx,(y0+y1)/2,ccz+ca,col,f2,kind,noCol,ex);}
         if(k!==l.d){pc2(-Lw/2,Lw/2,yb,top,C.wall,'wall');continue;}
         pc2(-Lw/2,-DW/2,yb,top,C.wall,'wall');pc2(DW/2,Lw/2,yb,top,C.wall,'wall');pc2(-DW/2,DW/2,lv+DH,top,C.wall,'wall');pc2(-DW/2,DW/2,yb,lv,C.wall,'wall');
-        var fr='#8a939c';pc2(-DW/2-0.1,-DW/2,lv,lv+DH,fr,'win',true,NS);pc2(DW/2,DW/2+0.1,lv,lv+DH,fr,'win',true,NS);pc2(-DW/2-0.1,DW/2+0.1,lv+DH,lv+DH+0.1,fr,'win',true,NS);
+        // futryna grubsza od ściany (wystaje 4 cm z obu stron) — żadna jej ściana nie leży w tej samej płaszczyźnie co mur, więc nie miga
+        var fr='#8a939c',FT=WT+0.08;pc2(-DW/2-0.12,-DW/2+0.02,lv,lv+DH+0.02,fr,'win',true,NS,FT);pc2(DW/2-0.02,DW/2+0.12,lv,lv+DH+0.02,fr,'win',true,NS,FT);pc2(-DW/2-0.12,DW/2+0.12,lv+DH-0.02,lv+DH+0.12,fr,'win',true,NS,FT);
         // przycisk przywołania obok drzwi (od strony korytarza)
         var bo=(WT/2+0.03)*1,bs=q[0]+q[1]>0?1:-1;
         if(hz)box(0.16,0.28,0.04,ccx+DW/2+0.35,lv+1.3,wz+q[1]*(WT/2+0.02),'#ffcc33',f2,'win',true,NS);else box(0.04,0.28,0.16,wx+q[0]*(WT/2+0.02),lv+1.3,ccz+DW/2+0.35,'#ffcc33',f2,'win',true,NS);
@@ -463,7 +466,7 @@ function buildParts(){
 function exportJSON(){
   var parts=buildParts().map(function(p){var q={shape:p.shape,size:p.size,color:p.color,position:p.position,role:B.mode==='budynki'?'bld':(p._k==='roof'?'roof':'bud')};if(p.col)q.col=true;if(p.ramp)q.ramp=p.ramp;if(p.opacity!==undefined)q.opacity=p.opacity;if(p.shadow===false)q.shadow=false;if(p.glass)q.glass=true;return q;});
   var o={name:(document.getElementById('name').value||'Budynek').trim()||'Budynek',parts:parts},ox=-B.w*CELL/2,oz=-B.h*CELL/2;
-  if(B.lifts.length)o.lifts=B.lifts.map(function(l){var q=DIRS[l.d];return {x:+(ox+l.c*CELL+CELL/2).toFixed(3),z:+(oz+l.r*CELL+CELL/2).toFixed(3),d:l.d,w:CELL,h:+(WH-0.3).toFixed(2),dw:1.9,dh:+Math.min(2.7,WH-0.3).toFixed(2),
+  if(B.lifts.length)o.lifts=B.lifts.map(function(l){var q=DIRS[l.d];return {cab:B.colors.cab||'#b08d57',door:B.colors.door||'#5f7f99',x:+(ox+l.c*CELL+CELL/2).toFixed(3),z:+(oz+l.r*CELL+CELL/2).toFixed(3),d:l.d,w:CELL,h:+(WH-0.3).toFixed(2),dw:1.9,dh:+Math.min(2.7,WH-0.3).toFixed(2),
     levels:B.floors.map(function(_,f){return +(f===0?GSLAB:f*FH).toFixed(3);}),doors:B.floors.map(function(_,f){return open(f,l.r+q[1],l.c+q[0]);})};});
   return o;
 }
@@ -541,7 +544,7 @@ function rebuild(){
   var parts=buildParts(),maxY=0;
   (function(){var ox=-B.w*CELL/2,oz=-B.h*CELL/2;B.lifts.forEach(function(l){var q=DIRS[l.d];B.floors.forEach(function(_,f){if(!open(f,l.r+q[1],l.c+q[0]))return;
     var lv=f===0?GSLAB:f*FH,dh=Math.min(2.7,WH-0.3),cx2=ox+l.c*CELL+CELL/2+q[0]*(CELL/2-0.12),cz2=oz+l.r*CELL+CELL/2+q[1]*(CELL/2-0.12),hz=q[1]!==0;
-    parts.push({shape:'box',size:hz?[1.95,dh,0.07]:[0.07,dh,1.95],color:'#b8c2cc',position:[cx2,lv+dh/2,cz2],col:true,_f:f,_k:'win'});});});})();
+    parts.push({shape:'box',size:hz?[1.95,dh,0.07]:[0.07,dh,1.95],color:B.colors.door||'#5f7f99',position:[cx2,lv+dh/2,cz2],col:true,_f:f,_k:'win'});});});})();
   parts.forEach(function(p){
     var m=new THREE.Mesh(new THREE.BoxGeometry(p.size[0],p.size[1],p.size[2]),new THREE.MeshStandardMaterial({color:p.color,roughness:0.8}));
     if(p.opacity!==undefined){m.material.transparent=true;m.material.opacity=p.opacity;m.material.depthWrite=false;}
@@ -668,7 +671,8 @@ document.querySelectorAll('.step').forEach(function(b){b.onclick=function(){goSt
 // wygląd
 var roofEl=document.getElementById('roof');roofEl.checked=B.roof!==false;
 roofEl.onchange=function(){B.roof=roofEl.checked;save();dirty=true;};
-[['c-wall','wall'],['c-floor','floor'],['c-stairs','stairs'],['c-roof','roof']].forEach(function(q){var el=document.getElementById(q[0]);el.value=B.colors[q[1]];
+if(!B.colors.cab)B.colors.cab='#b08d57';if(!B.colors.door)B.colors.door='#5f7f99'; // kolory windy (starsze projekty)
+[['c-wall','wall'],['c-floor','floor'],['c-stairs','stairs'],['c-roof','roof'],['c-cab','cab'],['c-door','door']].forEach(function(q){var el=document.getElementById(q[0]);el.value=B.colors[q[1]];
   el.oninput=function(){B.colors[q[1]]=el.value;save();dirty=true;};});
 var nameEl=document.getElementById('name');nameEl.value=B.name||'Budynek';nameEl.oninput=function(){B.name=nameEl.value;save();};
 

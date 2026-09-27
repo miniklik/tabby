@@ -53,6 +53,14 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
 #about code{font-family:ui-monospace,Consolas,monospace;font-size:.9em;background:rgba(255,243,212,.08);border-radius:5px;padding:1px 6px;color:var(--moon)}
 #about .sum{margin-top:44px;padding:20px 22px;border-left:3px solid var(--glow);background:rgba(240,163,94,.08);border-radius:0 14px 14px 0}
 #about .sum p{margin:0}
+#about .note{color:var(--muted)}
+#about .outro{margin:56px 0 20px;padding:30px 30px 28px;border:1px solid var(--line-hi);border-radius:20px;text-align:center;
+  background:radial-gradient(ellipse 90% 120% at 50% 0%,rgba(240,163,94,.16),rgba(18,22,62,.7) 70%)}
+#about .outro .ic{font-size:34px;line-height:1;margin-bottom:10px}
+#about .outro h3{margin:0 0 12px;font-family:var(--display);font-weight:500;font-size:26px;color:var(--moon)}
+#about .outro p{margin:0 auto 12px;max-width:32em;font-size:17px;line-height:1.6}
+#about .outro p:last-child{margin-bottom:0}
+#about .outro .go{color:var(--glow);font-family:var(--display);font-size:19px}
 /* ---------- telefon / pion ---------- */
 @media (max-aspect-ratio:1/1),(max-width:720px){
   .home{top:auto;bottom:max(24px,env(safe-area-inset-bottom));transform:none;left:20px;right:20px;width:auto}
@@ -110,6 +118,26 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
   <p>Fachowo taki sposób budowania nazywa się <b>modelowaniem z prymitywów</b>: obiekty składa się z prostych brył — pudełek, walców, kul, stożków — zamiast rzeźbić je jak w Blenderze. Format Tabby to mały, specjalistyczny język opisu kształtów. Właśnie dlatego sztuczna inteligencja tak łatwo tworzy dla Tabby nowe obiekty: tekst to jej naturalne środowisko.</p>
 
   <div class="sum"><p><b>W skrócie:</b> gry piszemy w JavaScript, rysujemy przez Three.js, a obiekty opisujemy w JSON według reguł formatu Tabby. HTML i CSS to opakowanie.</p></div>
+
+  <h2>Co potrafi</h2>
+  <p>Tabby potrafi naprawdę dużo, a wszystko działa od razu w przeglądarce, bez instalowania czegokolwiek.</p>
+  <dl>
+    <div class="item"><dt>Start w sekundę</dt><dd>Gry i sceny odpalają się praktycznie od razu, bez długich ekranów wczytywania. Klikasz i już grasz.</dd></div>
+    <div class="item"><dt>Zmiany na żywo</dt><dd>Wszystkie ustawienia działają w czasie rzeczywistym: pora dnia, mgła, zima, kolizje, pojazdy, dron. Zmieniasz i od razu widzisz efekt, bez przebudowywania gry.</dd></div>
+    <div class="item"><dt>Wszystko w jednym miejscu</dt><dd>Postać, pojazdy, drony, bronie, budynki, pogoda i wyścigi. Edytor, sklep z obiektami i gotowe sceny są pod ręką, w jednej karcie przeglądarki.</dd></div>
+  </dl>
+
+  <h2>Uczciwie o ograniczeniach</h2>
+  <p>Tabby działa jednak w przeglądarce, więc nie jest wielkim silnikiem w rodzaju Unreala czy Unity. Szybkość zależy od komputera: na mocnym sprzęcie wszystko chodzi płynnie, a na słabszym duża scena z tysiącami obiektów może zwolnić. Dlatego Tabby ma wskaźnik wydajności i sam włącza tryb oszczędny, gdy komputer nie nadąża.</p>
+  <p class="note">Nie spodziewaj się grafiki z najdroższych gier. Za to przy małych i średnich projektach dostajesz natychmiastową zabawę na całkiem dobrym poziomie, i to jest właśnie siła Tabby.</p>
+
+  <div class="outro">
+    <div class="ic">🚀</div>
+    <h3>Bądźmy dobrej myśli</h3>
+    <p>Technologia ciągle idzie do przodu. Każdy nowy komputer i każda nowa karta graficzna są szybsze od poprzednich, a przeglądarki z roku na rok coraz lepiej wykorzystują ich moc.</p>
+    <p>To, co dziś jest granicą, wkrótce przestanie przeszkadzać, a Tabby będzie rosło razem z tym postępem.</p>
+    <p class="go">Otwórz kartę, zbuduj coś małego i baw się od pierwszej sekundy.</p>
+  </div>
   </div>
 </section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

@@ -330,6 +330,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
           <div style="display:grid;grid-template-columns:80px auto 1fr auto;gap:6px 8px;align-items:center">
             <span style="color:#ccc">Cele</span><button type="button" class="edit-btn eb-rng" data-k="n" data-d="-1" style="padding:3px 11px;background:#ff9a3a;color:#000">−</button><b id="eb-rng-n" style="text-align:center;color:#fff">5</b><button type="button" class="edit-btn eb-rng" data-k="n" data-d="1" style="padding:3px 11px;background:#ff9a3a;color:#000">+</button>
             <span style="color:#ccc">Odległość</span><button type="button" class="edit-btn eb-rng" data-k="d" data-d="-1" style="padding:3px 11px;background:#ff9a3a;color:#000">−</button><b id="eb-rng-d" style="text-align:center;color:#fff">25 m</b><button type="button" class="edit-btn eb-rng" data-k="d" data-d="1" style="padding:3px 11px;background:#ff9a3a;color:#000">+</button>
+            <span style="color:#ccc">Rodzaj</span><button type="button" class="edit-btn eb-rng" data-k="k" data-d="-1" style="padding:3px 11px;background:#ff9a3a;color:#000">◀</button><b id="eb-rng-k" style="text-align:center;color:#fff">Stalowe</b><button type="button" class="edit-btn eb-rng" data-k="k" data-d="1" style="padding:3px 11px;background:#ff9a3a;color:#000">▶</button>
             <span style="color:#ccc">Broń</span><button type="button" class="edit-btn eb-rng" data-k="w" data-d="-1" style="padding:3px 11px;background:#ff9a3a;color:#000">◀</button><b id="eb-rng-w" style="text-align:center;color:#fff">M9</b><button type="button" class="edit-btn eb-rng" data-k="w" data-d="1" style="padding:3px 11px;background:#ff9a3a;color:#000">▶</button>
           </div>
         </div>
@@ -1791,7 +1792,7 @@ function wpnImpact(h,dir){
     n.applyMatrix3(new THREE.Matrix3().getNormalMatrix(mw)).normalize();
   }
   if(n.dot(dir)>0)n.negate();
-  var res=wpnReact(obj,dir);if(!res&&typeof rngImpact==='function'&&rngImpact(obj))res='hit'; // stalowy cel strzelnicy
+  var res=wpnReact(obj,dir);if(!res&&typeof rngImpact==='function'&&rngImpact(obj,h))res='hit'; // stalowy cel strzelnicy
   var col=new THREE.Color(0x8a8a8a);if(obj.material&&obj.material.color&&!obj.material.vertexColors)col.copy(obj.material.color);
   col.lerp(new THREE.Color(0xd8d0c0),0.35);
   // iskry
@@ -2905,9 +2906,10 @@ window.addEventListener('keydown',function(e){
 var RNG_W={"M9":{"parts":[{"shape":"box","size":[0.45,0.048,0.075],"color":"#34373d","position":[-0.3,0.9455,0.1]},{"shape":"cylinder","size":[0.02,0.02,0.14,12],"color":"#aab0b8","position":[-0.185,0.9455,0.138],"rotation":[0,0,1.5708]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.495,0.9455,0.1]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.4785,0.9455,0.1]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.462,0.9455,0.1]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.4455,0.9455,0.1]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#141516","position":[-0.429,0.9455,0.1]},{"shape":"box","size":[0.0675,0.0503,0.024],"color":"#141516","position":[-0.2325,0.9455,0.1045]},{"shape":"cylinder","size":[0.018,0.018,0.03,12],"color":"#b8bec6","position":[-0.0675,0.9455,0.1],"rotation":[0,0,1.5708],"role":"muzzle"},{"shape":"box","size":[0.39,0.051,0.048],"color":"#1d1f22","position":[-0.2775,0.9455,0.0475]},{"shape":"box","size":[0.135,0.045,0.018],"color":"#1d1f22","position":[-0.15,0.9455,0.0175]},{"shape":"box","size":[0.09,0.051,0.21],"color":"#1d1f22","position":[-0.4575,0.9455,-0.05],"rotation":[0,0.26,0]},{"shape":"box","size":[0.072,0.0528,0.165],"color":"#5a3a24","position":[-0.456,0.9455,-0.0455],"rotation":[0,0.26,0],"role":"grip"},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3e2716","position":[-0.4424,0.9455,0.01],"rotation":[0,0.26,0]},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3e2716","position":[-0.4513,0.9455,-0.0245],"rotation":[0,0.26,0]},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3e2716","position":[-0.4603,0.9455,-0.059],"rotation":[0,0.26,0]},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3e2716","position":[-0.4693,0.9455,-0.0935],"rotation":[0,0.26,0]},{"shape":"box","size":[0.105,0.051,0.021],"color":"#141516","position":[-0.483,0.9455,-0.158],"rotation":[0,0.26,0],"role":"mag"},{"shape":"box","size":[0.105,0.036,0.0135],"color":"#1d1f22","position":[-0.345,0.9455,-0.0155]},{"shape":"box","size":[0.0135,0.036,0.057],"color":"#1d1f22","position":[-0.294,0.9455,0.01]},{"shape":"box","size":[0.0135,0.018,0.042],"color":"#9aa0a8","position":[-0.351,0.9455,0.0145],"rotation":[0,-0.3,0]},{"shape":"box","size":[0.0195,0.018,0.027],"color":"#9aa0a8","position":[-0.537,0.9455,0.124],"rotation":[0,0.35,0]},{"shape":"box","size":[0.136,0.0595,0.0595],"color":"#1c1e22","position":[-0.398,0.92,-0.1153],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.034,0.0595,0.0595],"color":"#1c1e22","position":[-0.3215,0.92,-0.1153],"rotation":[1.5708,0.2,0]},{"shape":"box","size":[0.0085,0.0646,0.0646],"color":"#2a2d33","position":[-0.3045,0.92,-0.1153],"rotation":[1.5708,0,0]},{"shape":"cylinder","size":[0.0204,0.0204,0.0051,16],"color":"#ff1a1a","position":[-0.2994,0.92,-0.1153],"rotation":[1.5708,0,1.5708],"role":"laser"},{"shape":"cylinder","size":[0.0068,0.0068,0.0068,16],"color":"#ff4d4d","position":[-0.2977,0.92,-0.1153],"rotation":[1.5708,0,1.5708]},{"shape":"cylinder","size":[0.0289,0.0289,0.0204,16],"color":"#2a2d33","position":[-0.4745,0.92,-0.1153],"rotation":[1.5708,0,1.5708]},{"shape":"box","size":[0.0034,0.0425,0.0068],"color":"#0a0b0d","position":[-0.4864,0.92,-0.1153],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.119,0.0255,0.051],"color":"#111214","position":[-0.398,0.92,-0.1493],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0255,0.034,0.0136],"color":"#111214","position":[-0.398,0.8945,-0.1663],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0255,0.034,0.0136],"color":"#111214","position":[-0.398,0.9455,-0.1663],"rotation":[1.5708,0,0]},{"shape":"cylinder","size":[0.0068,0.0068,0.034,12],"color":"#555a63","position":[-0.398,0.92,-0.1748],"rotation":[-3.1416,0,0]},{"shape":"cylinder","size":[0.0102,0.0102,0.0051,12],"color":"#777d87","position":[-0.398,0.8996,-0.1748],"rotation":[-3.1416,0,0]},{"shape":"box","size":[0.051,0.0085,0.034],"color":"#2e3238","position":[-0.381,0.92,-0.0813],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0085,0.0102,0.0374],"color":"#1a1c20","position":[-0.398,0.92,-0.0813],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0085,0.0102,0.0374],"color":"#1a1c20","position":[-0.364,0.92,-0.0813],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.398,0.8894,-0.1153],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.398,0.8894,-0.1238],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.398,0.8894,-0.1068],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.398,0.9506,-0.1153],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.398,0.9506,-0.1238],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.398,0.9506,-0.1068],"rotation":[1.5708,0,0]},{"shape":"cylinder","size":[0.0051,0.0051,0.0034,8],"color":"#00ff00","position":[-0.432,0.903,-0.0847],"rotation":[-3.1416,0,0]},{"shape":"box","size":[0.017,0.017,0.0085],"color":"#1c1e22","position":[-0.4575,0.886,-0.1408],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.02,0.038,0.008],"color":"#141516","position":[-0.505,0.9455,0.1415]},{"shape":"box","size":[0.02,0.012,0.036],"color":"#141516","position":[-0.505,0.9325,0.1555]},{"shape":"box","size":[0.002,0.005,0.005],"color":"#f2f2f2","position":[-0.5155,0.9325,0.1675]},{"shape":"box","size":[0.02,0.012,0.036],"color":"#141516","position":[-0.505,0.9585,0.1555]},{"shape":"box","size":[0.002,0.005,0.005],"color":"#f2f2f2","position":[-0.5155,0.9585,0.1675]},{"shape":"box","size":[0.012,0.009,0.036],"color":"#141516","position":[-0.088,0.9455,0.1555]},{"shape":"box","size":[0.002,0.0055,0.0055],"color":"#f2f2f2","position":[-0.0945,0.9455,0.1685]}],"action":{"type":"weapon","name":"M9","rate":0.16,"range":90,"recoil":1,"power":1,"mag":15,"ammo":45}},"Pantera K30":{"parts":[{"shape":"box","size":[0.44,0.07,0.12],"color":"#1f2124","position":[0.05,0.955,0.08]},{"shape":"box","size":[0.42,0.064,0.022],"color":"#2c2f33","position":[0.05,0.955,0.151]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[-0.13,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[-0.085,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[-0.04,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[0.005,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[0.05,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[0.095,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[0.14,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[0.185,0.955,0.166]},{"shape":"box","size":[0.018,0.066,0.008],"color":"#1f2124","position":[0.23,0.955,0.166]},{"shape":"box","size":[0.08,0.072,0.03],"color":"#0e0f10","position":[0.12,0.955,0.1]},{"shape":"box","size":[0.03,0.02,0.02],"color":"#6d7278","position":[0.16,1.0,0.07]},{"shape":"box","size":[0.36,0.086,0.11],"color":"#4b5320","position":[0.45,0.955,0.08]},{"shape":"box","size":[0.04,0.088,0.02],"color":"#3c4219","position":[0.33,0.955,0.07]},{"shape":"box","size":[0.04,0.088,0.02],"color":"#3c4219","position":[0.405,0.955,0.07]},{"shape":"box","size":[0.04,0.088,0.02],"color":"#3c4219","position":[0.48,0.955,0.07]},{"shape":"box","size":[0.04,0.088,0.02],"color":"#3c4219","position":[0.555,0.955,0.07]},{"shape":"box","size":[0.36,0.06,0.016],"color":"#2c2f33","position":[0.45,0.955,0.142]},{"shape":"cylinder","size":[0.018,0.018,0.2,14],"color":"#2c2f33","position":[0.71,0.955,0.08],"rotation":[0,0,1.5708]},{"shape":"cylinder","size":[0.028,0.028,0.075,14],"color":"#1f2124","position":[0.845,0.955,0.08],"rotation":[0,0,1.5708],"role":"muzzle"},{"shape":"box","size":[0.008,0.058,0.012],"color":"#0b0b0c","position":[0.825,0.955,0.105]},{"shape":"box","size":[0.008,0.058,0.012],"color":"#0b0b0c","position":[0.845,0.955,0.105]},{"shape":"box","size":[0.008,0.058,0.012],"color":"#0b0b0c","position":[0.865,0.955,0.105]},{"shape":"box","size":[0.035,0.03,0.07],"color":"#1f2124","position":[0.63,0.955,0.125]},{"shape":"box","size":[0.03,0.05,0.012],"color":"#1f2124","position":[-0.12,0.955,0.172]},{"shape":"box","size":[0.02,0.014,0.034],"color":"#1f2124","position":[-0.12,0.941,0.195]},{"shape":"box","size":[0.002,0.006,0.006],"color":"#f2f2f2","position":[-0.131,0.941,0.205]},{"shape":"box","size":[0.02,0.014,0.034],"color":"#1f2124","position":[-0.12,0.969,0.195]},{"shape":"box","size":[0.002,0.006,0.006],"color":"#f2f2f2","position":[-0.131,0.969,0.205]},{"shape":"box","size":[0.012,0.01,0.05],"color":"#1f2124","position":[0.63,0.955,0.187]},{"shape":"box","size":[0.002,0.006,0.006],"color":"#ff7a1a","position":[0.6235,0.955,0.206]},{"shape":"box","size":[0.085,0.055,0.13],"color":"#2c2f33","position":[0.17,0.955,-0.03],"rotation":[0,-0.12,0]},{"shape":"box","size":[0.08,0.052,0.12],"color":"#2c2f33","position":[0.195,0.955,-0.145],"rotation":[0,-0.35,0]},{"shape":"box","size":[0.09,0.06,0.02],"color":"#1f2124","position":[0.22,0.955,-0.21],"rotation":[0,-0.45,0],"role":"mag"},{"shape":"box","size":[0.07,0.062,0.17],"color":"#1f2124","position":[-0.1,0.955,-0.05],"rotation":[0,0.35,0],"role":"grip"},{"shape":"box","size":[0.072,0.064,0.006],"color":"#141516","position":[-0.087,0.955,0.005],"rotation":[0,0.35,0]},{"shape":"box","size":[0.072,0.064,0.006],"color":"#141516","position":[-0.099,0.955,-0.03],"rotation":[0,0.35,0]},{"shape":"box","size":[0.072,0.064,0.006],"color":"#141516","position":[-0.111,0.955,-0.065],"rotation":[0,0.35,0]},{"shape":"box","size":[0.072,0.064,0.006],"color":"#141516","position":[-0.123,0.955,-0.1],"rotation":[0,0.35,0]},{"shape":"box","size":[0.12,0.045,0.012],"color":"#1f2124","position":[-0.01,0.955,-0.005]},{"shape":"box","size":[0.012,0.045,0.05],"color":"#1f2124","position":[0.045,0.955,0.015]},{"shape":"box","size":[0.012,0.02,0.04],"color":"#6d7278","position":[-0.02,0.955,0.02],"rotation":[0,-0.3,0]},{"shape":"box","size":[0.3,0.06,0.1],"color":"#4b5320","position":[-0.34,0.955,0.07]},{"shape":"box","size":[0.24,0.058,0.05],"color":"#3c4219","position":[-0.38,0.955,0.015],"rotation":[0,-0.15,0]},{"shape":"box","size":[0.2,0.062,0.02],"color":"#3c4219","position":[-0.35,0.955,0.13]},{"shape":"box","size":[0.035,0.066,0.165],"color":"#151515","position":[-0.505,0.955,0.055],"role":"stock"}],"action":{"type":"weapon","name":"Pantera K30","stance":"rifle","auto":true,"rate":0.1,"range":120,"recoil":0.55,"power":1.2,"mag":30,"ammo":90,"caliber":"7.62","sound":"rifle","reload":2.1}},"Ryś .45":{"parts":[{"shape":"box","size":[0.46,0.048,0.078],"color":"#1f2023","position":[-0.78,0.9455,0.39]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#0c0c0d","position":[-0.975,0.9455,0.39]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#0c0c0d","position":[-0.9585,0.9455,0.39]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#0c0c0d","position":[-0.942,0.9455,0.39]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#0c0c0d","position":[-0.9255,0.9455,0.39]},{"shape":"box","size":[0.0075,0.0518,0.063],"color":"#0c0c0d","position":[-0.909,0.9455,0.39]},{"shape":"box","size":[0.0675,0.0503,0.024],"color":"#0c0c0d","position":[-0.7125,0.9455,0.3945]},{"shape":"cylinder","size":[0.018,0.018,0.03,12],"color":"#2a2b2e","position":[-0.5475,0.9455,0.39],"rotation":[0,0,1.5708],"role":"muzzle"},{"shape":"box","size":[0.39,0.051,0.048],"color":"#9a7f58","position":[-0.7575,0.9455,0.3375]},{"shape":"box","size":[0.135,0.045,0.018],"color":"#9a7f58","position":[-0.63,0.9455,0.3075]},{"shape":"box","size":[0.09,0.051,0.21],"color":"#9a7f58","position":[-0.9375,0.9455,0.24],"rotation":[0,0.26,0]},{"shape":"box","size":[0.072,0.0528,0.165],"color":"#232323","position":[-0.936,0.9455,0.2445],"rotation":[0,0.26,0],"role":"grip"},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3a3a3a","position":[-0.9224,0.9455,0.3],"rotation":[0,0.26,0]},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3a3a3a","position":[-0.9313,0.9455,0.2655],"rotation":[0,0.26,0]},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3a3a3a","position":[-0.9403,0.9455,0.231],"rotation":[0,0.26,0]},{"shape":"box","size":[0.075,0.0534,0.006],"color":"#3a3a3a","position":[-0.9493,0.9455,0.1965],"rotation":[0,0.26,0]},{"shape":"box","size":[0.105,0.051,0.021],"color":"#7d6646","position":[-0.963,0.9455,0.132],"rotation":[0,0.26,0],"role":"mag"},{"shape":"box","size":[0.105,0.036,0.0135],"color":"#9a7f58","position":[-0.825,0.9455,0.2745]},{"shape":"box","size":[0.0135,0.036,0.057],"color":"#9a7f58","position":[-0.774,0.9455,0.3]},{"shape":"box","size":[0.0135,0.018,0.042],"color":"#6a6d72","position":[-0.831,0.9455,0.3045],"rotation":[0,-0.3,0]},{"shape":"box","size":[0.0195,0.018,0.027],"color":"#6a6d72","position":[-1.017,0.9455,0.414],"rotation":[0,0.35,0]},{"shape":"box","size":[0.0075,0.0518,0.05],"color":"#0c0c0d","position":[-0.685,0.9455,0.395]},{"shape":"box","size":[0.0075,0.0518,0.05],"color":"#0c0c0d","position":[-0.6685,0.9455,0.395]},{"shape":"box","size":[0.0075,0.0518,0.05],"color":"#0c0c0d","position":[-0.652,0.9455,0.395]},{"shape":"box","size":[0.0075,0.0518,0.05],"color":"#0c0c0d","position":[-0.6355,0.9455,0.395]},{"shape":"box","size":[0.3,0.036,0.01],"color":"#2a2b2e","position":[-0.78,0.9455,0.4335]},{"shape":"box","size":[0.136,0.0595,0.0595],"color":"#7d6646","position":[-0.878,0.92,0.1747],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.034,0.0595,0.0595],"color":"#7d6646","position":[-0.8015,0.92,0.1747],"rotation":[1.5708,0.2,0]},{"shape":"box","size":[0.0085,0.0646,0.0646],"color":"#2a2d33","position":[-0.7845,0.92,0.1747],"rotation":[1.5708,0,0]},{"shape":"cylinder","size":[0.0204,0.0204,0.0051,16],"color":"#ff1a1a","position":[-0.7794,0.92,0.1747],"rotation":[1.5708,0,1.5708],"role":"laser"},{"shape":"cylinder","size":[0.0068,0.0068,0.0068,16],"color":"#ff4d4d","position":[-0.7777,0.92,0.1747],"rotation":[1.5708,0,1.5708]},{"shape":"cylinder","size":[0.0289,0.0289,0.0204,16],"color":"#2a2d33","position":[-0.9545,0.92,0.1747],"rotation":[1.5708,0,1.5708]},{"shape":"box","size":[0.0034,0.0425,0.0068],"color":"#0a0b0d","position":[-0.9664,0.92,0.1747],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.119,0.0255,0.051],"color":"#7d6646","position":[-0.878,0.92,0.1407],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0255,0.034,0.0136],"color":"#7d6646","position":[-0.878,0.8945,0.1237],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0255,0.034,0.0136],"color":"#7d6646","position":[-0.878,0.9455,0.1237],"rotation":[1.5708,0,0]},{"shape":"cylinder","size":[0.0068,0.0068,0.034,12],"color":"#555a63","position":[-0.878,0.92,0.1152],"rotation":[-3.1416,0,0]},{"shape":"cylinder","size":[0.0102,0.0102,0.0051,12],"color":"#777d87","position":[-0.878,0.8996,0.1152],"rotation":[-3.1416,0,0]},{"shape":"box","size":[0.051,0.0085,0.034],"color":"#2e3238","position":[-0.861,0.92,0.2087],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0085,0.0102,0.0374],"color":"#1a1c20","position":[-0.878,0.92,0.2087],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.0085,0.0102,0.0374],"color":"#1a1c20","position":[-0.844,0.92,0.2087],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.878,0.8894,0.1747],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.878,0.8894,0.1662],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.878,0.8894,0.1832],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.878,0.9506,0.1747],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.878,0.9506,0.1662],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.068,0.0034,0.0034],"color":"#0d0e10","position":[-0.878,0.9506,0.1832],"rotation":[1.5708,0,0]},{"shape":"cylinder","size":[0.0051,0.0051,0.0034,8],"color":"#00ff00","position":[-0.912,0.903,0.2053],"rotation":[-3.1416,0,0]},{"shape":"box","size":[0.017,0.017,0.0085],"color":"#7d6646","position":[-0.9375,0.886,0.1492],"rotation":[1.5708,0,0]},{"shape":"box","size":[0.02,0.038,0.008],"color":"#0c0c0d","position":[-0.985,0.9455,0.433]},{"shape":"box","size":[0.02,0.012,0.022],"color":"#0c0c0d","position":[-0.985,0.9325,0.44]},{"shape":"box","size":[0.002,0.005,0.005],"color":"#f2f2f2","position":[-0.9955,0.9325,0.445]},{"shape":"box","size":[0.02,0.012,0.022],"color":"#0c0c0d","position":[-0.985,0.9585,0.44]},{"shape":"box","size":[0.002,0.005,0.005],"color":"#f2f2f2","position":[-0.9955,0.9585,0.445]},{"shape":"box","size":[0.012,0.008,0.022],"color":"#0c0c0d","position":[-0.568,0.9455,0.44]},{"shape":"box","size":[0.002,0.0055,0.0055],"color":"#ff7a1a","position":[-0.5745,0.9455,0.446]}],"action":{"type":"weapon","name":"Ryś .45","rate":0.24,"range":90,"recoil":1.45,"power":2,"mag":8,"ammo":32}}};
 var RNG_AMMO={'M9':{type:'ammo',amount:45,name:'Amunicja 9 mm'},'Ryś .45':{type:'ammo',amount:32,name:'Amunicja 9 mm'},'Pantera K30':{type:'ammo',amount:90,name:'Amunicja 7,62 mm',caliber:'7.62'}};
 var RNG_LIST=['M9','Ryś .45','Pantera K30'];
+var RNG_K=['steel','cans','paper','mix'],RNG_KN={steel:'Stalowe',cans:'Puszki i butelki',paper:'Tarcze',mix:'Mieszane'};
 var RNG_COL=[0x39ff6a,0xffb13a,0x3ab7ff,0xff4fd8,0xfff04a,0xff5a4a];
 var RNG={st:[],sig:'',scanT:0,act:null,ui:null};
-function rngA(po){var a=po.action||{};return {n:Math.max(1,Math.min(12,Math.round(drvNum(a.targets,5)))),d:Math.max(5,Math.min(80,Math.round(drvNum(a.dist,25)))),w:RNG_W[a.weapon]?a.weapon:'M9'};}
+function rngA(po){var a=po.action||{};return {n:Math.max(1,Math.min(12,Math.round(drvNum(a.targets,5)))),d:Math.max(5,Math.min(80,Math.round(drvNum(a.dist,25)))),w:RNG_W[a.weapon]?a.weapon:'M9',k:RNG_K.indexOf(a.kind)>=0?a.kind:'steel'};}
 function rngIs(po){return po&&po.action&&po.action.type==='range'&&po.gr&&po.gr.parent;}
 function rngEd(){return typeof loadedObjs!=='undefined';}
 // ---------- budowanie z części (jak obiekty Tabby) ----------
@@ -2933,8 +2935,28 @@ var RNG_T={ // rodzaje celów (przód +Z patrzy na strzelca); część "hit" to 
     rngB([0.015,0.28,0.015],[-0.14,1.68,0],'#9aa0a6'),rngB([0.015,0.28,0.015],[0.14,1.68,0],'#9aa0a6'),
     rngC([0.3,0.3,0.025,28],[0,1.24,0],'#d9d4c4',{rotation:[1.5708,0,0],role:'hit'})]
 };
+// puszka albo butelka na drewnianym słupku (przedmiot stoi na desce na wysokości 1 m)
+function rngMesh(geo,col,pos,rot){var m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:col,roughness:0.5}));m.position.set(pos[0],pos[1],pos[2]);if(rot)m.rotation.set(rot[0],rot[1],rot[2]);m.castShadow=true;return m;}
+function rngCanStand(bottle){
+  var g=rngMk([rngC([0.03,0.035,1.0,8],[0,0.5,0],'#6b4b2f'),rngB([0.34,0.035,0.26],[0,1.0,0],'#8a6440'),rngB([0.26,0.03,0.26],[0,0.015,0],'#4a3422')]);
+  var it=new THREE.Group();it.position.set(0,1.0175,0);
+  if(bottle){var gc=[0x2e7d32,0x6d4c1f,0x1f6f5c][Math.floor(Math.random()*3)];
+    it.add(rngMesh(new THREE.CylinderGeometry(0.042,0.042,0.2,12),gc,[0,0.1,0]));it.add(rngMesh(new THREE.CylinderGeometry(0.016,0.04,0.06,12),gc,[0,0.23,0]));
+    it.add(rngMesh(new THREE.CylinderGeometry(0.016,0.016,0.07,10),gc,[0,0.295,0]));it.add(rngMesh(new THREE.CylinderGeometry(0.019,0.019,0.015,10),0xd8c06a,[0,0.335,0]));it.userData.col=gc;
+  }else{var cc=[0xd62828,0x1f6fd0,0x2e9e44,0xe0b020][Math.floor(Math.random()*4)];
+    it.add(rngMesh(new THREE.CylinderGeometry(0.036,0.036,0.12,14),cc,[0,0.06,0]));it.add(rngMesh(new THREE.CylinderGeometry(0.033,0.036,0.012,14),0xc9ccd1,[0,0.126,0]));}
+  g.add(it);return {g:g,it:it};
+}
+// papierowa tarcza z pierścieniami na drewnianym stojaku — wytrzymuje kilka trafień
+function rngPaperStand(){
+  var g=rngMk([rngB([0.05,1.55,0.05],[-0.34,0.775,-0.02],'#8a6440'),rngB([0.05,1.55,0.05],[0.34,0.775,-0.02],'#8a6440'),rngB([0.75,0.04,0.04],[0,0.9,-0.02],'#6b4b2f'),
+    rngB([0.2,0.05,0.4],[-0.34,0.025,-0.02],'#4a3422'),rngB([0.2,0.05,0.4],[0.34,0.025,-0.02],'#4a3422')]);
+  var f=rngMesh(new THREE.BoxGeometry(0.62,0.62,0.02),0xf4efe2,[0,1.26,0.01]);
+  [[0.27,0x1a1a1a,0.0115],[0.21,0xf4efe2,0.0125],[0.15,0x1a1a1a,0.0135],[0.075,0xd62828,0.0145]].forEach(function(q){f.add(rngMesh(new THREE.CylinderGeometry(q[0],q[0],0.002,28),q[1],[0,0,q[2]],[Math.PI/2,0,0]));});
+  g.add(f);return {g:g,face:f};
+}
 // ---------- przebudowa stanowisk ----------
-function rngKey(po,i){var p=po.gr.position,A=rngA(po);return [i,p.x.toFixed(2),p.y.toFixed(2),p.z.toFixed(2),po.gr.rotation.y.toFixed(3),A.n,A.d,A.w,po.gr.visible?1:0].join(',');}
+function rngKey(po,i){var p=po.gr.position,A=rngA(po);return [i,p.x.toFixed(2),p.y.toFixed(2),p.z.toFixed(2),po.gr.rotation.y.toFixed(3),A.n,A.d,A.w,A.k,po.gr.visible?1:0].join(',');}
 function rngScan(dt){
   RNG.scanT-=dt;if(RNG.scanT>0)return;RNG.scanT=0.5;
   var sts=wpnPlaced().filter(rngIs);
@@ -2997,6 +3019,7 @@ function rngBuild(S){
 // losowe ustawienie celów (każda próba inaczej): blisko talerzyki, średnio poppery, daleko gongi — tak, żeby się nie zasłaniały
 function rngLayout(S){
   S.plates.forEach(function(P){if(P.grp&&P.grp.parent)P.grp.parent.remove(P.grp);});S.plates=[];
+  (S.fx||[]).forEach(function(f){if(f.m.parent)f.m.parent.remove(f.m);});S.fx=[];
   var A=S.A,g=S.po.gr,ry=g.rotation.y,d0=Math.max(4,A.d*0.4),picked=[];
   for(var i=0;i<A.n;i++){
     var best=null,bs=-1;
@@ -3006,12 +3029,17 @@ function rngLayout(S){
     picked.push(best);
   }
   picked.forEach(function(q){
+    var tk=A.k==='mix'?(Math.random()<0.4?'steel':(Math.random()<0.5?'cans':'paper')):A.k,yaw=ry+(Math.random()-0.5)*0.25;
+    if(tk==='cans'){var bt=Math.random()<0.45,cs=rngCanStand(bt);cs.g.position.copy(rngW(S,q.lx,q.f));cs.g.rotation.y=yaw;S.lane.add(cs.g);
+      var Pc={type:bt?'bottle':'can',m:cs.it,grp:cs.g,st:S,need:1,got:0,done:false};cs.it.traverse(function(o){o.userData._rngP=Pc;});S.plates.push(Pc);return;}
+    if(tk==='paper'){var ps=rngPaperStand();ps.g.position.copy(rngW(S,q.lx,q.f));ps.g.rotation.y=yaw;S.lane.add(ps.g);
+      var Pp={type:'paper',m:ps.face,grp:ps.g,st:S,need:3,got:0,done:false};ps.face.traverse(function(o){o.userData._rngP=Pp;});S.plates.push(Pp);return;}
     var r=Math.random(),kind=q.f<12?(r<0.8?'plate':'popper'):(q.f<28?(r<0.2?'plate':(r<0.85?'popper':'gong')):(r<0.55?'gong':'popper'));
     var tg=rngMk(RNG_T[kind]);tg.position.copy(rngW(S,q.lx,q.f));tg.rotation.y=ry+(Math.random()-0.5)*0.25;S.lane.add(tg);
     tg.traverse(function(m){if(!m.isMesh||m.userData._role!=='hit')return;
       var bb=m.geometry.boundingBox||(m.geometry.computeBoundingBox(),m.geometry.boundingBox),sz=new THREE.Vector3();
       bb.clone().applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(m.rotation)).getSize(sz);
-      var P={m:m,grp:tg,p0:m.position.clone(),rx:m.rotation.x,h:sz.y,col:m.material.color.getHex(),th:0,tgt:0,v:0,down:false,swing:0,upT:0,fall:kind!=='gong',st:S};
+      var P={type:'steel',need:1,got:0,m:m,grp:tg,p0:m.position.clone(),rx:m.rotation.x,h:sz.y,col:m.material.color.getHex(),th:0,tgt:0,v:0,down:false,swing:0,upT:0,fall:kind!=='gong',st:S};
       m.userData._rngP=P;S.plates.push(P);});
   });
   S.far=A.d;
@@ -3029,19 +3057,67 @@ function rngUse(po){var S=rngOf(po);if(!S||!S.wpo)return;
   wpnPickup(S.wpo);
 }
 // ---------- trafienie (z wpnImpact) i strzał (z wpnFire) ----------
-function rngImpact(obj){
-  var P=obj&&obj.userData&&obj.userData._rngP;if(!P)return false;
+function rngFind(o){for(var k=0;k<5&&o;k++,o=o.parent)if(o.userData&&o.userData._rngP)return o.userData._rngP;return null;}
+function rngCount(S){S.hits++;if(S.hits>=S.plates.length)rngFinish(S);}
+function rngImpact(obj,h){
+  var P=rngFind(obj);if(!P)return false;
   var S=P.st,inRun=RNG.act===S&&S.state==='run';
-  if(P.fall){if(!P.down){P.v=0;P.tgt=1.45;}}
-  else{P.swing=Math.min(0.75,P.swing+0.5);P.st2=0;}
-  rngDing(P);
-  if(!P.down){P.down=true;P.m.material.color.setHex(0xff6a2a);
-    if(inRun){S.hits++;if(S.hits>=S.plates.length)rngFinish(S);}
-    else if(S.state!=='done')P.upT=4;} // poza zadaniem płytka sama wraca po chwili
+  if(P.type==='steel'){
+    if(P.fall){if(!P.down){P.v=0;P.tgt=1.45;}}
+    else{P.swing=Math.min(0.75,P.swing+0.5);P.st2=0;}
+    rngDing(P);
+    if(!P.down){P.down=true;P.m.material.color.setHex(0xff6a2a);
+      if(inRun)rngCount(S);
+      else if(S.state!=='done')P.upT=4;} // poza zadaniem płytka sama wraca po chwili
+    return true;
+  }
+  if(P.done)return true;
+  P.got++;var dir=rngDir(P);
+  if(P.type==='paper'){rngHole(P,h);rngSnd('paper',P);if(P.got<P.need)return true;rngTear(P,dir);}
+  else if(P.type==='can'){rngSnd('can',P);rngFly(P,dir);}
+  else{rngSnd('glass',P);rngShatter(P,dir);}
+  P.done=true;if(inRun)rngCount(S);
   return true;
 }
+// kierunek strzału (poziomo, od strzelca do celu)
+function rngDir(P){var w=new THREE.Vector3(),c=new THREE.Vector3();P.m.getWorldPosition(w);cam.getWorldPosition(c);var d=w.sub(c);d.y=0;return d.normalize();}
+function rngFx(S,m,v,sp,gy){S.fx.push({m:m,v:v,sp:sp,gy:gy});}
+function rngFly(P,dir){ // puszka odlatuje i spada na ziemię
+  var S=P.st;S.lane.attach(P.m);
+  rngFx(S,P.m,new THREE.Vector3(dir.x*(3+Math.random()*2)+(Math.random()-0.5),2.2+Math.random()*1.5,dir.z*(3+Math.random()*2)+(Math.random()-0.5)),new THREE.Vector3(Math.random()*14-7,Math.random()*8-4,Math.random()*14-7),0.036);
+}
+function rngShatter(P,dir){ // butelka pęka na kawałki szkła
+  var S=P.st,w=new THREE.Vector3();P.m.getWorldPosition(w);P.m.visible=false;var col=P.m.userData.col||0x2e7d32;
+  for(var i=0;i<10;i++){var s=0.02+Math.random()*0.035,m=rngMesh(new THREE.BoxGeometry(s,s*0.8,0.008),col,[w.x+(Math.random()-0.5)*0.06,w.y+0.05+Math.random()*0.2,w.z+(Math.random()-0.5)*0.06],[Math.random()*3,Math.random()*3,0]);
+    m.material.transparent=true;m.material.opacity=0.85;S.lane.add(m);
+    var a=Math.random()*Math.PI*2,sp=1+Math.random()*2.2;rngFx(S,m,new THREE.Vector3(Math.cos(a)*sp+dir.x*1.5,1+Math.random()*2.2,Math.sin(a)*sp+dir.z*1.5),new THREE.Vector3(Math.random()*20-10,Math.random()*20-10,Math.random()*20-10),0.004);}
+}
+function rngHole(P,h){ // przestrzelina w tarczy
+  if(!h||!h.point)return;var l=P.m.worldToLocal(h.point.clone());
+  var m=rngMesh(new THREE.CylinderGeometry(0.016,0.016,0.003,10),0x111111,[Math.max(-0.29,Math.min(0.29,l.x)),Math.max(-0.29,Math.min(0.29,l.y)),0.0165],[Math.PI/2,0,0]);m.castShadow=false;P.m.add(m);
+}
+function rngTear(P,dir){ // po ostatnim trafieniu tarcza rozpada się na cztery kawałki
+  var S=P.st,f=P.m;f.updateMatrixWorld(true);f.visible=false;
+  [[-0.155,0.155],[0.155,0.155],[-0.155,-0.155],[0.155,-0.155]].forEach(function(q){
+    var w=new THREE.Vector3(q[0],q[1],0).applyMatrix4(f.matrixWorld),m=rngMesh(new THREE.BoxGeometry(0.3,0.3,0.02),0xf4efe2,[w.x,w.y,w.z]);
+    m.quaternion.copy(f.getWorldQuaternion(new THREE.Quaternion()));S.lane.add(m);
+    var o=new THREE.Vector3(q[0],q[1]*0.5,0).applyQuaternion(m.quaternion).multiplyScalar(5);
+    rngFx(S,m,new THREE.Vector3(dir.x*2.2+o.x,1.2+Math.random()+o.y,dir.z*2.2+o.z),new THREE.Vector3(Math.random()*8-4,Math.random()*8-4,Math.random()*8-4),0.012);});
+}
+function rngFxTick(S,dt){
+  for(var i=0;i<S.fx.length;i++){var f=S.fx[i];if(f.rest)continue;
+    f.v.y-=9.8*dt;f.m.position.addScaledVector(f.v,dt);f.m.rotation.x+=f.sp.x*dt;f.m.rotation.y+=f.sp.y*dt;f.m.rotation.z+=f.sp.z*dt;
+    if(f.m.position.y<=f.gy){f.m.position.y=f.gy;if(f.v.y<-1.6){f.v.y*=-0.28;f.v.x*=0.5;f.v.z*=0.5;f.sp.multiplyScalar(0.5);}else f.rest=true;}}
+}
+function rngSnd(k,P){
+  try{var ac=wpnAC(),t=ac.currentTime,d=ac.destination,w=new THREE.Vector3(),c=new THREE.Vector3();P.m.getWorldPosition(w);cam.getWorldPosition(c);var v=1/(1+c.distanceTo(w)*0.035);
+    if(k==='can'){wpnTone(ac,t,0.14,'triangle',2600,900,0.09*v,d);wpnTone(ac,t+0.03,0.1,'square',1800,700,0.03*v,d);}
+    else if(k==='glass'){wpnNoise(ac,t,0.22,'highpass',3000,6000,0.14*v,d);for(var i=0;i<4;i++)wpnTone(ac,t+0.03+i*0.035,0.16,'sine',3200+Math.random()*3000,0,0.035*v,d);}
+    else wpnNoise(ac,t,0.07,'lowpass',600,300,0.14*v,d);
+  }catch(e){}
+}
 function rngShot(){var S=RNG.act;if(!S)return;if(S.state==='ready'){rngUp(S,true);S.state='run';S.t=0;S.shots=0;S.hits=0;if(RNG.ui)RNG.ui.end.style.display='none';}if(S.state==='run')S.shots++;}
-function rngUp(S,now){S.plates.forEach(function(P){P.upT=0;if(P.down){P.down=false;P.m.material.color.setHex(P.col);if(P.fall){P.tgt=0;if(now){P.th=0;P.v=0;}}}});}
+function rngUp(S,now){S.plates.forEach(function(P){if(P.type!=='steel')return;P.upT=0;if(P.down){P.down=false;P.m.material.color.setHex(P.col);if(P.fall){P.tgt=0;if(now){P.th=0;P.v=0;}}}});}
 // R: nowa próba — cele ustawiają się od nowa, losowo
 function rngRestart(){var S=RNG.act;if(!S||S.state==='ready')return false;S.state='ready';S.t=0;S.shots=0;S.hits=0;S.endHtml='';rngLayout(S);if(RNG.ui)RNG.ui.end.style.display='none';return true;}
 window.addEventListener('keydown',function(e){if(e.code!=='KeyR'||e.repeat)return;if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;rngRestart();},true);
@@ -3092,7 +3168,7 @@ function rngHud(){
   if(S){var N=S.plates.length,b=S.best?raceFmt(S.best.t):'brak',cel=N===1?'cel':(N%10>=2&&N%10<=4&&(N%100<12||N%100>14)?'cele':'celów');
     if(S.state==='done')html='<div class="row"><span class="tr">🎯 '+S.name+'</span><span class="gt">✓ zaliczone • '+raceFmt(S.t)+'</span><span class="bs">🏆 '+b+'</span></div><div class="hint"><b>R</b> — nowa próba</div>';
     else if(S.state==='run')html='<div class="row"><span class="tm">'+raceFmt(S.t)+'</span><span class="gt">🎯 '+S.hits+' / '+N+'</span><span class="bs">strzały '+S.shots+'</span></div><div class="hint">zbij wszystkie cele • <b>R</b> od nowa • odejście od stanowiska przerywa</div>';
-    else html='<div class="row"><span class="tr">🎯 '+S.name+' • '+S.wname+'</span><span class="gt">'+N+' '+cel+' • do '+S.far+' m</span><span class="bs">🏆 '+b+'</span></div>'+
+    else html='<div class="row"><span class="tr">🎯 '+S.name+' • '+S.wname+'</span><span class="gt">'+N+' '+cel+' • '+RNG_KN[S.A.k].toLowerCase()+' • do '+S.far+' m</span><span class="bs">🏆 '+b+'</span></div>'+
       '<div class="hint">'+(WPN.po?'Czas rusza z <b>pierwszym strzałem</b> • PPM celuj • LPM strzał':'Weź broń z lady — <b>E</b>')+'</div>';}
   var on=!!html;if(on!==u.on){u.on=on;u.hud.style.display=on?'block':'none';}
   if(on&&html!==u.last){u.hud.innerHTML=html;u.last=html;}
@@ -3105,7 +3181,7 @@ function rngInfo(S){
   if(!S){u.info.style.display='none';return;}
   var N=S.plates.length,cel=N===1?'cel':(N%10>=2&&N%10<=4&&(N%100<12||N%100>14)?'cele':'celów');
   u.info.style.setProperty('--rc','#'+('00000'+S.col.toString(16)).slice(-6));
-  u.info.innerHTML='<div class="h">🎯 '+S.name+'</div><div class="w">'+S.wname+' • '+N+' '+cel+' • do '+S.far+' m</div>'+
+  u.info.innerHTML='<div class="h">🎯 '+S.name+'</div><div class="w">'+S.wname+' • '+N+' '+cel+' ('+RNG_KN[S.A.k].toLowerCase()+') • do '+S.far+' m</div>'+(S.A.k==='paper'||S.A.k==='mix'?'<div class="k">tarcza pada po 3 trafieniach</div>':'')+
     '<div class="bs">🏆 rekord: '+(S.best?raceFmt(S.best.t):'brak')+(S.state==='done'?' • ✓ zaliczone':'')+'</div>'+
     '<div class="k">Wejdź do budki • <b>E</b> broń i naboje • czas rusza z pierwszym strzałem • <b>R</b> nowa próba</div>';
   u.info.style.display='block';
@@ -3113,7 +3189,7 @@ function rngInfo(S){
 // ---------- co klatkę ----------
 function rngTick(dt){
   if(!scene)return;rngScan(dt);if(!RNG.st.length)return;rngEnsureUI();
-  RNG.st.forEach(function(S){S.plates.forEach(function(P){rngPlate(P,dt);});});
+  RNG.st.forEach(function(S){S.plates.forEach(function(P){if(P.type==='steel')rngPlate(P,dt);});if(S.fx)rngFxTick(S,dt);});
   var best=null,busy=(typeof DRV!=='undefined'&&DRV.t)||drnFlying();
   // jesteś w budce: między przegrodami, za ladą (lokalnie |x|<1.42, z od 0.38 do 1.6); przy wychodzeniu trochę luzu
   function loc(S){var g=S.po.gr,a=g.rotation.y,c=Math.cos(a),s=Math.sin(a),dx=charX-g.position.x,dz=charZ-g.position.z;return [dx*c-dz*s,dx*s+dz*c];}
@@ -3125,6 +3201,7 @@ function rngTick(dt){
   if(best&&!RNG.act&&typeof cycleCam==='function'&&camStyle!=='fps'){cycleCam();camYaw=best.po.gr.rotation.y;camPitch=0.04;}
   else if(!best&&RNG.act&&typeof cycleCam==='function'&&camStyle==='fps')cycleCam();
   if(RNG.act&&RNG.act!==best){var O=RNG.act;if(O.state==='run'){O.state='ready';rngUp(O,false);if(DRN.ui)drnToast('Zadanie przerwane — wróć na stanowisko');}RNG.ui.end.style.display='none';}
+  if(best&&best!==RNG.act&&best.state==='ready'&&best.plates.some(function(P){return P.done;}))rngLayout(best); // cele zestrzelone spoza budki — stawiamy od nowa
   if(best&&best!==RNG.act&&best.state==='done'&&best.endHtml){RNG.ui.end.innerHTML=best.endHtml;RNG.ui.end.style.display='block';}
   RNG.act=best;
   // opis stanowiska: widać go w polu przed budką, znika po wejściu do środka
@@ -4141,7 +4218,7 @@ function updateEditUI(){
   document.getElementById('eb-col').checked=!!po._col;
   edShowVeh();
   var erb=document.getElementById('eb-rng'),ra=po.action&&po.action.type==='range';erb.style.display=ra?'block':'none';
-  if(ra){var RA=rngA(po);document.getElementById('eb-rng-n').textContent=RA.n;document.getElementById('eb-rng-d').textContent=RA.d+' m';document.getElementById('eb-rng-w').textContent=RA.w;}
+  if(ra){var RA=rngA(po);document.getElementById('eb-rng-n').textContent=RA.n;document.getElementById('eb-rng-d').textContent=RA.d+' m';document.getElementById('eb-rng-w').textContent=RA.w;document.getElementById('eb-rng-k').textContent=RNG_KN[RA.k];}
   var egb=document.getElementById('eb-gate'),ga=po.action&&po.action.type==='gate';egb.style.display=ga?'flex':'none';
   if(ga){if(!po.action.n){RACE.scanT=0;raceScan(0);}document.getElementById('eb-gate-n').textContent=po.action.n||'?';}
   var rot=Math.round(po.gr.rotation.y*180/Math.PI);
@@ -5598,6 +5675,7 @@ function init(){
     var A=rngA(po),d=+b.dataset.d,k=b.dataset.k;
     if(k==='n')po.action.targets=Math.max(1,Math.min(12,A.n+d));
     else if(k==='d')po.action.dist=Math.max(5,Math.min(80,A.d+d*5));
+    else if(k==='k'){var j=RNG_K.indexOf(A.k);po.action.kind=RNG_K[(j+d+RNG_K.length)%RNG_K.length];}
     else{var i=RNG_LIST.indexOf(A.w);po.action.weapon=RNG_LIST[(i+d+RNG_LIST.length)%RNG_LIST.length];}
     RNG.scanT=0;rngScan(0);updateEditUI();});});
   document.getElementById('eb-gate-p').addEventListener('click',function(){gateNum(1);});

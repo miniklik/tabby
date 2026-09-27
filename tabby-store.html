@@ -342,7 +342,7 @@ var ASSETS = [
   {
     name:"Motocykl",
     category:["pojazd","interaktywny"],
-    desc:"Czerwony ścigacz. E wsiada — ludzik siedzi na motocyklu, trzyma kierownicę i w zakrętach kładzie się razem z nim do środka. Szybki i zwrotny.",
+    desc:"Czerwony ścigacz. E wsiada — ludzik siedzi na motocyklu i trzyma kierownicę. Szybki, skręca łagodnie jak quad, a w zakrętach lekko przechyla się na bok.",
     parts:[
       {"shape": "cylinder", "size": [0.34, 0.34, 0.16, 18], "color": "#161616", "position": [0, 0.34, -0.8], "rotation": [0, 0, 1.5708], "role": "wheel_fl"},
       {"shape": "cylinder", "size": [0.2, 0.2, 0.17, 18], "color": "#3a3d42", "position": [0, 0.34, -0.8], "rotation": [0, 0, 1.5708], "role": "wheel_fl"},
@@ -377,7 +377,7 @@ var ASSETS = [
       {"shape": "box", "size": [0.1, 0.06, 0.02], "color": "#2c2e33", "position": [0.3255, 1.17, -0.62]},
       {"shape": "box", "size": [0.1, 0.03, 0.04], "color": "#aeb4bc", "position": [0.1922, 0.5, 0.18]}
     ],
-    action:{"type": "drive", "speed": 15, "turnSpeed": 2.6, "grip": 0.09, "lean": 2.6, "rider": true}
+    action:{"type": "drive", "speed": 15, "turnSpeed": 0.2, "grip": 0.1, "steerSpeed": 3, "lean": 1.1, "rider": true}
   },
   {
     name:"Quad",

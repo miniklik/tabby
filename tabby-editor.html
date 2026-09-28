@@ -2999,7 +2999,28 @@ function liftMake(g,d){
     [-1,1].forEach(function(s){var p=liftBox(L,dw/2+0.05,dh,0.07,s*(dw/4),y+dh/2,w/2-0.12,DC);D.panels.push({m:p,s:s});});
     L.doors.push(D);
   });
+  // 🟢 światełka nad drzwiami (na każdym piętrze od korytarza i w kabinie nad wejściem): numer piętra kabiny i strzałki kierunku
+  L.ind=[];var n=L.lv.length;
+  function indicator(parent,x,y,z,flip){
+    var gi=new THREE.Group();gi.position.set(x,y,z);if(flip)gi.rotation.y=Math.PI;parent.add(gi);
+    var W2=0.44+n*0.21;liftBox(L,W2,0.3,0.03,0,0,0,'#16181b',gi).castShadow=false;
+    var I={lamps:[],up:null,dn:null};
+    for(var k=0;k<n;k++){var m=liftBox(L,0.14,0.14,0.02,-W2/2+0.33+k*0.21,0,0.02,'#1d3323',gi);m.castShadow=false;I.lamps.push(m);}
+    [['up',1],['dn',-1]].forEach(function(q){var ar=new THREE.Mesh(new THREE.ConeGeometry(0.075,0.12,3),new THREE.MeshStandardMaterial({color:'#1d3323'}));
+      ar.position.set(q[1]>0?-W2/2+0.12:W2/2-0.12,0,0.025);if(q[1]<0)ar.rotation.z=Math.PI;gi.add(ar);I[q[0]]=ar;});
+    L.ind.push(I);
+  }
+  L.lv.forEach(function(y,i){if(L.doors[i])indicator(L.root,0,y+dh+0.36,w/2+0.21,false);});
+  indicator(L.cab,0,h-0.32,cw/2-0.03,true); // w kabinie, nad wejściem (patrzy do środka)
+  L.indK='';
   liftCols(L);return L;
+}
+function liftInd(L){ // które światełko świeci: piętro, przy którym jest kabina, i strzałka, gdy jedzie
+  var fl=0,bd=1e9;L.lv.forEach(function(y,i){var d=Math.abs(y-L.y);if(d<bd){bd=d;fl=i;}});
+  var dir=L.state==='moving'?(L.y1>L.y0?1:-1):0,bl=dir&&(Math.floor(performance.now()/350)%2===0),k=fl+'|'+dir+'|'+bl;if(k===L.indK)return;L.indK=k;
+  var ON=0x39ff6a,OFF=0x1d3323;
+  function set(m,on){m.material.color.setHex(on?ON:OFF);m.material.emissive.setHex(on?0x22cc4a:0);m.material.emissiveIntensity=on?1.2:0;}
+  L.ind.forEach(function(I){I.lamps.forEach(function(m,i){set(m,i===fl);});set(I.up,dir>0&&bl);set(I.dn,dir<0&&bl);});
 }
 function liftW(L,lx,ly,lz){return L.root.localToWorld(new THREE.Vector3(lx,ly,lz));}
 function liftCols(L){ // kolizje ruchome: podłoga i sufit kabiny, zamknięte drzwi
@@ -3012,7 +3033,7 @@ function liftCols(L){ // kolizje ruchome: podłoga i sufit kabiny, zamknięte dr
 }
 // gdzie jest ludzik względem windy
 function liftLocal(L){var v=L.root.worldToLocal(new THREE.Vector3(charX,charY,charZ));return v;}
-function liftInside(L){var v=liftLocal(L),hw=(L.w-0.55)/2;return Math.abs(v.x)<hw&&Math.abs(v.z)<hw&&Math.abs(v.y-L.y)<1.2;}
+function liftInside(L,m){var v=liftLocal(L),hw=(L.w-0.55)/2+(m||0);return Math.abs(v.x)<hw&&Math.abs(v.z)<hw&&Math.abs(v.y-L.y)<1.2;}
 function liftFront(L){var v=liftLocal(L);if(Math.abs(v.x)>1.6||v.z<L.w/2-0.2||v.z>L.w/2+2.6)return -1;
   for(var i=0;i<L.lv.length;i++)if(L.doors[i]&&Math.abs(v.y-L.lv[i])<1.2)return i;return -1;}
 function liftName(i){return i===0?'P':String(i);}
@@ -3040,11 +3061,13 @@ function liftTick(dt){
     var ins=liftInside(L),fr=liftFront(L);
     if(L.state==='idle'&&L.doors[L.cur]&&L.doors[L.cur].tg>0&&!ins&&fr!==L.cur){L.wait-=dt;if(L.wait<=0)liftDoor(L,L.cur,0);} // same się zamykają
     if(moved)liftCols(L);
+    liftInd(L);
     if(ins){near=L;mode='in';}else if(fr>=0&&!near){near=L;mode='front';L.fr=fr;}
   });
   // kamera: w kabinie od razu z oczu, twarzą do drzwi (Tab dalej przełącza), po wyjściu — zza pleców (jak na strzelnicy)
-  if(mode==='in'&&!LIFT.inL){LIFT.inL=near;if(typeof cycleCam==='function'&&camStyle!=='fps')cycleCam();camYaw=near.g.rotation.y+near.root.rotation.y+Math.PI;camPitch=0.05;}
-  else if(mode!=='in'&&LIFT.inL){LIFT.inL=null;if(typeof cycleCam==='function'&&camStyle==='fps')cycleCam();}
+  // kamera nie obraca ludzika (inaczej W od razu wyprowadza z kabiny); wejście głębiej niż 25 cm, wyjście dopiero 30 cm za progiem — bez migania
+  if(!LIFT.inL&&near&&mode==='in'&&liftInside(near,-0.25)&&!(typeof DRV!=='undefined'&&DRV.t)){LIFT.inL=near;if(typeof cycleCam==='function'&&camStyle!=='fps')cycleCam();}
+  else if(LIFT.inL&&!liftInside(LIFT.inL,0.3)){LIFT.inL=null;if(typeof cycleCam==='function'&&camStyle==='fps')cycleCam();}
   LIFT.near=near;LIFT.mode=mode;liftHud();
 }
 function liftHud(){

@@ -515,7 +515,7 @@ function camRay(px,py,pz,dx,dy,dz){var wCols=walk.cols; // jaka część odcinka
 function camClip(px,py,pz,aim){
   var wCols=walk.cols;if(CCL.off||!wCols||!wCols.length)return;
   var now=performance.now(),gap=now-(CCL.t||0),dt=Math.min(0.1,(now-(CCL.t||now))/1000);CCL.t=now;
-  var snap=gap>250; // pierwsza klatka po przełączeniu kamery (np. wyjście z windy) — od razu na miejsce, bez „drugiego odjazdu”
+  var sw=gap>250; // pierwsza klatka po przełączeniu z widoku z oczu (wyjście z windy, ze stanowiska, Tab): kamera startuje tuż za głową i jednym płynnym ruchem odjeżdża do tyłu
   var dx=cam.position.x-px,dy=cam.position.y-py,dz=cam.position.z-pz,L=Math.sqrt(dx*dx+dy*dy+dz*dz);if(L<0.4)return;
   if(aim){var fa=camRay(px,py,pz,dx,dy,dz);if(fa<1){var ka=Math.max(fa,0.3/L);cam.position.set(px+dx*ka,py+dy*ka,pz+dz*ka);}return;} // celowanie przez ramię
   var h=Math.sqrt(dx*dx+dz*dz),a0=Math.atan2(dx,dz),MIN=Math.min(L,1.9);
@@ -532,12 +532,12 @@ function camClip(px,py,pz,aim){
   }
   CCL.yt=tgt;if(tgt)CCL.side=tgt>0?1:-1;else if(Math.abs(CCL.ya)<0.05)CCL.side=0;
   // płynnie: prędkość obrotu kamery rośnie i maleje łagodnie (sprężynka), bez szarpnięć
-  if(snap){CCL.ya=tgt;CCL.yv=0;CCL.pa=up;}
+  if(sw){CCL.ya=tgt;CCL.yv=0;CCL.pa=up;CCL.snapT=now+900;}
   var sp=Math.abs(tgt)>Math.abs(CCL.ya)?9:5,ns=Math.ceil(dt/0.016),hd=dt/Math.max(1,ns);CCL.yv=CCL.yv||0;
   for(var si=0;si<ns;si++){CCL.yv+=((tgt-CCL.ya)*sp*sp-2*sp*CCL.yv)*hd;CCL.ya+=CCL.yv*hd;}
   CCL.pa+=(up-CCL.pa)*(1-Math.exp(-dt*3));
   var p=pos(CCL.ya,CCL.pa),f=camRay(px,py,pz,p[0],p[1],p[2]),k=Math.max(f,MIN/L); // na wszelki wypadek nie wchodzimy w mur w trakcie ruchu
-  if(snap)CCL.k=k;else CCL.k+=(k-CCL.k)*(1-Math.exp(-dt*(k<CCL.k?12:2.5)));if(CCL.k>f&&f>=MIN/L)CCL.k=f; // do ściany szybko, od ściany powoli; nigdy w mur
+  if(sw)CCL.k=MIN/L;else CCL.k+=(k-CCL.k)*(1-Math.exp(-dt*(k<CCL.k?12:(now<(CCL.snapT||0)?3.5:2.5))));if(CCL.k>f&&f>=MIN/L)CCL.k=f;if(CCL.k>f&&f>=MIN/L)CCL.k=f; // do ściany szybko, od ściany powoli; nigdy w mur
   cam.position.set(px+p[0]*CCL.k,py+p[1]*CCL.k,pz+p[2]*CCL.k);
 }
 function rebuild(){

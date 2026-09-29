@@ -589,8 +589,6 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <label class="ep-file-btn" style="background:rgba(210,153,34,0.12);color:#d29922;border-color:rgba(210,153,34,0.4);margin-bottom:0">📂 Wczytaj scenę (.html)<input type="file" accept=".html,.htm" id="ed-load-scene"></label>
         <div id="load-scene-msg" style="color:#3fb950;font-size:11px;font-weight:bold;text-align:center;margin-top:8px;display:none"></div>
       </div>
-      <div class="ep-lbl">Gracz</div>
-      <div id="tb-pl-box" style="border:2px solid rgba(63,185,80,0.35);border-radius:12px;padding:12px 12px 10px;margin-bottom:14px;background:rgba(63,185,80,0.04);font-size:12px;color:#c9d1d9;transition:box-shadow .3s"><div style="font-weight:bold;margin-bottom:4px">🧍 Gracze na mapie</div><div style="color:#888;font-size:11px;line-height:1.5;margin-bottom:8px">Gracz to postać z <b style="color:#e6edf3">Tabby Store → Postacie → Gracz</b>. Stawiasz go jak wroga — jego miejsce i kierunek (zielona strzałka) to start. <b style="color:#3fb950">1</b> — jeden gracz i gospodarz, <b style="color:#58a6ff">2–4</b> — kolejni w multiplayerze. <b style="color:#e6edf3">Kliknij gracza w ✎ Edytorze</b>, żeby ustawić życie, szybkość, broń…</div><button class="ep-exp" id="tb-sp-add" style="background:#3fb950;margin-bottom:6px">➕ Postaw gracza tutaj</button><div id="tb-sp-list"></div></div>
       <div class="ep-lbl">Zapisz</div>
       <div class="tb-mp-choice" style="margin:0 0 10px;padding:9px 10px;border:1px solid rgba(255,255,255,0.16);border-radius:10px;background:rgba(255,255,255,0.04);text-align:left;transition:box-shadow .2s"><div style="font-size:12px;color:#e6edf3;font-weight:bold;margin-bottom:6px">Jak zapisać grę?</div><div style="display:flex;gap:6px"><button type="button" class="tb-mp-opt" data-mp="0" style="flex:1;min-width:0;padding:8px 6px;border-radius:8px;font-size:12.5px;font-weight:bold;cursor:pointer">👤 Jeden gracz</button><button type="button" class="tb-mp-opt" data-mp="1" style="flex:1;min-width:0;padding:8px 6px;border-radius:8px;font-size:12.5px;font-weight:bold;cursor:pointer">🌐 Multiplayer</button></div><div class="tb-mp-note" style="font-size:11.5px;color:#9aa4b2;margin-top:6px;line-height:1.4">Wybierz, zanim zapiszesz.</div></div>
       <button class="ep-exp" id="ed-export-html" style="margin-bottom:6px">&#9889; Zapisz jako HTML (jeden plik)</button>
@@ -765,9 +763,8 @@ function tbPlEditUI(po){ // panel ustawień klikniętego gracza w Edytorze
   ['walk','run','jump'].forEach(function(k){f('tb-pl-'+k+'-v').textContent=(+P[k]).toFixed(1);});
   f('tb-pl-ammo-row').style.display=P.wpn?'flex':'none';
 }
-function tbPlFocus(){ // pokaż panel „Gracz” w Opcjach
-  var b=document.getElementById('tb-pl-box');if(b){try{b.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){}b.style.boxShadow='0 0 0 3px #3fb950';setTimeout(function(){b.style.boxShadow='';},1600);}
-  if(typeof showMsg==='function')showMsg('🧍 Postaw postać „Gracz” (Tabby Store → Postacie) albo kliknij „Postaw gracza tutaj”');
+function tbPlFocus(){ // podpowiedź: gracza stawia się jak postać
+  if(typeof showMsg==='function')showMsg('🧍 Postaw postać „Gracz” z Tabby Store → Postacie');
 }
 function tbSpawnCheck(go,onBack){ // przypomnienie przy zapisie: punkt startowy (multiplayer: co najmniej 2)
   tbSyncSpawns();var need=TB_MP?2:1,n=TB_SPAWNS.length;if(n>=need){go();return;}
@@ -775,7 +772,7 @@ function tbSpawnCheck(go,onBack){ // przypomnienie przy zapisie: punkt startowy 
   var bg=document.createElement('div');bg.id='tb-sp-warn';bg.style.cssText='position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-family:sans-serif';
   bg.innerHTML='<div style="width:380px;max-width:92vw;background:#161b26;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:20px;color:#e6edf3;box-shadow:0 18px 50px rgba(0,0,0,.6)">'+
     '<div style="font-size:17px;font-weight:bold;margin-bottom:8px">🧍 Miejsce startu gracza</div><div style="font-size:13.5px;line-height:1.5;color:#c9d1d9;margin-bottom:6px">'+msg+'</div>'+
-    '<div style="font-size:12px;color:#8b949e;margin-bottom:16px">Postaw postać „Gracz” z Tabby Store → Postacie albo użyj ⚙ Opcje → „Postaw gracza tutaj”.</div>'+
+    '<div style="font-size:12px;color:#8b949e;margin-bottom:16px">Postaw postać „Gracz” z Tabby Store → Postacie.</div>'+
     '<div style="display:flex;gap:8px"><button data-b="back" style="flex:1;padding:10px;border:0;border-radius:8px;background:#3fb950;color:#06200d;font-weight:bold;font-size:14px;cursor:pointer">Wróć i ustaw</button>'+
     '<button data-b="go" style="flex:1;padding:10px;border:0;border-radius:8px;background:rgba(255,255,255,.1);color:#e6edf3;font-weight:bold;font-size:14px;cursor:pointer">Zapisz mimo to</button></div></div>';
   function done(){bg.remove();}
@@ -7476,7 +7473,7 @@ function init(){
   // 🌐 pole „Multiplayer” (w Opcjach i w oknie zapisu) — jedno ustawienie projektu
   (function(){ // 🧍 gracze: lista w Opcjach + ustawienia klikniętego gracza w Edytorze
     ['tb-pl-box','eb-pl'].forEach(function(id){var box=document.getElementById(id);if(box)['keydown','keyup','mousedown','click','wheel'].forEach(function(t){box.addEventListener(t,function(e){e.stopPropagation();});});});
-    document.getElementById('tb-sp-add').onclick=function(){tbAddPlayer(charX,charY||0,charZ,camYaw,{});tbSpawnDraw(true);showMsg('🧍 Gracz '+TB_SPAWNS.length+' postawiony — kliknij go w Edytorze, żeby zmienić ustawienia');};
+    if(document.getElementById('tb-sp-add'))document.getElementById('tb-sp-add').onclick=function(){tbAddPlayer(charX,charY||0,charZ,camYaw,{});tbSpawnDraw(true);showMsg('🧍 Gracz '+TB_SPAWNS.length+' postawiony — kliknij go w Edytorze, żeby zmienić ustawienia');};
     function cur(){var po=editIdx>=0?placedObjs[editIdx]:null;return po&&po.action&&po.action.type==='player'?po:null;}
     function num(id,k,mn,mx){var el=document.getElementById(id);el.addEventListener('input',function(){var po=cur();if(!po)return;var v=parseFloat(el.value);if(isNaN(v))return;po.action[k]=Math.max(mn,Math.min(mx,v));var o=document.getElementById(id+'-v');if(o)o.textContent=(+po.action[k]).toFixed(1);});}
     num('tb-pl-hp','hp',1,1000);num('tb-pl-walk','walk',1,12);num('tb-pl-run','run',2,20);num('tb-pl-jump','jump',2,15);num('tb-pl-ammo','ammo',0,999);

@@ -134,7 +134,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
     <button class="pill" data-cat="strefy">🟥 Strefy</button>
     <button class="pill" data-cat="wyscigi">🏁 Wyścigi</button>
     <button class="pill" data-cat="strzelnica">🎯 Strzelnica</button>
-    <button class="pill" data-cat="wrogowie">🤖 Wrogowie</button>
+    <button class="pill" data-cat="wrogowie">🧍 Postacie</button>
   </div>
 </div>
 <div class="stats" id="stats"></div>
@@ -2010,6 +2010,32 @@ var ASSETS = [
     ]
   },
   {
+    name:"Gracz",
+    category:["wrogowie"],
+    desc:"Miejsce startu gracza. Postaw go tam, gdzie gracz ma zacząć, i obróć w stronę, w którą ma patrzeć. Pierwszy postawiony to gracz 1 (jeden gracz i gospodarz), kolejni to gracze 2–4 w multiplayerze. Kliknij go w Edytorze, żeby ustawić życie, chód, bieg, skok, kamerę, koszulkę i broń na starcie. W grze tej postaci nie widać — w jej miejscu pojawia się gracz.",
+    parts:[
+      {"shape": "cylinder", "size": [0.7, 0.7, 0.02, 32], "color": "#3fb950", "position": [0, 0.01, 0], "opacity": 0.5},
+      {"shape": "cone", "size": [0.2, 0.5, 12], "color": "#3fb950", "position": [0, 0.05, -1.0], "rotation": [-1.5708, 0, 0]},
+      {"shape": "box", "size": [0.55, 0.6, 0.55], "color": "#ffcc88", "position": [0, 1.74, 0]},
+      {"shape": "box", "size": [0.58, 0.15, 0.58], "color": "#443322", "position": [0, 2.06, 0]},
+      {"shape": "box", "size": [0.58, 0.35, 0.12], "color": "#443322", "position": [0, 1.84, 0.28]},
+      {"shape": "box", "size": [0.08, 0.06, 0.03], "color": "#222222", "position": [-0.12, 1.79, -0.28]},
+      {"shape": "box", "size": [0.08, 0.06, 0.03], "color": "#222222", "position": [0.12, 1.79, -0.28]},
+      {"shape": "box", "size": [0.6, 0.7, 0.35], "color": "#3366cc", "position": [0, 1.19, 0], "role": "pshirt"},
+      {"shape": "box", "size": [0.2, 0.45, 0.22], "color": "#3366cc", "position": [-0.42, 1.22, 0], "role": "pshirt"},
+      {"shape": "box", "size": [0.2, 0.45, 0.22], "color": "#3366cc", "position": [0.42, 1.22, 0], "role": "pshirt"},
+      {"shape": "box", "size": [0.18, 0.4, 0.2], "color": "#ffcc88", "position": [-0.42, 0.89, 0]},
+      {"shape": "box", "size": [0.18, 0.4, 0.2], "color": "#ffcc88", "position": [0.42, 0.89, 0]},
+      {"shape": "box", "size": [0.22, 0.42, 0.24], "color": "#444455", "position": [-0.15, 0.6, 0]},
+      {"shape": "box", "size": [0.22, 0.42, 0.24], "color": "#444455", "position": [0.15, 0.6, 0]},
+      {"shape": "box", "size": [0.2, 0.38, 0.22], "color": "#444455", "position": [-0.15, 0.26, 0]},
+      {"shape": "box", "size": [0.2, 0.38, 0.22], "color": "#444455", "position": [0.15, 0.26, 0]},
+      {"shape": "box", "size": [0.22, 0.1, 0.32], "color": "#553322", "position": [-0.15, 0.05, -0.04]},
+      {"shape": "box", "size": [0.22, 0.1, 0.32], "color": "#553322", "position": [0.15, 0.05, -0.04]}
+    ],
+    action:{"type": "player"}
+  },
+  {
     name:"Cyborg",
     category:["wrogowie", "militaria"],
     desc:"Wróg unoszący się nad ziemią: cylindryczny tułów z działkiem, głowa obracająca się dookoła, dwie antenki. Patroluje okolicę miejsca, w którym go postawisz. Gdy cię zobaczy, antenki migają na czerwono, a po chwili strzela widocznymi pociskami — da się zrobić unik albo schować za murem (przez ściany nie widzi). 4 trafienia = spada, dymi i wybucha. Gracz dostaje pasek życia, który po 5 s bez trafienia sam się odnawia. W JSON: hp (trafienia), dmg (siła strzału), range (zasięg wzroku), rate (co ile sekund strzela), speed.",
@@ -2035,7 +2061,7 @@ var ASSETS = [
   },
   {
     name:"Mur osłonowy",
-    category:["wrogowie", "militaria", "budynek"],
+    category:["militaria", "budynek"],
     desc:"Wysoki betonowy mur (3 × 2,3 m) — cała postać chowa się za nim przed cyborgami. Ma kolizję.",
     parts:[
       {"shape": "box", "size": [3, 2.3, 0.45], "color": "#9a9d9f", "position": [0, 1.15, 0], "col": true},
@@ -2384,7 +2410,7 @@ function renderCards(){
     asset.category.forEach(function(cat){
       var tag = document.createElement('span');
       tag.className = 'tag tag-' + cat;
-      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria',strefy:'Strefy',wyscigi:'Wyścigi',strzelnica:'Strzelnica',wrogowie:'Wrogowie'};
+      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria',strefy:'Strefy',wyscigi:'Wyścigi',strzelnica:'Strzelnica',wrogowie:'Postacie'};
       tag.textContent = labels[cat] || cat;
       tags.appendChild(tag);
     });
@@ -2399,7 +2425,7 @@ function renderCards(){
     meta.className = 'card-meta';
     meta.innerHTML = '<span class="meta-parts">🧱 ' + asset.parts.length + ' części</span>';
     if(asset.action){
-      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni', ammo:'📦 Amunicja', drone:'🛸 Dron'};
+      var aLabels = {text:'💬 Tekst', open:'🚪 Otwieranie', teleport:'🌀 Teleport', sound:'🔊 Dźwięk', light:'💡 Światło', drive:'🚗 Jazda', fuse:'⏱ Zapalnik 7 s', weapon:'🔫 Broń do podniesienia', attach:'🔧 Dodatek do broni', ammo:'📦 Amunicja', drone:'🛸 Dron', player:'🧍 Start gracza', enemy:'🤖 Wróg'};
       meta.innerHTML += '<span>' + (aLabels[asset.action.type]||asset.action.type) + '</span>';
     }
     if(asset.parts.some(function(q){return q.hidden;})) meta.innerHTML += '<span>👻 Niewidoczna w grze</span>';

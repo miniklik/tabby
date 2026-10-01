@@ -371,10 +371,15 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
             <span style="color:#ccc">Broń</span><button type="button" class="edit-btn eb-rng" data-k="w" data-d="-1" style="padding:3px 11px;background:#ff9a3a;color:#000">◀</button><b id="eb-rng-w" style="text-align:center;color:#fff">M9</b><button type="button" class="edit-btn eb-rng" data-k="w" data-d="1" style="padding:3px 11px;background:#ff9a3a;color:#000">▶</button>
           </div>
         </div>
+        <div id="eb-dst" style="display:none;border:2px solid rgba(242,193,46,0.45);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:rgba(242,193,46,0.05);font-size:13px;font-weight:600;color:#f2c12e">
+          <div style="margin-bottom:8px">⚡ Stacja ładowania dronów</div>
+          <div style="display:grid;grid-template-columns:80px auto 1fr auto;gap:6px 8px;align-items:center"><span style="color:#ccc">Życie</span><button type="button" class="edit-btn eb-dst" data-k="hp" data-d="-1" style="padding:3px 11px;background:#f2c12e;color:#000">−</button><b id="eb-dst-hp" style="text-align:center;color:#fff">-</b><button type="button" class="edit-btn eb-dst" data-k="hp" data-d="1" style="padding:3px 11px;background:#f2c12e;color:#000">+</button><span style="color:#ccc">Odbudowa</span><button type="button" class="edit-btn eb-dst" data-k="reb" data-d="-1" style="padding:3px 11px;background:#f2c12e;color:#000">◀</button><b id="eb-dst-reb" style="text-align:center;color:#fff">-</b><button type="button" class="edit-btn eb-dst" data-k="reb" data-d="1" style="padding:3px 11px;background:#f2c12e;color:#000">▶</button></div>
+          <div style="margin-top:8px;font-size:11px;color:#9aa4b2;font-weight:400;line-height:1.45">Dron zniżony nad platformą ładuje baterię, a z kasetą także laser i ładunki. Na stacji leży uzbrojenie — <b>E</b> nad platformą doczepia je pod dronem. Laser zabiera 1 życia na trafienie, ładunek dużo więcej. Zniszczona stacja dymi i nie ładuje, aż się odbuduje (albo do restartu gry).</div>
+        </div>
         <div id="eb-dkit" style="display:none;border:2px solid rgba(255,138,91,0.45);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:rgba(255,138,91,0.05);font-size:13px;font-weight:600;color:#ff8a5b">
           <div style="margin-bottom:8px">🎯 Uzbrojenie drona</div>
           <div style="display:grid;grid-template-columns:80px auto 1fr auto;gap:6px 8px;align-items:center"><span style="color:#ccc">Laser</span><button type="button" class="edit-btn eb-dkit" data-k="ammo" data-d="-1" style="padding:3px 11px;background:#ff8a5b;color:#000">−</button><b id="eb-dkit-ammo" style="text-align:center;color:#fff">-</b><button type="button" class="edit-btn eb-dkit" data-k="ammo" data-d="1" style="padding:3px 11px;background:#ff8a5b;color:#000">+</button><span style="color:#ccc">Ładunki</span><button type="button" class="edit-btn eb-dkit" data-k="bombs" data-d="-1" style="padding:3px 11px;background:#ff8a5b;color:#000">−</button><b id="eb-dkit-bombs" style="text-align:center;color:#fff">-</b><button type="button" class="edit-btn eb-dkit" data-k="bombs" data-d="1" style="padding:3px 11px;background:#ff8a5b;color:#000">+</button><span style="color:#ccc">Wybuch</span><button type="button" class="edit-btn eb-dkit" data-k="power" data-d="-1" style="padding:3px 11px;background:#ff8a5b;color:#000">◀</button><b id="eb-dkit-power" style="text-align:center;color:#fff">-</b><button type="button" class="edit-btn eb-dkit" data-k="power" data-d="1" style="padding:3px 11px;background:#ff8a5b;color:#000">▶</button><span style="color:#ccc">Latarka</span><button type="button" class="edit-btn eb-dkit" data-k="light" data-d="-1" style="padding:3px 11px;background:#ff8a5b;color:#000">◀</button><b id="eb-dkit-light" style="text-align:center;color:#fff">-</b><button type="button" class="edit-btn eb-dkit" data-k="light" data-d="1" style="padding:3px 11px;background:#ff8a5b;color:#000">▶</button></div>
-          <div style="margin-top:8px;font-size:11px;color:#9aa4b2;font-weight:400;line-height:1.45">Podleć dronem nisko nad stojak i naciśnij <b>E</b> — kaseta doczepi się pod dronem. <b>LPM</b> laser, <b>F</b> zrzut ładunku, <b>L</b> latarka, <b>R</b> powrót. Ładowanie: zniż się nad lądowiskiem drona albo nad stojakiem.</div>
+          <div style="margin-top:8px;font-size:11px;color:#9aa4b2;font-weight:400;line-height:1.45">Podleć dronem nisko nad stację (albo stojak) i naciśnij <b>E</b> — kaseta doczepi się pod dronem. <b>PPM</b> celowanie (jak u ludzika), <b>LPM</b> laser, <b>F</b> zrzut ładunku, <b>L</b> latarka, <b>R</b> powrót. Ładowanie: zniż się nad lądowiskiem drona albo nad stojakiem.</div>
         </div>
         <div id="eb-drn" style="display:none;border:2px solid rgba(90,209,255,0.45);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:rgba(90,209,255,0.05);font-size:13px;font-weight:600;color:#5ad1ff">
           <div style="margin-bottom:8px">🛸 Sterowanie drona</div>
@@ -2026,6 +2031,7 @@ function wpnReact(obj,dir){
 }
 function wpnImpact(h,dir){
   if(typeof drkRemoteHit==='function')drkRemoteHit(h.object,1); // 🌐 trafiony dron innego gracza
+  if(typeof dstHit==='function')dstHit(h.object,1); // ⚡ trafiona stacja ładowania
   var V=THREE.Vector3,obj=h.object,p=h.point.clone(),n=new V(0,1,0);
   if(h.face){
     n.copy(h.face.normal);var mw=obj.matrixWorld;
@@ -2148,6 +2154,7 @@ function wpnUpdate(dt,offs){
   }
   wpnLaser(fps);
   var tf=(CCL.fovT||WPN.fov0)*(1-WPN.aimT*(fps?0.3:0.1)); // kąt bazowy: w budynku szerszy
+  if(drnFlying()&&DRN.stage!=='landed')tf=(DRT.fov0||WPN.fov0)+14*(DRT.bst||0);tf*=1-0.2*((typeof DRK!=='undefined'&&DRK.aimT)||0); // 🎯 dron: turbo i lekkie przybliżenie przy celowaniu
   if(Math.abs(cam.fov-tf)>0.01){cam.fov=tf;cam.updateProjectionMatrix();}
   wpnHud(true);
 }
@@ -2351,6 +2358,7 @@ function drnAutoStep(dt){
 // wszystko do stanu z edytora (Odbuduj / eksport)
 function drnRestoreAll(){
   drkReset(); // 🎯 kaseta wraca na stojak
+  if(typeof dstReset==='function')dstReset(); // ⚡ stacje ładowania wracają całe
   drnLights(false);drnHum(false);drnDropCarry();DRN.pad=null;
   if(drnFlying()&&DRN.sv){camYaw=DRN.sv.yaw;camPitch=DRN.sv.pitch;}
   DRN.touched.forEach(function(po){var h=po.gr.userData._drnHome;if(h){po.gr.position.copy(h.p);po.gr.rotation.copy(h.r);delete po.gr.userData._drnHome;}po.gr.visible=true;
@@ -2404,7 +2412,7 @@ function drnHud(on){if(!DRN.ui)return;if(DRN.ui.hudOn!==on){DRN.ui.hudOn=on;DRN.
 function drnHudMode(m){var u=DRN.ui;if(!u||u.mode===m)return;u.mode=m;var a=drnAct();u.n.textContent='🛸 '+(a.name||'Dron');
   if(m==='carry'){u.barW.style.display='none';u.s.textContent='Dron na plecach';u.k.innerHTML='F połóż lądowisko i startuj • <b>T zostaw drona</b>';}
   else if(m==='placed'){u.barW.style.display='';u.s.textContent='Dron na lądowisku';u.k.innerHTML='E weź z lądowiskiem • F start • <b>T zakończ</b>';}
-  else{u.barW.style.display='';u.k.innerHTML=(a.ctl==='pilot'?'Strzałki lot • W/S góra/dół • A/D obrót':'WASD lot • Spacja/Shift góra/dół')+(drvNum(a.turbo,1)>1?' • PPM turbo':'')+(a.flips?' • Q salto':'')+' • Tab kamera'+(m==='flyk'?' • <b>LPM laser • F ładunek • L latarka • R powrót</b>':' • F powrót')+' • <b>T zostaw drona</b>';}}
+  else{u.barW.style.display='';u.k.innerHTML=(a.ctl==='pilot'?'Strzałki lot • W/S góra/dół • A/D obrót':'WASD lot • Spacja/Shift góra/dół')+(drvNum(a.turbo,1)>1&&m!=='flyk'?' • PPM turbo':'')+(a.flips?' • Q salto':'')+' • Tab kamera'+(m==='flyk'?' • <b>PPM celuj + LPM laser • F ładunek • L latarka • R powrót</b>':' • F powrót')+' • <b>T zostaw drona</b>';}}
 function drnOwn(on){DRN.own=!!on;if(DRN.ui)DRN.ui.own.style.display=DRN.own?'block':'none';}
 function drnNoise(v){
   if(!DRN.ui)return;var c=DRN.ui.nzc,cv=DRN.ui.nz;cv.style.opacity=v>0.01?String(Math.min(0.85,v)):'0';
@@ -2537,7 +2545,9 @@ function drnStep(dt){
     var dp=0.15+(p-0.3)*0.55,fx=-Math.sin(camYaw),fz=-Math.cos(camYaw);
     cam.position.set(DRN.x,DRN.y-0.12,DRN.z);cam.lookAt(DRN.x+fx*Math.cos(dp)*10,DRN.y-0.12-Math.sin(dp)*10,DRN.z+fz*Math.cos(dp)*10);
   }else if(DRN.stage!=='landed'){
-    cam.position.set(DRN.x+Math.sin(camYaw)*Math.cos(p)*D,DRN.y+0.2+Math.sin(p)*D,DRN.z+Math.cos(camYaw)*Math.cos(p)*D);cam.lookAt(DRN.x,DRN.y+0.2,DRN.z);
+    var at=DRK.aimT||0; // 🎯 PPM: celowanie jak u ludzika — kamera bliżej, nad prawym bokiem drona, celownik obok drona
+    var rx=Math.cos(camYaw),rz=-Math.sin(camYaw),px=DRN.x+rx*0.85*at,py=DRN.y+0.2+0.3*at,pz=DRN.z+rz*0.85*at,Dd=D+(3.6-D)*at,pa=p+(Math.min(p,0.35)-p)*at;
+    cam.position.set(px+Math.sin(camYaw)*Math.cos(pa)*Dd,py+Math.sin(pa)*Dd,pz+Math.cos(camYaw)*Math.cos(pa)*Dd);cam.lookAt(px,py,pz);
   }
   if(DRN.shake>0.002&&DRN.stage!=='landed'){var sk=DRN.shake;cam.position.x+=(Math.random()-0.5)*sk;cam.position.y+=(Math.random()-0.5)*sk;cam.position.z+=(Math.random()-0.5)*sk;DRN.shake*=Math.exp(-dt*9);}
   drnFlipCam();
@@ -2581,18 +2591,20 @@ function drkTop(po){return po.gr.position.y+1.0;}
 function drkNear(po,hmax){var p=po.gr.position,dx=DRN.x-p.x,dz=DRN.z-p.z,dy=DRN.y-drkTop(po);return dx*dx+dz*dz<1.6&&dy>-0.3&&dy<hmax;}
 function drkTryPick(){ // E nad stojakiem: kaseta doczepia się pod dronem
   if(DRK.on||!DRN.po)return false;var st=null;drkStands().forEach(function(po){if(!st&&drkNear(po,2.5))st=po;});
+  if(!st){var dsK=dstNear();if(dsK&&drkMeshes(dsK.po.gr).length)st=dsK.po;} // ⚡ uzbrojenie leży na stacji ładowania
   if(!st)return false;var A=drkA(st.action),g=new THREE.Group(),dg=DRN.po.gr;dg.updateMatrixWorld(true);st.gr.updateMatrixWorld(true);
   DRK.bombs=[];DRK.lamp=null;
   drkFill(g,st,DRK);drkStandBlink(st);
   dg.add(g);DRK.g=g;DRK.stand=st;DRK.on=true;mpDkSend(1);DRK.A=A;DRK.ammo=A.ammo;DRK.nb=A.bombs;DRK.light=false;
   if(A.light){var sp=new THREE.SpotLight(0xfff2d6,0,45,0.48,0.5,1.2);sp.position.set(0,0.1,-0.2);var tg=new THREE.Object3D();tg.position.set(0,-3,-9);g.add(sp);g.add(tg);sp.target=tg;DRK.spot=sp;}
-  drkBombVis();wpnSnd('pick');drnBeep(760);drnToast('🎯 Uzbrojenie podłączone — LPM laser, F ładunek, L latarka, R powrót');DRN.ui&&(DRN.ui.mode='');return true;
+  drkBombVis();wpnSnd('pick');drnBeep(760);drnToast('🎯 Uzbrojenie podłączone — od teraz wrogowie celują w drona! PPM celuj, LPM laser, F ładunek');DRN.ui&&(DRN.ui.mode='');return true;
 }
 function drkFill(g,st,T){ // kopia kasety ze stojaka pod dronem (moim albo innego gracza)
-  drkMeshes(st.gr).forEach(function(m){var c=m.clone();var wp=new THREE.Vector3();m.getWorldPosition(wp);st.gr.worldToLocal(wp);
-    c.position.set(wp.x,wp.y-0.94,wp.z);c.visible=true;c.castShadow=false;g.add(c);
+  var ms=drkMeshes(st.gr),ref=null;ms.forEach(function(m){if(!ref&&m.userData._role==='dkit'){ref=new THREE.Vector3();m.getWorldPosition(ref);st.gr.worldToLocal(ref);}});if(!ref)ref=new THREE.Vector3(0,1.07,0);
+  ms.forEach(function(m){var c=m.clone();var wp=new THREE.Vector3();m.getWorldPosition(wp);st.gr.worldToLocal(wp);
+    c.position.set(wp.x-ref.x,wp.y-ref.y+0.13,wp.z-ref.z);c.visible=true;c.castShadow=false;g.add(c);
     var r=m.userData._role;if(T){if(r==='dbomb')T.bombs.push(c);if(r==='dlamp')T.lamp=c;if(r==='dlas')T.tip=c;}});}
-function drkStandBlink(st){var ms=drkMeshes(st.gr);ms.forEach(function(m){m.visible=false;});setTimeout(function(){ms.forEach(function(m){m.visible=true;});},2500);} // stojak się nie wyczerpuje — kaseta wraca po chwili
+function drkStandBlink(st){var ms=drkMeshes(st.gr);ms.forEach(function(m){m.visible=false;});setTimeout(function(){var S=st.gr.userData._dst;if(S&&S.dead)return;ms.forEach(function(m){m.visible=true;});},2500);} // stojak się nie wyczerpuje — kaseta wraca po chwili
 function drkBombVis(){var n=DRK.bombs.length,show=DRK.A?Math.ceil(n*DRK.nb/Math.max(1,DRK.A.bombs)):0;DRK.bombs.forEach(function(b,i){b.visible=i<show;});}
 function drkLight(on){if(!DRK.on||!DRK.spot){drnToast('To uzbrojenie nie ma latarki');return;}DRK.light=on;DRK.spot.intensity=on?2.6:0;if(DRK.lamp&&DRK.lamp.material&&DRK.lamp.material.emissive){DRK.lamp.material=DRK.lamp.material.clone();DRK.lamp.material.emissive.setHex(on?0xffd27a:0x000000);}drnBeep(on?900:500);}
 function drkDrop(){ // F: zrzut ładunku
@@ -2606,6 +2618,7 @@ function drkBoom(c,R,by){
   if(drnFlying()&&DRN.po&&!(DRN.dead>0)){var dd=Math.hypot(DRN.x-c.x,DRN.y-c.y,DRN.z-c.z);if(dd<R+1)drkHurt(Math.ceil(14*(1-dd/(R+1)))+2,by||null);} // wybuch blisko mojego drona
   drvBlastFx(c);drvBoom();DRV.shake=Math.max(DRV.shake||0,0.6);
   if(typeof misBlast==='function')misBlast(c);
+  dstBlast(c,R+2.5); // ⚡ ładunek niszczy stację
   for(var i=wCols.length-1;i>=0;i--){var w=wCols[i];if(!w||w._gone||!w.veh||!(w.veh.explode||w.veh.destroy))continue;if(Math.hypot(w.x-c.x,w.z-c.z)>R)continue;drvExplode(w);}
 }
 function drkBeam(on,a,b){
@@ -2615,7 +2628,7 @@ function drkBeam(on,a,b){
   bm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());bm.material.opacity=0.65+Math.random()*0.3;
 }
 function drkCross(on){var x=DRK.x;if(!x){x=document.createElement('div');x.id='drk-x';x.style.cssText='position:fixed;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px;z-index:20;pointer-events:none;display:none;border:2px solid rgba(255,80,60,.9);border-radius:50%';x.innerHTML='<i style="position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;background:#ff5040;border-radius:50%"></i>';document.body.appendChild(x);DRK.x=x;}var v=on?'block':'none';if(x.style.display!==v)x.style.display=v;}
-function drkHudTxt(){var hp=(typeof mpGame==='function'&&mpGame())?' • ❤ '+Math.max(0,Math.ceil(DRN.hp))+'/'+DRK_HP:'';if(!DRK.on)return hp;return hp+' • 🔴 '+Math.ceil(DRK.ammo)+' • 💣 '+DRK.nb+'/'+DRK.A.bombs+(DRK.light?' • 🔦':'')+(DRK.charging?' • ⚡ ładowanie…':'');}
+function drkHudTxt(){var hp=((typeof mpGame==='function'&&mpGame())||DRK.on)?' • ❤ '+Math.max(0,Math.ceil(DRN.hp))+'/'+DRK_HP:'';if(!DRK.on)return hp;return hp+' • 🔴 '+Math.ceil(DRK.ammo)+' • 💣 '+DRK.nb+'/'+DRK.A.bombs+(DRK.light?' • 🔦':'')+(DRK.charging?' • ⚡ ładowanie…':'');}
 function drkTick(dt){
   // spadające ładunki (też po wylądowaniu)
   for(var i=DRK.fall.length-1;i>=0;i--){var B=DRK.fall[i];B.t+=dt;B.vy-=9.8*dt;B.vx*=0.995;B.vz*=0.995;
@@ -2624,15 +2637,18 @@ function drkTick(dt){
     if(typeof ENM!=='undefined')ENM.list.forEach(function(E){if(!E.dead&&E.gr&&E.gr.position.distanceTo(m.position)<1.1)hitE=true;});
     if(m.position.y<=fl+0.04||hitE||B.t>12){scene.remove(m);DRK.fall.splice(i,1);drkBoom(new THREE.Vector3(m.position.x,Math.max(fl,m.position.y)+0.3,m.position.z),B.R,B.by);}}
   var fly=drnFlying()&&DRN.stage==='fly'&&DRN.po;
-  if(!fly){DRK.lmb=false;drkBeam(false);drkCross(false);
+  if(!fly){DRK.lmb=false;drkBeam(false);drkCross(false);DRK.aimT=0;
     if(DRK.on&&DRK.spot&&DRN.stage==='none'&&DRK.light)drkLight(false);return;}
   // podpowiedź nad stojakiem
-  if(!DRK.on){DRK.hintT-=dt;if(DRK.hintT<=0){var st=drkStands().filter(function(po){return drkNear(po,2.5);})[0];if(st){drnToast('E — weź uzbrojenie');DRK.hintT=2;}}return;}
-  drkCross(true);
+  var dsN=dstNear();if(dsN&&!DRK.on){var fa=drvNum(drnAct().battery,90);if(DRN.bat<fa-0.5&&!DST.chg)drnToast('⚡ Ładowanie baterii na stacji…');DRN.bat=Math.min(fa,DRN.bat+dt*fa/4);}DST.chg=!!dsN;
+  if(!DRK.on){DRK.hintT-=dt;if(DRK.hintT<=0){var st=drkStands().filter(function(po){return drkNear(po,2.5);})[0]||(dsN&&drkMeshes(dsN.po.gr).length?dsN.po:null);if(st){drnToast('E — weź uzbrojenie');DRK.hintT=2;}}return;}
+  var aimOn=DRT.rmb&&!DRN.own&&!(DRN.dead>0);DRK.aimT=(DRK.aimT||0)+((aimOn?1:0)-(DRK.aimT||0))*Math.min(1,dt*9);if(DRK.aimT<0.002)DRK.aimT=0;
+  var canShoot=DRK.aimT>0.6||DRN.own;drkCross(canShoot);
   // ładowanie: nisko nad lądowiskiem drona albo nad stojakiem
   var a=drnAct(),full=drvNum(a.battery,90),chg=false;
   if(DRN.pad){var p=DRN.pad.position,dx=DRN.x-p.x,dz=DRN.z-p.z;if(dx*dx+dz*dz<2.2&&DRN.y-p.y<2.2)chg=true;}
-  if(DRK.stand&&drkNear(DRK.stand,2.2))chg=true;
+  if(DRK.stand&&DRK.stand.action&&DRK.stand.action.type==='dkit'&&drkNear(DRK.stand,2.2))chg=true;
+  if(dsN)chg=true; // ⚡ stacja ładowania
   if(chg){var A=DRK.A,was=DRK.charging;DRN.bat=Math.min(full,DRN.bat+dt*full/4);DRK.ammo=Math.min(A.ammo,DRK.ammo+dt*A.ammo/4);
     DRK.cT=(DRK.cT||0)+dt;if(DRK.cT>4/Math.max(1,A.bombs)&&DRK.nb<A.bombs){DRK.cT=0;DRK.nb++;drkBombVis();drnBeep(640);}
     if(!was)drnToast('⚡ Ładowanie baterii i uzbrojenia…');
@@ -2640,11 +2656,15 @@ function drkTick(dt){
   else DRK.full=false;
   DRK.charging=chg;
   // laser: ciągły, póki trzymasz LPM
-  if(DRK.lmb&&DRK.ammo>0&&!chg&&!(DRN.dead>0)){
+  if(DRK.lmb&&canShoot&&DRK.ammo>0&&!chg&&!(DRN.dead>0)){
     DRK.listT-=dt;if(!DRK.list||DRK.listT<=0){var dg=DRN.po.gr;DRK.list=wpnTargets().filter(function(o){for(var q=o;q;q=q.parent)if(q===dg)return false;return true;});DRK.listT=0.5;}
     cam.updateMatrixWorld(true);var V=THREE.Vector3,o=new V(),d=new V();cam.getWorldPosition(o);cam.getWorldDirection(d);
-    var rc=DRK.rc||(DRK.rc=new THREE.Raycaster());rc.set(o,d);rc.near=0;rc.far=80;var hs=rc.intersectObjects(DRK.list,false),h=hs.length?hs[0]:null;
-    var end=h?h.point:o.clone().addScaledVector(d,80),tip=new V();if(DRK.tip){DRK.tip.getWorldPosition(tip);}else tip.set(DRN.x,DRN.y,DRN.z);
+    var tip=new V();if(DRK.tip){DRN.po.gr.updateMatrixWorld(true);DRK.tip.getWorldPosition(tip);}else tip.set(DRN.x,DRN.y,DRN.z);
+    // 1) promień z celownika wyznacza punkt celowania (pomija to, co jest między kamerą a dronem)
+    var rc=DRK.rc||(DRK.rc=new THREE.Raycaster());rc.set(o,d);rc.near=0;rc.far=120;var t0=Math.max(0,tip.clone().sub(o).dot(d)),hs=rc.intersectObjects(DRK.list,false),aimP=null;
+    for(var hi=0;hi<hs.length;hi++){if(hs[hi].distance>t0-0.05){aimP=hs[hi].point;break;}}if(!aimP)aimP=o.clone().addScaledVector(d,120);
+    // 2) laser leci z lufy do punktu celowania — przeszkoda po drodze go zatrzyma
+    var d2=aimP.clone().sub(tip),L2=d2.length();d2.normalize();rc.set(tip,d2);rc.far=L2+0.05;var h2=rc.intersectObjects(DRK.list,false),h=h2.length?h2[0]:null,end=h?h.point:aimP;d=d2;
     drkBeam(true,tip,end);DRK.ammo=Math.max(0,DRK.ammo-dt*20); // 20 naboi na sekundę
     DRK.lsT=(DRK.lsT||0)-dt;if(DRK.lsT<=0&&typeof mpEv==='function'){DRK.lsT=0.1;mpEv('dl',{a:[+tip.x.toFixed(2),+tip.y.toFixed(2),+tip.z.toFixed(2)],b:[+end.x.toFixed(2),+end.y.toFixed(2),+end.z.toFixed(2)]});}
     DRK.hitT-=dt;if(h&&DRK.hitT<=0){DRK.hitT=0.15;wpnImpact(h,d);}
@@ -2692,9 +2712,44 @@ function drkReset(){
 window.addEventListener('mousedown',function(e){if(e.button===0&&DRK.on&&drnFlying()&&DRN.stage==='fly'&&document.pointerLockElement){DRK.lmb=true;}},true);
 window.addEventListener('mouseup',function(e){if(e.button===0)DRK.lmb=false;},true);
 document.addEventListener('pointerlockchange',function(){if(!document.pointerLockElement)DRK.lmb=false;});
+
+// ===== ⚡ STACJA ŁADOWANIA DRONÓW: duża platforma, agregat, obrotowy radar — ładuje drony, da się ją zniszczyć =====
+var DST={list:[],scanT:0,msgT:0};
+function dstA(a){a=a||{};return {hp:Math.round(drvNum(a.hp,60)),reb:Math.round(drvNum(a.rebuild,0))};}
+function dstInit(po){var u=po.gr.userData;if(u._dst)return u._dst;var A=dstA(po.action);
+  var S={po:po,max:A.hp,hp:A.hp,dead:false,spin:null,leds:[],brk:[],plat:[],t:Math.random()*3,smT:0,dT:0};
+  var sp=[];po.gr.traverse(function(o){var r=o.isMesh&&o.userData&&o.userData._role;if(r==='sspin')sp.push(o);else if(r==='sled')S.leds.push(o);else if(r==='sbrk')S.brk.push(o);else if(r==='splat')S.plat.push(o);});
+  if(sp.length){var cx=0,cz=0;sp.forEach(function(m){cx+=m.position.x;cz+=m.position.z;});cx/=sp.length;cz/=sp.length;var par=sp[0].parent,pv=new THREE.Group();pv.position.set(cx,0,cz);par.add(pv);
+    sp.forEach(function(m){if(m.parent)m.parent.remove(m);m.position.x-=cx;m.position.z-=cz;pv.add(m);});S.spin=pv;}
+  S.plat.forEach(function(m){if(m.material){m.material=m.material.clone();m.userData._c0=m.material.color.getHex();}});
+  u._dst=S;return S;}
+function dstAll(){return wpnPlaced().filter(function(po){return po.action&&po.action.type==='dstation'&&po.gr;}).map(dstInit);}
+function dstNear(){if(!DRN.po)return null;var best=null;DST.list.forEach(function(S){if(S.dead)return;var g=S.po.gr,dx=DRN.x-g.position.x,dz=DRN.z-g.position.z,dy=DRN.y-(g.position.y+0.48);
+  var c=Math.cos(-g.rotation.y),sn=Math.sin(-g.rotation.y),lx=dx*c-dz*sn,lz=dx*sn+dz*c;if(Math.abs(lx)<2.1&&Math.abs(lz)<2.1&&dy>-0.3&&dy<2.6)best=S;});return best;}
+function dstOwner(obj){for(var q=obj;q;q=q.parent){if(q.userData&&q.userData._dst)return q.userData._dst;}return null;}
+function dstHit(obj,n){var S=dstOwner(obj);if(!S||S.dead)return false;S.hp-=n;
+  if(performance.now()-DST.msgT>700){DST.msgT=performance.now();drnToast('⚡ Stacja ładowania: '+Math.max(0,Math.ceil(S.hp))+' / '+S.max);}
+  if(S.hp<=0)dstDestroy(S,true);return true;}
+function dstDestroy(S,send){if(S.dead)return;S.dead=true;S.dT=0;var g=S.po.gr;g.updateMatrixWorld(true);
+  var n=0;S.brk.forEach(function(m){if(m.visible&&n<8){drvDebris(m);n++;}m.visible=false;});S.leds.forEach(function(m){m.visible=false;});if(S.spin){drvDebris(S.spin);S.spin.visible=false;}
+  S.plat.forEach(function(m){if(m.material)m.material.color.multiplyScalar(0.35);});drkMeshes(g).forEach(function(m){m.visible=false;});
+  [[3.4,0.8,0.6],[-3.2,3.6,-1.4],[0,0.8,0]].forEach(function(p,i){var v=new THREE.Vector3(p[0],p[1],p[2]);g.localToWorld(v);setTimeout(function(){drvBlastFx(v);drvBoom();},i*220);});
+  DRV.shake=Math.max(DRV.shake||0,1.2);drnToast('💥 Stacja ładowania zniszczona');
+  if(send&&typeof mpEv==='function'&&typeof placedActions!=='undefined'&&typeof mpPi==='function'){var i=mpPi(g);if(i>=0)mpEv('sx',{i:i});}}
+function dstRestore(S){S.dead=false;S.hp=S.max;drkMeshes(S.po.gr).forEach(function(m){m.visible=true;});S.brk.forEach(function(m){m.visible=true;});S.leds.forEach(function(m){m.visible=true;});if(S.spin)S.spin.visible=true;
+  S.plat.forEach(function(m){if(m.material&&m.userData._c0!==undefined)m.material.color.setHex(m.userData._c0);});}
+function dstBlast(c,R){DST.list.forEach(function(S){if(S.dead)return;var bb=new THREE.Box3().setFromObject(S.po.gr),d=bb.distanceToPoint(c);if(d<R)dstHit(S.po.gr.children[0]||S.po.gr,Math.ceil(S.max*0.55*(1-d/R))+3);});}
+function dstTick(dt){
+  DST.scanT-=dt;if(DST.scanT<=0){DST.scanT=1;DST.list=dstAll();}
+  DST.list.forEach(function(S){S.t+=dt;
+    if(!S.dead){if(S.spin)S.spin.rotation.y+=dt*1.3;S.leds.forEach(function(m,i){m.visible=((S.t*1.6+i*0.37)%1)<0.55;});}
+    else{S.smT-=dt;S.dT+=dt;if(S.smT<=0&&typeof wpnPuff==='function'){S.smT=0.22;var v=new THREE.Vector3(3.4+(Math.random()-0.5)*0.8,1.1,0.6);S.po.gr.localToWorld(v);wpnPuff(v,0x2a2a2a,0.5,2.2,2.4,new THREE.Vector3((Math.random()-0.5)*0.3,1.4,(Math.random()-0.5)*0.3));}
+      var rb=dstA(S.po.action).reb;if(rb>0&&S.dT>rb){dstRestore(S);drnToast('⚡ Stacja ładowania odbudowana');}}});
+}
+function dstReset(){DST.list.forEach(function(S){if(S.dead)dstRestore(S);S.hp=S.max;});}
 // co klatkę (także bez lotu)
 function drnTick(dt){
-  drnScanBases(dt);drkTick(dt);drkRemoteTick(dt);
+  drnScanBases(dt);dstTick(dt);drkTick(dt);drkRemoteTick(dt);
   if(!DRN.ui)return;
   if(DRN.stage==='toBase'&&DRN.po){ // dron sam leci do bazy, a ty patrzysz z ludzika
     DRN.t+=dt;if(drnAutoStep(dt)){drnArriveBase();}else drnPose(dt,true);
@@ -2989,7 +3044,7 @@ function perfTick(dt){
 // Turbo ma zapas energii (3 s ciągłego użycia, pełne ładowanie w 6 s). Salto: Q = w przód, S+Q = w tył, A+Q / D+Q = beczka w bok.
 var DRT={rmb:false,en:1,bst:0,fov0:0,flip:null,ui:null};
 function drnTurboK(dt,a){
-  var T=drvNum(a.turbo,1);if(T<=1){DRT.bst=0;return 1;}
+  var T=drvNum(a.turbo,1);if(T<=1||(typeof DRK!=='undefined'&&DRK.on)){DRT.bst=0;return 1;}
   var on=DRT.rmb&&DRN.stage==='fly'&&DRT.en>0.02&&!DRT.empty;
   if(on){DRT.en=Math.max(0,DRT.en-dt/3);if(DRT.en<=0)DRT.empty=true;}
   else{DRT.en=Math.min(1,DRT.en+dt/6);if(DRT.en>0.3)DRT.empty=false;}
@@ -3020,7 +3075,7 @@ function drnFlipCam(){ // kamera FPV kręci się razem z dronem; kamera zza dron
 }
 function drnTricksTick(){ // FOV przy turbo + pasek energii w panelu drona
   if(!cam)return;if(!DRT.fov0)DRT.fov0=cam.fov;
-  var fl=drnFlying()&&DRN.stage!=='landed',f=(fl?DRT.fov0:(CCL.fovT||DRT.fov0))+(fl?14*DRT.bst:0); // pieszo w budynku — szerszy kąt
+  var fl=drnFlying()&&DRN.stage!=='landed',f=((fl?DRT.fov0:(CCL.fovT||DRT.fov0))+(fl?14*DRT.bst:0))*(fl?1-0.2*(DRK.aimT||0):1); // pieszo w budynku — szerszy kąt; dron: przybliżenie przy celowaniu
   if(Math.abs(cam.fov-f)>0.05){cam.fov=f;cam.updateProjectionMatrix();}
   if(!DRN.ui)return;var a=drnAct(),has=drvNum(a.turbo,1)>1;
   if(!DRT.ui){var d=document.createElement('div');d.className='tb';d.innerHTML='⚡ Turbo <span class="tbb"><i></i></span>';
@@ -4025,9 +4080,23 @@ function enmFire(E){
   var gl=new THREE.Sprite(new THREE.SpriteMaterial({map:drvGlow(),color:0xff3a2a,transparent:true,opacity:0.8,depthWrite:false}));gl.scale.setScalar(0.6);gl.userData._wfx=true;m.add(gl);
   ENM.bolts.push({m:m,v:dir.multiplyScalar(20),d:0,E:E});enmSnd('shot',p);
 }
+
+// ===== 🎯 DUSZA W DRONIE: uzbrojony dron w locie staje się celem wrogów zamiast ludzika — aż do zestrzelenia =====
+function drkSoul(){return DRK.on&&DRN.po&&drnFlying()&&DRN.stage!=='landed'&&DRN.stage!=='toBase'&&!(DRN.dead>0)&&DRN.po.gr.visible;}
+function drkSoulIn(){if(!drkSoul())return null;var sv={x:charX,y:charY,z:charZ};charX=DRN.x;charY=DRN.y-1.0;charZ=DRN.z;return sv;} // wrogowie „widzą” drona jak ludzika
+function drkSoulOut(sv){if(sv){charX=sv.x;charY=sv.y;charZ=sv.z;}}
+function drkRemoteSoul(id){if(typeof placedActions==='undefined')return null;for(var i=0;i<placedActions.length;i++){var pa=placedActions[i];
+  if(pa._dkG&&pa._mpBy===id&&pa.gr&&pa.gr.visible&&typeof mpBusy==='function'&&mpBusy(pa))return pa;}return null;}
+function drkSoulHit(p,dmg){ // pocisk wroga trafia uzbrojonego drona (mojego albo — u gospodarza — innego gracza)
+  if(drkSoul()){var dx=p.x-DRN.x,dy=p.y-DRN.y,dz=p.z-DRN.z;if(dx*dx+dy*dy+dz*dz<0.6*0.6){drkHurt(Math.max(1,Math.round(dmg/4)),null);return true;}}
+  if(typeof mpGame==='function'&&mpGame()&&MP.host&&typeof placedActions!=='undefined'){for(var i=0;i<placedActions.length;i++){var pa=placedActions[i];
+    if(!pa._dkG||!pa._mpBy||!pa.gr||!pa.gr.visible||!mpBusy(pa))continue;var q=pa.gr.position,ex=p.x-q.x,ey=p.y-q.y,ez=p.z-q.z;
+    if(ex*ex+ey*ey+ez*ez<0.6*0.6){mpEv('dh',{to:pa._mpBy,d:Math.max(1,Math.round(dmg/4))});return true;}}}
+  return false;}
 function enmBolts(dt){
   for(var i=ENM.bolts.length-1;i>=0;i--){var b=ENM.bolts[i],p=b.m.position,st=b.v.length()*dt,n=Math.max(1,Math.ceil(st/0.4)),hit=false;
     for(var s=0;s<n&&!hit;s++){p.addScaledVector(b.v,dt/n);b.d+=st/n;
+      if(drkSoulHit(p,b.E.A.dmg)){hit=true;break;} // 🎯 trafiony uzbrojony dron
       var dx=p.x-charX,dz=p.z-charZ,dy=p.y-(charY+0.95);
       if(!ENM.ply.dead&&dx*dx+dz*dz<0.38*0.38&&Math.abs(dy)<0.95){enmHurt(b.E.A.dmg);hit=true;break;}
       if(typeof mpBoltHit==='function'&&mpBoltHit(p,b.E.A.dmg)){hit=true;break;} // 🌐 trafiony inny gracz
@@ -4069,8 +4138,8 @@ function enmTick(dt){
   else if(ENM.t-P.lastHit>5&&P.hp<P.max)P.hp=Math.min(P.max,P.hp+dt*6); // po 5 s bez trafienia życie wraca
   if(ENM.ui.vigT>0){ENM.ui.vigT-=dt;if(ENM.ui.vigT<=0)ENM.ui.vig.style.opacity='0';}
   var alive=0;
-  ENM.list.forEach(function(E){var _sw=typeof mpSwapIn==='function'?mpSwapIn(E):null; // 🌐 gra z innymi: gość tylko pokazuje, gospodarz celuje w najbliższego gracza
-    if(_sw==='g'){mpEnmGuest(E,dt);if(E.dead){enmDead(E,dt);return;}alive++;enmBar(E);return;}
+  ENM.list.forEach(function(E){var _ds=drkSoulIn(),_sw=typeof mpSwapIn==='function'?mpSwapIn(E):null; // 🌐 gra z innymi: gość tylko pokazuje, gospodarz celuje w najbliższego gracza
+    if(_sw==='g'){drkSoulOut(_ds);mpEnmGuest(E,dt);if(E.dead){enmDead(E,dt);return;}alive++;enmBar(E);return;}
     try{(function(){
     var g=E.gr;
     if(!active&&E.po&&E.po.x!==undefined&&typeof loadedObjs!=='undefined'){ // edytor bez gry: wróg stoi tam, gdzie go postawiono
@@ -4125,7 +4194,7 @@ function enmTick(dt){
     E.col.x=g.position.x;E.col.z=g.position.z;E.col.y=g.position.y+0.35;
     if(E.flash>0){E.flash-=dt;E.parts.eye.forEach(function(m){m.material.emissiveIntensity=E.flash>0?3:0.8;});}
     enmBar(E);
-    })();}finally{if(_sw)mpSwapOut(_sw);}
+    })();}finally{if(_sw)mpSwapOut(_sw);drkSoulOut(_ds);}
   });
   enmBolts(dt);
   var P2=ENM.ply,u=ENM.ui,show=ENM.list.length>0;u.hud.style.display=show?'block':'none';
@@ -4958,6 +5027,7 @@ function mpApply(d){
   if(MP.phase!=='game')return;MP.rx=true;
   try{var pa=d.i>=0?placedActions[d.i]:null;
   switch(d.k){
+    case 'sx':{var spa=placedActions[d.i];if(spa&&spa.gr&&spa.action&&spa.action.type==='dstation')dstDestroy(dstInit(spa),false);break;} // ⚡ ktoś zniszczył stację
     case 'dk':{drkRemoteKit(d);break;} // 🎯 inny gracz wziął / oddał kasetę
     case 'dl':{drkRemoteBeam(d);break;} // 🔴 laser innego drona
     case 'db':{var m=new THREE.Mesh(new THREE.CylinderGeometry(0.022,0.022,0.07,8),new THREE.MeshLambertMaterial({color:0x2c2c2a}));m.position.set(d.x,d.y,d.z);scene.add(m);DRK.fall.push({m:m,vx:d.vx,vy:d.vy,vz:d.vz,R:d.R||4,t:0,by:d.id});break;} // 💣 zrzut innego drona
@@ -5011,8 +5081,8 @@ function mpPoseTick(dt){var now=performance.now(),f=Math.min(1,dt*12);
 function mpSwapIn(E){ // u gospodarza wróg celuje w najbliższego gracza (także gościa)
   if(!mpGame())return null;if(!MP.host)return 'g';
   var g=E.gr.position,best=null,bd=Math.hypot(charX-g.x,charZ-g.z);
-  Object.keys(MP.rem).forEach(function(k){var R=MP.rem[k];if(!R.ph||!R.tx||R.tx.v===0)return;var d=Math.hypot(R.g.position.x-g.x,R.g.position.z-g.z);if(d<bd){bd=d;best=R;}});
-  if(!best)return null;var sv={x:charX,y:charY,z:charZ};charX=best.g.position.x;charY=best.g.position.y;charZ=best.g.position.z;return sv;}
+  Object.keys(MP.rem).forEach(function(k){var R=MP.rem[k];if(!R.ph||!R.tx||R.tx.v===0)return;var sd=drkRemoteSoul(R.id),P=sd?sd.gr.position:R.g.position;var d=Math.hypot(P.x-g.x,P.z-g.z);if(d<bd){bd=d;best={P:P,sd:sd};}});
+  if(!best)return null;var sv={x:charX,y:charY,z:charZ};charX=best.P.x;charY=best.sd?best.P.y-1.0:best.P.y;charZ=best.P.z;return sv;}
 function mpSwapOut(sv){if(sv&&sv!=='g'){charX=sv.x;charY=sv.y;charZ=sv.z;}}
 function mpBoltHit(p,dmg){ // pocisk wroga u gospodarza trafia gościa
   if(!mpGame()||!MP.host)return false;
@@ -6061,7 +6131,9 @@ function updateEditUI(){
     document.getElementById('eb-enm-respawn').textContent=ENM_N[EA.respawn];document.getElementById('eb-enm-rt').textContent=EA.rt+' s';document.getElementById('eb-enm-area').textContent=EA.area+' m';
     var vis={zone:EA.mode==='patrol',alt:isD,rt:EA.respawn!=='none',area:EA.respawn==='area'};
     document.querySelectorAll('.eb-enm-row').forEach(function(r){var k=r.dataset.row;r.style.display=(vis[k]===false)?'none':'contents';});}
-  var ekb=document.getElementById('eb-dkit'),ka=po.action&&po.action.type==='dkit';ekb.style.display=ka?'block':'none';
+  var esb=document.getElementById('eb-dst'),sa=po.action&&po.action.type==='dstation';esb.style.display=sa?'block':'none';
+  if(sa){var SA=dstA(po.action);document.getElementById('eb-dst-hp').textContent=SA.hp+' trafień';document.getElementById('eb-dst-reb').textContent=SA.reb>0?'po '+SA.reb+' s':'nigdy';}
+  var ekb=document.getElementById('eb-dkit'),ka=po.action&&(po.action.type==='dkit'||po.action.type==='dstation');ekb.style.display=ka?'block':'none';
   if(ka){var KA=drkA(po.action),PN={small:'Mały',norm:'Średni',big:'Duży'};document.getElementById('eb-dkit-ammo').textContent=KA.ammo+' naboi';document.getElementById('eb-dkit-bombs').textContent=KA.bombs+' szt.';
     document.getElementById('eb-dkit-power').textContent=PN[KA.power];document.getElementById('eb-dkit-light').textContent=KA.light?'Tak':'Nie';}
   var edb=document.getElementById('eb-drn'),da=po.action&&po.action.type==='drone';edb.style.display=da?'block':'none';
@@ -7571,8 +7643,14 @@ function init(){
     if(ENM_OPT[k]){var L=ENM_OPT[k],i=L.indexOf(A[k]);po.action[k]=L[(i+d+L.length)%L.length];}
     else{var st={zone:[3,60,1],alt:[5,40,1],rt:[3,300,5],area:[3,80,5]}[k],v=A[k]+d*st[2];if(k==='rt'&&A.rt<10)v=A.rt+d;po.action[k]=Math.max(st[0],Math.min(st[1],v));}
     ENM.scanT=0;enmScan(0);updateEditUI();});});
+  document.querySelectorAll('.eb-dst').forEach(function(b){b.addEventListener('click',function(){ // ⚡ ustawienia stacji ładowania
+    if(editIdx<0)return;var po=placedObjs[editIdx];if(!po.action||po.action.type!=='dstation')return;
+    var A=dstA(po.action),d=+b.dataset.d,k=b.dataset.k,RB=[0,30,60,120];
+    if(k==='hp')po.action.hp=Math.max(20,Math.min(300,A.hp+d*10));
+    else if(k==='reb'){var j=RB.indexOf(A.reb);if(j<0)j=0;po.action.rebuild=RB[(j+d+RB.length)%RB.length];}
+    updateEditUI();});});
   document.querySelectorAll('.eb-dkit').forEach(function(b){b.addEventListener('click',function(){ // 🎯 ustawienia uzbrojenia drona
-    if(editIdx<0)return;var po=placedObjs[editIdx];if(!po.action||po.action.type!=='dkit')return;
+    if(editIdx<0)return;var po=placedObjs[editIdx];if(!po.action||(po.action.type!=='dkit'&&po.action.type!=='dstation'))return;
     var A=drkA(po.action),d=+b.dataset.d,k=b.dataset.k,L=['small','norm','big'];
     if(k==='ammo')po.action.ammo=Math.max(100,Math.min(2000,A.ammo+d*100));
     else if(k==='bombs')po.action.bombs=Math.max(1,Math.min(30,A.bombs+d));

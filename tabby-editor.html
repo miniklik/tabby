@@ -2546,7 +2546,7 @@ function drnStep(dt){
     cam.position.set(DRN.x,DRN.y-0.12,DRN.z);cam.lookAt(DRN.x+fx*Math.cos(dp)*10,DRN.y-0.12-Math.sin(dp)*10,DRN.z+fz*Math.cos(dp)*10);
   }else if(DRN.stage!=='landed'){
     var at=DRK.aimT||0; // 🎯 PPM: celowanie jak u ludzika — kamera bliżej, nad prawym bokiem drona, celownik obok drona
-    var rx=Math.cos(camYaw),rz=-Math.sin(camYaw),px=DRN.x+rx*0.85*at,py=DRN.y+0.2+0.3*at,pz=DRN.z+rz*0.85*at,Dd=D+(3.6-D)*at,pa=p+(Math.min(p,0.35)-p)*at;
+    var rx=Math.cos(camYaw),rz=-Math.sin(camYaw),px=DRN.x+rx*0.85*at,py=DRN.y+0.2+0.3*at,pz=DRN.z+rz*0.85*at,Dd=D+(3.6-D)*at,pa=p;
     cam.position.set(px+Math.sin(camYaw)*Math.cos(pa)*Dd,py+Math.sin(pa)*Dd,pz+Math.cos(camYaw)*Math.cos(pa)*Dd);
     if(at>0.01){var cfy=drnCollide(cam.position.x,cam.position.z,cam.position.y+0.5)[2]+0.3;if(cam.position.y<cfy)cam.position.y=cfy;} // celowanie w górę: kamera pod dronem, ale nie pod ziemią
     cam.lookAt(px,py,pz);
@@ -2645,7 +2645,7 @@ function drkTick(dt){
   var dsN=dstNear();if(dsN&&!DRK.on){var fa=drvNum(drnAct().battery,90);if(DRN.bat<fa-0.5&&!DST.chg)drnToast('⚡ Ładowanie baterii na stacji…');DRN.bat=Math.min(fa,DRN.bat+dt*fa/4);}DST.chg=!!dsN;
   if(!DRK.on){DRK.hintT-=dt;if(DRK.hintT<=0){var st=drkStands().filter(function(po){return drkNear(po,2.5);})[0]||(dsN&&drkMeshes(dsN.po.gr).length?dsN.po:null);if(st){drnToast('E — weź uzbrojenie');DRK.hintT=2;}}return;}
   var aimOn=DRT.rmb&&!DRN.own&&!(DRN.dead>0);
-  if(!aimOn&&typeof CMINP!=='undefined'&&camPitch<CMINP)camPitch+=(CMINP-camPitch)*Math.min(1,dt*6); /* po celowaniu w górę kamera wraca nad drona */
+  if(!aimOn&&typeof CMINP!=='undefined'&&camPitch<CMINP)camPitch+=(CMINP-camPitch)*Math.min(1,dt*6);if(!aimOn&&typeof CMAXP!=='undefined'&&camPitch>CMAXP)camPitch+=(CMAXP-camPitch)*Math.min(1,dt*6); /* po celowaniu w górę kamera wraca nad drona */
  DRK.aimT=(DRK.aimT||0)+((aimOn?1:0)-(DRK.aimT||0))*Math.min(1,dt*9);if(DRK.aimT<0.002)DRK.aimT=0;
   var canShoot=DRK.aimT>0.6||DRN.own;drkCross(canShoot);
   // ładowanie: nisko nad lądowiskiem drona albo nad stojakiem
@@ -7298,7 +7298,7 @@ function init(){
     else{si.textContent='Click to continue';si.style.display=edOpen?'none':'block';renderer.domElement.style.cursor='pointer';}
   });
   document.addEventListener('mousemove',function(e){if(!pLock)return;var ws=wpnSens();camYaw-=e.movementX*CSENS*ws;
-    camPitch+=e.movementY*CSENS*ws;camPitch=Math.max(camStyle==='fps'?-1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?-0.75:CMINP),Math.min(camStyle==='fps'?1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?0.9:CMAXP),camPitch));});
+    camPitch+=e.movementY*CSENS*ws;camPitch=Math.max(camStyle==='fps'?-1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?-0.75:CMINP),Math.min(camStyle==='fps'?1.0:((typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?1.3:wpnReady()?0.9:CMAXP),camPitch));});
   renderer.domElement.addEventListener('mousemove',function(e){moveGhost(e);});
   document.addEventListener('keydown',function(e){
     if(e.code==='KeyE'){
@@ -8586,7 +8586,7 @@ function init(){
   });
   document.addEventListener('mousemove',function(e){if(!pLock)return;var ws=wpnSens();camYaw-=e.movementX*CSENS*ws;
     camPitch+=e.movementY*CSENS*ws;
-    camPitch=Math.max(camStyle==='fps'?-1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?-0.75:CMINP),Math.min(camStyle==='fps'?1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?0.9:CMAXP),camPitch));});
+    camPitch=Math.max(camStyle==='fps'?-1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?-0.75:CMINP),Math.min(camStyle==='fps'?1.0:((typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?1.3:wpnReady()?0.9:CMAXP),camPitch));});
   document.addEventListener('keydown',function(e){switch(e.code){
     case'KeyW':keys.w=1;break;case'KeyA':keys.a=1;break;case'KeyS':keys.s=1;break;case'KeyD':keys.d=1;break;
     case'ShiftLeft':case'ShiftRight':keys.sh=1;break;case'Space':keys.sp=1;e.preventDefault();break;

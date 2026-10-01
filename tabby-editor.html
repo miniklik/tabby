@@ -6774,7 +6774,8 @@ function tabbyCollectProject(){
   var d={objects:[],placed:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused,fog:+(+TBFOG.v).toFixed(2),season:TBWIN.on?'winter':'summer',snow:+(+TBWIN.fall).toFixed(2),snowH:+(+TBWIN.depth).toFixed(2)}};
   loadedObjs.forEach(function(ob){
     if(ob.type==='glb'){d.objects.push({name:ob.name,parts:[]});return;}
-    var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;d.objects.push(eo);
+    var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;if(ob.lifts)eo.lifts=ob.lifts; // 🛗 windy budynku też idą do projektu
+    d.objects.push(eo);
   });
   placedObjs.forEach(function(po){
     var ob=loadedObjs[po.oi];if(!ob||ob.type==='glb')return;

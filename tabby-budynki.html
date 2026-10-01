@@ -111,7 +111,8 @@ input[type=text]{width:100%;background:rgba(255,255,255,.06);border:1px solid rg
     <!-- KROK 2 -->
     <div class="pane" data-pane="2" hidden>
       <div class="sec"><h2>Wygląd</h2>
-        <label class="tog" style="margin-bottom:12px"><input type="checkbox" id="roof"> Dach</label>
+        <label class="tog" style="margin-bottom:6px"><input type="checkbox" id="roof"> Dach</label>
+        <label class="tog" style="margin-bottom:12px" title="Dach najwyższego piętra staje się tarasem z barierką, a winda wyjeżdża na dach. Wyjście na niższy dach robi się samo: obróć drzwi windy w stronę dachu."><input type="checkbox" id="terrace"> Taras na najwyższym dachu (winda wyjeżdża na dach)</label>
         <div class="sw">Ściany <input type="color" id="c-wall" value="#d9cfbd"></div>
         <div class="sw">Podłogi <input type="color" id="c-floor" value="#8a6a48"></div>
         <div class="sw">Schody <input type="color" id="c-stairs" value="#9c7a55"></div>
@@ -134,6 +135,9 @@ input[type=text]{width:100%;background:rgba(255,255,255,.06);border:1px solid rg
       <div class="sec">
         <button class="btn go big" id="copy-btn">Kopiuj JSON</button>
         <button class="btn big" id="dl-btn">Pobierz .json</button>
+        <button class="btn big" id="prj-load" title="Wczytaj budynek z pliku .json (np. od kolegi) i dalej go edytuj">📂 Wczytaj .json</button>
+        <button class="btn big" id="demo-btn" title="Wczytaj jeden z gotowych przykładowych budynków">🏠 Wczytaj demo</button>
+        <input type="file" id="prj-file" accept=".json,application/json" style="display:none">
         <p class="hint" style="margin-top:10px">W Tabby Editor otwórz <b>Obiekty</b>, wklej JSON i postaw budynek na mapie. Ściany, podłogi i schody mają już kolizję — ludzik od razu chodzi w środku.</p>
       </div>
     </div>
@@ -216,9 +220,20 @@ function applyStairs(){
 function liftAt(r,c){for(var i=0;i<B.lifts.length;i++){var l=B.lifts[i];if(l.r===r&&l.c===c)return l;}return null;}
 function applyLifts(){B.lifts=B.lifts.filter(function(l){return inGrid(l.r,l.c);});B.lifts.forEach(function(l){B.floors.forEach(function(g){g[l.r][l.c]=1;});});}
 function liftBlocked(r,c){for(var f=0;f<B.floors.length;f++){if(stairAt(f,r,c)||hole(f,r,c)||landAt(f,r,c))return true;}return false;}
+function liftDir(l,f){return l.dd&&l.dd[f]!==undefined?l.dd[f]:l.d;} // 🚪 strona drzwi windy na danym piętrze
+function terDoor(l,f){ // 🚪 wyjście z windy na zewnątrz: na parterze na ziemię (np. dziedziniec), wyżej na niższy dach (taras)
+  var q=DIRS[liftDir(l,f)],nr=l.r+q[1],nc=l.c+q[0];if(open(f,nr,nc)||liftAt(nr,nc))return false;
+  if(f===0)return true; // parter: przed drzwiami ziemia (dziedziniec albo zewnątrz budynku) — zawsze da się wyjść
+  return B.roof&&open(f-1,nr,nc);}
+function roofWalk(f){ // czy po dachu nad piętrem f da się chodzić (taras)
+  if(!B.roof)return false;if(f===B.floors.length-1)return !!B.terrace;for(var i=0;i<B.lifts.length;i++)if(terDoor(B.lifts[i],f+1))return true;return false;}
+function terEdge(f,h,r,c){ // czy ta krawędź to drzwi windy na taras (tam nie stawiamy zwykłej ściany)
+  for(var i=0;i<B.lifts.length;i++){var l=B.lifts[i];if(!terDoor(l,f))continue;var q=DIRS[liftDir(l,f)];
+    if(h&&q[1]!==0&&l.c===c&&Math.max(l.r,l.r+q[1])===r)return true;if(!h&&q[0]!==0&&l.r===r&&Math.max(l.c,l.c+q[0])===c)return true;}return false;}
 function placeLift(rc){
   var r=rc[0],c=rc[1],l=liftAt(r,c);
-  if(l){l.d=(l.d+1)%4;lastDir=l.d;toast('Drzwi windy: '+ARROW[l.d]);return;}
+  if(l){if(!l.dd)l.dd=B.floors.map(function(){return l.d;});while(l.dd.length<B.floors.length)l.dd.push(l.d);l.dd[curF]=(liftDir(l,curF)+1)%4;if(curF===0)l.d=l.dd[0];lastDir=l.dd[curF];
+    toast('Drzwi windy na '+(curF===0?'parterze':curF+'. piętrze')+': '+ARROW[l.dd[curF]]+(B.floors.length>1?' — inne piętra się nie zmieniają':''));return;}
   if(liftBlocked(r,c)){toast('Tu są schody albo otwór nad schodami');return;}
   if(B.floors.length<2){if(!addFloor(true))return;}
   var d=0;for(var k=0;k<4;k++){var q=DIRS[k];if(inGrid(r+q[1],c+q[0])&&B.floors[0][r+q[1]][c+q[0]]){d=k;break;}}
@@ -268,7 +283,7 @@ function drawGrid(){
     }
   });
   // windy: niebieski szyb, żółta kreska = drzwi
-  B.lifts.forEach(function(l){var x=l.c*px,y=l.r*px,d=DIRS[l.d];cx.fillStyle='#2f6fb8';cx.fillRect(x+2,y+2,px-4,px-4);
+  B.lifts.forEach(function(l){var x=l.c*px,y=l.r*px,d=DIRS[liftDir(l,curF)];cx.fillStyle='#2f6fb8';cx.fillRect(x+2,y+2,px-4,px-4);
     cx.fillStyle='#fff';cx.font='bold '+Math.round(px*0.42)+'px sans-serif';cx.fillText('🛗',x+px/2,y+px/2+1);
     cx.strokeStyle='#ffcc33';cx.lineWidth=Math.max(3,px*0.12);cx.lineCap='butt';cx.beginPath();
     if(d[0]!==0){var xx=x+(d[0]>0?px-2:2);cx.moveTo(xx,y+px*0.25);cx.lineTo(xx,y+px*0.75);}else{var yy=y+(d[1]>0?px-2:2);cx.moveTo(x+px*0.25,yy);cx.lineTo(x+px*0.75,yy);}cx.stroke();});
@@ -281,8 +296,8 @@ function drawGrid(){
 // krawędzie ze ścianą (w jednostkach siatki), scalone w długie odcinki
 function eachWall(f,cb){
   var W=B.w,H=B.h;
-  function wallH(r,c){var a=r>0&&open(f,r-1,c),b=r<H&&open(f,r,c);if(a===b)return false;if(f===0&&(r===0||r===H))return false;return true;}
-  function wallV(r,c){var a=c>0&&open(f,r,c-1),b=c<W&&open(f,r,c);if(a===b)return false;if(f===0&&(c===0||c===W))return false;return true;}
+  function wallH(r,c){var a=r>0&&open(f,r-1,c),b=r<H&&open(f,r,c);if(a===b)return false;if(terEdge(f,true,r,c))return false;if(f===0&&(r===0||r===H))return false;return true;}
+  function wallV(r,c){var a=c>0&&open(f,r,c-1),b=c<W&&open(f,r,c);if(a===b)return false;if(terEdge(f,false,r,c))return false;if(f===0&&(c===0||c===W))return false;return true;}
   for(var r=0;r<=H;r++){var s=-1;for(var c=0;c<=W;c++){var on=c<W&&wallH(r,c);if(on&&s<0)s=c;if(!on&&s>=0){cb(s,r,c,r);s=-1;}}}
   for(var c2=0;c2<=W;c2++){var s2=-1;for(var r2=0;r2<=H;r2++){var on2=r2<H&&wallV(r2,c2);if(on2&&s2<0)s2=r2;if(!on2&&s2>=0){cb(c2,s2,c2,r2);s2=-1;}}}
 }
@@ -352,7 +367,7 @@ document.getElementById('size-btn').onclick=function(){
   B.w=B.h=n;applyStairs();renderFloors();fitCanvas();save();dirty=true;};
 var HINTS={draw:'Maluj pomieszczenia i korytarze. Ściany stawiają się same. Prawy przycisk to gumka. Klik na schodach albo windzie obraca je.',
   erase:'Wymazuj pomieszczenia (także schody).',
-  lift:'Kliknij kratkę, żeby postawić windę — szyb przejdzie przez wszystkie piętra, na każdym będą drzwi. Kliknij windę jeszcze raz, żeby obrócić drzwi. Gumka usuwa windę.',
+  lift:'Kliknij kratkę, żeby postawić windę — szyb przejdzie przez wszystkie piętra, na każdym będą drzwi. Kliknij windę jeszcze raz, żeby obrócić drzwi — osobno na każdym piętrze (wybierz piętro u góry). Gumka usuwa windę.',
   stairs:'Kliknij, żeby postawić schody (3 kratki). Kliknij schody jeszcze raz, żeby je obrócić. Podest i otwór w stropie na piętrze wyżej zrobią się same.'};
 function setTool(t){tool=t;document.querySelectorAll('.tool').forEach(function(x){x.classList.toggle('active',x.dataset.tool===t);});document.getElementById('tool-hint').textContent=HINTS[t];}
 document.querySelectorAll('.tool').forEach(function(b){b.onclick=function(){setTool(b.dataset.tool);};});
@@ -415,20 +430,20 @@ function buildParts(){
       else{var l2=(y2-y1)*CELL+WT;box(WT,WH,l2,X(x1),base+WH/2,Z(y1)+(y2-y1)*CELL/2,C.wall,f,'wall');}
     });
     // dach nad komórkami, nad którymi nic już nie ma (zachodzi na ściany, żeby nie było szpar)
-    if(B.roof)rects(function(r,c){return open(f,r,c)&&!open(f+1,r,c);}).forEach(function(q){
+    if(B.roof)rects(function(r,c){return open(f,r,c)&&!open(f+1,r,c)&&!(B.terrace&&f===B.floors.length-1&&liftAt(r,c));}).forEach(function(q){ // taras: nad szybem windy otwór (winda wyjeżdża na dach)
       var w=(q[3]-q[1])*CELL+WT,d=(q[2]-q[0])*CELL+WT;
-      box(w,ROOF,d,X(q[1])+(q[3]-q[1])*CELL/2,base+WH+ROOF/2,Z(q[0])+(q[2]-q[0])*CELL/2,C.roof,f,'roof',!BLD,BLD?NS:null);
+      box(w,ROOF,d,X(q[1])+(q[3]-q[1])*CELL/2,base+WH+ROOF/2,Z(q[0])+(q[2]-q[0])*CELL/2,C.roof,f,'roof',!BLD&&!roofWalk(f),BLD?NS:null); // taras: dach z kolizją także w Labiryncie
       if(BLD)box((q[3]-q[1])*CELL,0.02,(q[2]-q[0])*CELL,X(q[1])+(q[3]-q[1])*CELL/2,base+WH-0.012,Z(q[0])+(q[2]-q[0])*CELL/2,C.ceil||'#f3efe6',f,'ceil',true,NS);}); // w Budynkach dach to zwykły sufit (z kolizją), od spodu jasny
   }
   // windy: ściany szybu (od strony pomieszczeń), na każdym piętrze otwór na drzwi (drzwi i kabinę dokłada gra)
   B.lifts.forEach(function(l){
     for(var f2=0;f2<B.floors.length;f2++){
       var base2=f2*FH,lv=f2===0?GSLAB:base2,yb=f2===0?0:base2-SLAB,top=base2+WH,ccx=X(l.c)+CELL/2,ccz=Z(l.r)+CELL/2,DW=1.9,DH=Math.min(2.7,WH-0.3);
-      for(var k=0;k<4;k++){var q=DIRS[k],nr=l.r+q[1],nc=l.c+q[0];if(!open(f2,nr,nc))continue; // od strony pustej jest zwykła ściana zewnętrzna
+      for(var k=0;k<4;k++){var q=DIRS[k],nr=l.r+q[1],nc=l.c+q[0];if(!open(f2,nr,nc)&&!(k===liftDir(l,f2)&&terDoor(l,f2)))continue; // od strony pustej jest zwykła ściana zewnętrzna (chyba że to drzwi na taras)
         var hz=q[1]!==0,wx=ccx+q[0]*CELL/2,wz=ccz+q[1]*CELL/2,Lw=CELL+WT;
         function pc2(a0,a1,y0,y1,col,kind,noCol,ex,th){var la=a1-a0,ca=(a0+a1)/2,t=th||WT+0.02; // ściany szybu o 1 cm grubsze od zwykłych — na łączeniach nie migająif(la<=0.01||y1-y0<=0.01)return;
           if(hz)box(la,y1-y0,t,ccx+ca,(y0+y1)/2,wz,col,f2,kind,noCol,ex);else box(t,y1-y0,la,wx,(y0+y1)/2,ccz+ca,col,f2,kind,noCol,ex);}
-        if(k!==l.d){pc2(-Lw/2,Lw/2,yb,top,C.wall,'wall');continue;}
+        if(k!==liftDir(l,f2)){pc2(-Lw/2,Lw/2,yb,top,C.wall,'wall');continue;}
         pc2(-Lw/2,-DW/2,yb,top,C.wall,'wall');pc2(DW/2,Lw/2,yb,top,C.wall,'wall');pc2(-DW/2,DW/2,lv+DH,top,C.wall,'wall');pc2(-DW/2,DW/2,yb,lv,C.wall,'wall');
         // futryna grubsza od ściany (wystaje 4 cm z obu stron) — żadna jej ściana nie leży w tej samej płaszczyźnie co mur, więc nie miga
         var fr='#8a939c',FT=WT+0.08;pc2(-DW/2-0.12,-DW/2+0.02,lv,lv+DH+0.02,fr,'win',true,NS,FT);pc2(DW/2-0.02,DW/2+0.12,lv,lv+DH+0.02,fr,'win',true,NS,FT);pc2(-DW/2-0.12,DW/2+0.12,lv+DH-0.02,lv+DH+0.12,fr,'win',true,NS,FT);
@@ -438,6 +453,27 @@ function buildParts(){
       }
     }
   });
+  // 🏙 TARAS: dach najwyższego piętra z barierką; winda wyjeżdża na dach do nadbudówki z drzwiami
+  if(B.roof){
+    var tf=B.floors.length-1,rt=tf*FH+WH+ROOF;
+    var isRoof=function(f,r,c){return open(f,r,c)&&!open(f+1,r,c)&&!liftAt(r,c);};
+    for(var tfl=0;tfl<=tf;tfl++){if(!roofWalk(tfl))continue;var rtl=tfl*FH+WH+ROOF; // barierki na każdym dachu, na który da się wyjść z windy
+    for(var tr=0;tr<B.h;tr++)for(var tc=0;tc<B.w;tc++){if(!isRoof(tfl,tr,tc))continue;
+      for(var tk=0;tk<4;tk++){var tq=DIRS[tk],nr2=tr+tq[1],nc2=tc+tq[0];if(isRoof(tfl,nr2,nc2)||open(tfl+1,nr2,nc2)||liftAt(nr2,nc2))continue; // barierka tylko na krawędzi dachu
+        var ecx=X(tc)+CELL/2+tq[0]*(CELL/2-RAIL_T/2),ecz=Z(tr)+CELL/2+tq[1]*(CELL/2-RAIL_T/2);
+        if(tq[1]!==0){box(CELL+RAIL_T,RAIL_H,RAIL_T,X(tc)+CELL/2,rtl+RAIL_H/2,ecz,C.wall,tfl,'wall');box(CELL+RAIL_T+0.06,0.08,RAIL_T+0.08,X(tc)+CELL/2,rtl+RAIL_H+0.04,ecz,C.roof,tfl,'wall',true);}
+        else{box(RAIL_T,RAIL_H,CELL+RAIL_T,ecx,rtl+RAIL_H/2,Z(tr)+CELL/2,C.wall,tfl,'wall');box(RAIL_T+0.08,0.08,CELL+RAIL_T+0.06,ecx,rtl+RAIL_H+0.04,Z(tr)+CELL/2,C.roof,tfl,'wall',true);}}}}
+    if(B.terrace)B.lifts.forEach(function(l){ // nadbudówka nad szybem: 4 ściany, drzwi od strony tarasu, daszek
+      var ccx=X(l.c)+CELL/2,ccz=Z(l.r)+CELL/2,DW=1.9,DH=Math.min(2.7,WH-0.3),top=rt+WH,Lw=CELL+WT,dq=DIRS[liftDir(l,tf)],out=open(tf,l.r+dq[1],l.c+dq[0]);
+      for(var k=0;k<4;k++){var q=DIRS[k],hz=q[1]!==0,wx=ccx+q[0]*CELL/2,wz=ccz+q[1]*CELL/2;
+        var pc3=function(a0,a1,y0,y1,col,kind,noCol,ex,th){var la=a1-a0,ca=(a0+a1)/2,t=th||WT+0.02;if(la<=0.01||y1-y0<=0.01)return;
+          if(hz)box(la,y1-y0,t,ccx+ca,(y0+y1)/2,wz,col,tf,kind,noCol,ex);else box(t,y1-y0,la,wx,(y0+y1)/2,ccz+ca,col,tf,kind,noCol,ex);};
+        if(k!==liftDir(l,tf)||!out){pc3(-Lw/2,Lw/2,rt,top,C.wall,'wall');continue;}
+        pc3(-Lw/2,-DW/2,rt,top,C.wall,'wall');pc3(DW/2,Lw/2,rt,top,C.wall,'wall');pc3(-DW/2,DW/2,rt+DH,top,C.wall,'wall');
+        var fr='#8a939c',FT=WT+0.08;pc3(-DW/2-0.12,-DW/2+0.02,rt,rt+DH+0.02,fr,'win',true,NS,FT);pc3(DW/2-0.02,DW/2+0.12,rt,rt+DH+0.02,fr,'win',true,NS,FT);pc3(-DW/2-0.12,DW/2+0.12,rt+DH-0.02,rt+DH+0.12,fr,'win',true,NS,FT);
+        if(hz)box(0.16,0.28,0.04,ccx+DW/2+0.35,rt+1.3,wz+q[1]*(WT/2+0.02),'#ffcc33',tf,'win',true,NS);else box(0.04,0.28,0.16,wx+q[0]*(WT/2+0.02),rt+1.3,ccz+DW/2+0.35,'#ffcc33',tf,'win',true,NS);}
+      box(CELL+WT+0.1,ROOF,CELL+WT+0.1,ccx,top+ROOF/2,ccz,C.roof,tf,'roof',!BLD,BLD?NS:null);}); // daszek nadbudówki
+  }
   // schody: 12 stopni na 3 kratkach (jak w Ghost Maze), pełna szerokość kratki
   B.stairs.forEach(function(st){
     if(st.f+1>=B.floors.length)return;
@@ -467,7 +503,8 @@ function exportJSON(){
   var parts=buildParts().map(function(p){var q={shape:p.shape,size:p.size,color:p.color,position:p.position,role:B.mode==='budynki'?'bld':(p._k==='roof'?'roof':'bud')};if(p.col)q.col=true;if(p.ramp)q.ramp=p.ramp;if(p.opacity!==undefined)q.opacity=p.opacity;if(p.shadow===false)q.shadow=false;if(p.glass)q.glass=true;return q;});
   var o={name:(document.getElementById('name').value||'Budynek').trim()||'Budynek',parts:parts},ox=-B.w*CELL/2,oz=-B.h*CELL/2;
   if(B.lifts.length)o.lifts=B.lifts.map(function(l){var q=DIRS[l.d];return {cab:B.colors.cab||'#b08d57',door:B.colors.door||'#5f7f99',x:+(ox+l.c*CELL+CELL/2).toFixed(3),z:+(oz+l.r*CELL+CELL/2).toFixed(3),d:l.d,w:CELL,h:+(WH-0.3).toFixed(2),dw:1.9,dh:+Math.min(2.7,WH-0.3).toFixed(2),
-    levels:B.floors.map(function(_,f){return +(f===0?GSLAB:f*FH).toFixed(3);}),doors:B.floors.map(function(_,f){return open(f,l.r+q[1],l.c+q[0]);})};});
+    levels:B.floors.map(function(_,f){return +(f===0?GSLAB:f*FH).toFixed(3);}),doors:B.floors.map(function(_,f){var qq=DIRS[liftDir(l,f)];return open(f,l.r+qq[1],l.c+qq[0])||terDoor(l,f);}),ds:B.floors.map(function(_,f){return liftDir(l,f);})};});
+  if(o.lifts&&B.roof&&B.terrace){var tf=B.floors.length-1,rt=+(tf*FH+WH+ROOF).toFixed(3);o.lifts.forEach(function(L,i){var l=B.lifts[i],dt=liftDir(l,tf),q=DIRS[dt];L.levels.push(rt);L.doors.push(open(tf,l.r+q[1],l.c+q[0]));L.ds.push(dt);L.terrace=true;});} // 🏙 taras: dodatkowy przystanek na dachu
   return o;
 }
 
@@ -503,7 +540,9 @@ function liftMake(g,d){
   liftBox(L,cw,0.12,cw,0,-0.04,0,'#6d737a',L.cab);                                   // podłoga (2 cm nad posadzką)
   liftBox(L,cw,0.08,cw,0,h,0,'#c9ced4',L.cab);                                        // sufit kabiny
   liftBox(L,1.2,0.04,1.2,0,h-0.05,0,'#fff6d8',L.cab).material.emissive=new THREE.Color('#fff2c0'); // lampa
-  liftBox(L,0.06,h,cw,-cw/2+0.03,h/2,0,CC,L.cab);liftBox(L,0.06,h,cw,cw/2-0.03,h/2,0,CC,L.cab);liftBox(L,cw,h,0.06,0,h/2,-cw/2+0.03,CC,L.cab);
+  var LR=function(i){var di=d.ds&&d.ds[i]!==undefined?d.ds[i]:d.d,a=[[0,-1],[1,0],[0,1],[-1,0]][di];var r=Math.atan2(a[0],a[1])-L.root.rotation.y;while(r>Math.PI)r-=Math.PI*2;while(r<-Math.PI)r+=Math.PI*2;return r;}; // 🚪 drzwi na każdym piętrze mogą być z innej strony
+  var used={};d.levels.forEach(function(_,i){if(!d.doors||d.doors[i])used[((Math.round(LR(i)/(Math.PI/2))%4)+4)%4]=1;}); // 0:+Z 1:+X 2:-Z 3:-X
+  if(!used[3])liftBox(L,0.06,h,cw,-cw/2+0.03,h/2,0,CC,L.cab);if(!used[1])liftBox(L,0.06,h,cw,cw/2-0.03,h/2,0,CC,L.cab);if(!used[2])liftBox(L,cw,h,0.06,0,h/2,-cw/2+0.03,CC,L.cab); // kabina otwarta tam, gdzie są drzwi
   liftBox(L,cw-0.2,0.06,0.08,0,1.0,-cw/2+0.1,'#d9dde1',L.cab);                       // poręcz
   var pn=liftBox(L,0.4,0.7,0.05,cw/2-0.4,1.4,cw/2-0.12,'#2b2f33',L.cab);            // panel z przyciskami (przy drzwiach, w środku)
   L.cab.traverse(function(o){if(o.isMesh)o.castShadow=false;});                        // kabina nie zaciemnia sama siebie
@@ -512,8 +551,8 @@ function liftMake(g,d){
   var dw=d.dw||1.9,dh=Math.min(d.dh||2.6,h);
   L.lv.forEach(function(y,i){
     if(d.doors&&!d.doors[i]){L.doors.push(null);return;}
-    var D={o:0,tg:0,y:y,panels:[]};
-    [-1,1].forEach(function(s){var p=liftBox(L,dw/2+0.05,dh,0.07,s*(dw/4),y+dh/2,w/2-0.12,DC);D.panels.push({m:p,s:s});});
+    var D={o:0,tg:0,y:y,panels:[],rot:LR(i)},Dg=new THREE.Group();Dg.rotation.y=D.rot;L.root.add(Dg);D.g=Dg;
+    [-1,1].forEach(function(s){var p=liftBox(L,dw/2+0.05,dh,0.07,s*(dw/4),y+dh/2,w/2-0.12,DC,Dg);D.panels.push({m:p,s:s});});
     L.doors.push(D);
   });
   // 🟢 światełka nad drzwiami (na każdym piętrze od korytarza i w kabinie nad wejściem): numer piętra kabiny i strzałki kierunku
@@ -527,7 +566,7 @@ function liftMake(g,d){
       ar.position.set(q[1]>0?-W2/2+0.12:W2/2-0.12,0,0.025);if(q[1]<0)ar.rotation.z=Math.PI;gi.add(ar);I[q[0]]=ar;});
     L.ind.push(I);
   }
-  L.lv.forEach(function(y,i){if(L.doors[i])indicator(L.root,0,y+dh+0.36,w/2+0.21,false);});
+  L.lv.forEach(function(y,i){if(L.doors[i])indicator(L.doors[i].g,0,y+dh+0.36,w/2+0.21,false);});
   indicator(L.cab,0,h-0.32,cw/2-0.03,true); // w kabinie, nad wejściem (patrzy do środka)
   L.indK='';
   liftCols(L);return L;
@@ -545,14 +584,15 @@ function liftCols(L){ // kolizje ruchome: podłoga i sufit kabiny, zamknięte dr
   var cw=L.w-0.55,c=liftW(L,0,L.y,0),hw=cw/2;
   wCols.push({x:c.x,z:c.z,hw:hw,hd:hw,y:c.y-0.12,h:0.12,_lift:L});
   wCols.push({x:c.x,z:c.z,hw:hw,hd:hw,y:c.y+Math.min(L.d.h||3,3.2),h:0.1,_lift:L});
-  L.doors.forEach(function(D){if(!D||D.o>0.85)return;var p=liftW(L,0,D.y,L.w/2-0.12),a=Math.abs(Math.sin(L.root.rotation.y+L.g.rotation.y)),e=0.95*(1-a)+0.08*a,f=0.08*(1-a)+0.95*a;
+  L.doors.forEach(function(D){if(!D||D.o>0.85)return;var r0=D.rot||0,zz=L.w/2-0.12,p=liftW(L,Math.sin(r0)*zz,D.y,Math.cos(r0)*zz),a=Math.abs(Math.sin(L.root.rotation.y+L.g.rotation.y+r0)),e=0.95*(1-a)+0.08*a,f=0.08*(1-a)+0.95*a;
     wCols.push({x:p.x,z:p.z,hw:e,hd:f,y:p.y,h:2.6,_lift:L});});
 }
 // gdzie jest ludzik względem windy
 function liftLocal(L){var v=L.root.worldToLocal(new THREE.Vector3(charX,charY,charZ));return v;}
 function liftInside(L,m){var v=liftLocal(L),hw=(L.w-0.55)/2+(m||0);return Math.abs(v.x)<hw&&Math.abs(v.z)<hw&&Math.abs(v.y-L.y)<1.2;}
-function liftFront(L){var v=liftLocal(L);if(Math.abs(v.x)>1.6||v.z<L.w/2-0.2||v.z>L.w/2+2.6)return -1;
-  for(var i=0;i<L.lv.length;i++)if(L.doors[i]&&Math.abs(v.y-L.lv[i])<1.2)return i;return -1;}
+function liftFront(L){var v=liftLocal(L); // przed którymi drzwiami stoi ludzik (drzwi mogą być z różnych stron)
+  for(var i=0;i<L.lv.length;i++){var D=L.doors[i];if(!D||Math.abs(v.y-L.lv[i])>=1.2)continue;var r=D.rot||0,c=Math.cos(r),s=Math.sin(r),x=v.x*c-v.z*s,z=v.x*s+v.z*c;
+    if(Math.abs(x)<=1.6&&z>=L.w/2-0.2&&z<=L.w/2+2.6)return i;}return -1;}
 function liftName(i){return i===0?'P':String(i);}
 function liftGo(L,k){ // jazda na piętro k (najpierw zamknięcie drzwi)
   if(k===L.cur&&L.state==='idle'){liftDoor(L,k,1);return;}
@@ -616,7 +656,7 @@ function init3D(){
   renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;host.prepend(renderer.domElement);
   scene=new THREE.Scene();scene.background=new THREE.Color(0x6f9fd0);scene.fog=new THREE.Fog(0x6f9fd0,90,220);
-  cam=new THREE.PerspectiveCamera(55,1,0.1,400);
+  cam=new THREE.PerspectiveCamera(55,1,0.05,400); // bliska płaszczyzna 5 cm: kamera przy ścianie nie „widzi przez mur”
   scene.add(new THREE.HemisphereLight(0xcfe4ff,0x55663f,0.55));scene.add(new THREE.AmbientLight(0x8899aa,0.35));
   var sun=new THREE.DirectionalLight(0xfff1dc,0.85);sun.position.set(30,50,20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.03;
   var sc=sun.shadow.camera;sc.left=-60;sc.right=60;sc.top=60;sc.bottom=-60;sc.far=160;scene.add(sun);
@@ -634,7 +674,8 @@ function resize(){if(!renderer)return;var h=document.getElementById('view');rend
 // Gdy za plecami jest ściana, kamera szuka najbliższego wolnego miejsca obok (obraca się wokół ludzika w bok),
 // a dopiero gdy nigdzie nie ma miejsca — lekko się podnosi. Nigdy nie podjeżdża bliżej niż ~1,9 m (nie widać „środka” ludzika).
 var CCL={ya:0,yt:0,pa:0,k:1,t:0,side:0,off:false};
-function camRay(px,py,pz,dx,dy,dz){var wCols=walk.cols; // jaka część odcinka pivot→kamera jest wolna (0..1)
+// ☀ KAMERA NA ZEWNĄTRZ — pierwsza wersja (z GitHuba), bez zmian
+function camRayOut(px,py,pz,dx,dy,dz){var wCols=walk.cols; // jaka część odcinka pivot→kamera jest wolna (0..1)
   var m=0.25,best=1,cx=px+dx,cy=py+dy,cz=pz+dz,sx0=Math.min(px,cx)-m,sx1=Math.max(px,cx)+m,sz0=Math.min(pz,cz)-m,sz1=Math.max(pz,cz)+m,sy0=Math.min(py,cy)-m,sy1=Math.max(py,cy)+m;
   for(var i=0;i<wCols.length;i++){var w=wCols[i];if(w.ramp)continue;
     var x0=w.x-w.hw-m,x1=w.x+w.hw+m,z0=w.z-w.hd-m,z1=w.z+w.hd+m,y0=(w.y||0)-m,y1=(w.y||0)+(w.h||3)+m;
@@ -646,15 +687,15 @@ function camRay(px,py,pz,dx,dy,dz){var wCols=walk.cols; // jaka część odcinka
     if(ok&&t0<best)best=t0;}
   return best;
 }
-function camClip(px,py,pz,aim){
+function camClipOut(px,py,pz,aim){
   var wCols=walk.cols;if(CCL.off||!wCols||!wCols.length)return;
   var now=performance.now(),gap=now-(CCL.t||0),dt=Math.min(0.1,(now-(CCL.t||now))/1000);CCL.t=now;
   var sw=gap>250; // pierwsza klatka po przełączeniu z widoku z oczu (wyjście z windy, ze stanowiska, Tab): kamera startuje tuż za głową i jednym płynnym ruchem odjeżdża do tyłu
   var dx=cam.position.x-px,dy=cam.position.y-py,dz=cam.position.z-pz,L=Math.sqrt(dx*dx+dy*dy+dz*dz);if(L<0.4)return;
-  if(aim){var fa=camRay(px,py,pz,dx,dy,dz);if(fa<1){var ka=Math.max(fa,0.3/L);cam.position.set(px+dx*ka,py+dy*ka,pz+dz*ka);}return;} // celowanie przez ramię
+  if(aim){var fa=camRayOut(px,py,pz,dx,dy,dz);if(fa<1){var ka=Math.max(fa,0.3/L);cam.position.set(px+dx*ka,py+dy*ka,pz+dz*ka);}return;} // celowanie przez ramię
   var h=Math.sqrt(dx*dx+dz*dz),a0=Math.atan2(dx,dz),MIN=Math.min(L,1.9);
   function pos(off,up){var a=a0+off,hh=h,yy=dy;if(up){var ang=Math.atan2(dy,h)+up;hh=Math.cos(ang)*L;yy=Math.sin(ang)*L;}return [Math.sin(a)*hh,yy,Math.cos(a)*hh];}
-  function room(off,up){var p=pos(off,up);return camRay(px,py,pz,p[0],p[1],p[2])*L;}
+  function room(off,up){var p=pos(off,up);return camRayOut(px,py,pz,p[0],p[1],p[2])*L;}
   // 1) prosto za plecami jest dość miejsca? zostajemy (co najwyżej lekko bliżej)
   var tgt=0,up=0,r0=room(0,0);
   if(r0<Math.max(MIN,L*0.6)){
@@ -670,9 +711,73 @@ function camClip(px,py,pz,aim){
   var sp=Math.abs(tgt)>Math.abs(CCL.ya)?9:5,ns=Math.ceil(dt/0.016),hd=dt/Math.max(1,ns);CCL.yv=CCL.yv||0;
   for(var si=0;si<ns;si++){CCL.yv+=((tgt-CCL.ya)*sp*sp-2*sp*CCL.yv)*hd;CCL.ya+=CCL.yv*hd;}
   CCL.pa+=(up-CCL.pa)*(1-Math.exp(-dt*3));
-  var p=pos(CCL.ya,CCL.pa),f=camRay(px,py,pz,p[0],p[1],p[2]),k=Math.max(f,MIN/L); // na wszelki wypadek nie wchodzimy w mur w trakcie ruchu
+  var p=pos(CCL.ya,CCL.pa),f=camRayOut(px,py,pz,p[0],p[1],p[2]),k=Math.max(f,MIN/L); // na wszelki wypadek nie wchodzimy w mur w trakcie ruchu
   if(sw)CCL.k=MIN/L;else CCL.k+=(k-CCL.k)*(1-Math.exp(-dt*(k<CCL.k?12:(now<(CCL.snapT||0)?3.5:2.5))));if(CCL.k>f&&f>=MIN/L)CCL.k=f;if(CCL.k>f&&f>=MIN/L)CCL.k=f; // do ściany szybko, od ściany powoli; nigdy w mur
   cam.position.set(px+p[0]*CCL.k,py+p[1]*CCL.k,pz+p[2]*CCL.k);
+}
+// 🏠 kamera w budynku (Opcja 2: „przez ramię”) — liczby do dostrajania
+var IN_DIST=2.8,IN_SHOULDER=0.55,IN_UP=0.15,IN_FOV=72,CAM_FOV=55,IN_RATE=3; // odległość, przesunięcie w prawo, podniesienie, kąt widzenia, szybkość przejścia
+var CAM_GAP=0.5; // 🎥 odstęp kamery od ściany (m) — kamera trzyma się tyle od muru
+function camRay(px,py,pz,dx,dy,dz){var wCols=walk.cols; // jaka część odcinka pivot→kamera jest wolna (0..1)
+  var m=CAM_GAP,best=1,cx=px+dx,cy=py+dy,cz=pz+dz,sx0=Math.min(px,cx)-m,sx1=Math.max(px,cx)+m,sz0=Math.min(pz,cz)-m,sz1=Math.max(pz,cz)+m,sy0=Math.min(py,cy)-m,sy1=Math.max(py,cy)+m;
+  camRay.hitW=null;
+  for(var i=0;i<wCols.length;i++){var w=wCols[i];if(w.ramp||w._see)continue;
+    var x0=w.x-w.hw-m,x1=w.x+w.hw+m,z0=w.z-w.hd-m,z1=w.z+w.hd+m,y0=(w.y||0)-m,y1=(w.y||0)+(w.h||3)+m;
+    if(CCL.cut!==undefined){if((w.y||0)>=CCL.cut)continue;y1=Math.min(y1,CCL.cut+m);} // w budynku: wszystko nad stropem jest „przycięte” — kamera może wznieść się nad pokój
+    if(x1<sx0||x0>sx1||z1<sz0||z0>sz1||y1<sy0||y0>sy1)continue;
+    if(px>=x0&&px<=x1&&py>=y0&&py<=y1&&pz>=z0&&pz<=z1){ // głowa ludzika w pasie odstępu tej bryły (stoi tuż przy ścianie)
+      var wy0=w.y||0,wy1=wy0+(w.h||3);if(Math.abs(px-w.x)<w.hw&&Math.abs(pz-w.z)<w.hd&&py>wy0&&py<wy1)continue; // stoi w bryle (schody) — pomijamy
+      var qx=Math.max(w.x-w.hw,Math.min(px,w.x+w.hw)),qy=Math.max(wy0,Math.min(py,wy1)),qz=Math.max(w.z-w.hd,Math.min(pz,w.z+w.hd));
+      var mm=Math.max(0,Math.min(m,Math.max(Math.abs(qx-px),Math.abs(qy-py),Math.abs(qz-pz)))-0.01); // odstęp tej bryły zmniejszony tak, żeby głowa była tuż poza nim
+      x0=w.x-w.hw-mm;x1=w.x+w.hw+mm;z0=w.z-w.hd-mm;z1=w.z+w.hd+mm;y0=wy0-mm;y1=Math.min(wy1+mm,CCL.cut!==undefined?CCL.cut+mm:1e9);} // dalej zwykły test — liczy się tylko, jeśli kamera naprawdę idzie w tę bryłę
+    var t0=0,t1=best,o=[px,py,pz],d=[dx,dy,dz],lo=[x0,y0,z0],hi=[x1,y1,z1],ok=true;
+    for(var a=0;a<3&&ok;a++){if(Math.abs(d[a])<1e-6){if(o[a]<lo[a]||o[a]>hi[a])ok=false;continue;}
+      var ta=(lo[a]-o[a])/d[a],tb=(hi[a]-o[a])/d[a];if(ta>tb){var q=ta;ta=tb;tb=q;}if(ta>t0)t0=ta;if(tb<t1)t1=tb;if(t0>=t1-1e-4)ok=false;}
+    if(ok&&t0<best){best=t0;camRay.hitW=w;}}
+  return best;
+}
+var SEE_ON=false; // 👻 przezroczyste ściany — odłożone na później (true = włączone)
+var SEE_R=1.2,SEE_OP=0.18; // 👻 ściany dalej niż 1,2 m od ludzika zasłaniające kamerę → przezroczyste (18%)
+function seeFade(now,dt){ // płynne znikanie i pojawianie się zasłaniających ścian
+  var a=1-Math.exp(-dt*10),b=1-Math.exp(-dt*4);
+  walk.cols.forEach(function(w){if(!w.m)return;var m=w.m,o0=m.userData.op0,on=now-(w._seeT||-1e9)<120,tg=on?Math.min(o0,SEE_OP):o0,cur=m.userData.opc===undefined?o0:m.userData.opc;
+    if(Math.abs(cur-tg)<0.005){if(cur!==tg){cur=tg;}else if(!on&&cur===o0&&m.userData.opc===undefined)return;}
+    cur+=(tg-cur)*(tg<cur?a:b);if(Math.abs(cur-tg)<0.005)cur=tg;m.userData.opc=cur;
+    var tr=cur<0.999;m.material.transparent=tr||o0<1;m.material.opacity=cur;m.material.depthWrite=!tr&&o0>=1;m.castShadow=!tr&&o0>=1;
+    if(cur===o0&&!on)delete m.userData.opc;});}
+function walkFade(){ // kamera tuż przy ludziku → ludzik półprzezroczysty, żeby nie zasłaniał widoku
+  if(!walk.ch)return;var op=CCL.near===undefined?1:Math.max(0.2,Math.min(1,(CCL.near-0.6)/1.2));if(walk._op===op)return;walk._op=op;
+  walk.ch.traverse(function(o){if(o.isMesh&&o.material){o.material.transparent=op<1;o.material.opacity=op;o.material.depthWrite=op>=1;}});}
+function camClip(px,py,pz,aim){
+  var wCols=walk.cols;if(CCL.off||!wCols||!wCols.length)return;
+  var now=performance.now(),gap=now-(CCL.t||0),dt=Math.min(0.1,(now-(CCL.t||now))/1000);CCL.t=now;
+  var sw=gap>250; // pierwsza klatka po przełączeniu z widoku z oczu (wyjście z windy, ze stanowiska, Tab): kamera startuje tuż za głową i jednym płynnym ruchem odjeżdża do tyłu
+  var dx=cam.position.x-px,dy=cam.position.y-py,dz=cam.position.z-pz,L=Math.sqrt(dx*dx+dy*dy+dz*dz);if(L<0.4)return;
+  // 🏠 w pomieszczeniu (strop nad głową): widok z góry z przyciętym stropem i wyższymi piętrami
+  var ceil=Infinity,fy=py-1.4;for(var ci=0;ci<wCols.length;ci++){var cw=wCols[ci];if(cw.ramp||cw._enm)continue;var cb=cw.y||0;if(cb<fy+2.0||cb>=ceil)continue;if(Math.abs(px-cw.x)<cw.hw&&Math.abs(pz-cw.z)<cw.hd)ceil=cb;}
+  CCL.cut=ceil<Infinity?ceil-0.05:undefined;
+  if(typeof renderer!=='undefined'&&renderer){if(!CCL.pl)CCL.pl=new THREE.Plane(new THREE.Vector3(0,-1,0),0);
+    if(CCL.cut!==undefined&&!aim&&(py+Math.sin(Math.atan2(dy,Math.sqrt(dx*dx+dz*dz))+(CCL.pa||0))*L>CCL.cut-0.3)){CCL.pl.constant=CCL.cut;if(renderer.clippingPlanes[0]!==CCL.pl)renderer.clippingPlanes=[CCL.pl];}
+    else if(renderer.clippingPlanes.length)renderer.clippingPlanes=[];}
+  if(aim){var fa=camRay(px,py,pz,dx,dy,dz);if(fa<1){var ka=Math.max(fa,0.3/L);cam.position.set(px+dx*ka,py+dy*ka,pz+dz*ka);}return;} // celowanie przez ramię
+  // 🎥 SPRĘŻYNOWE RAMIĘ — tak jak Spring Arm w Unreal i Cinemachine w Unity:
+  // kamera zawsze na tej samej linii za plecami (nie ucieka w bok ani do góry);
+  // gdy coś ją zasłania, od razu podjeżdża bliżej, trzymając CAM_GAP (50 cm) od muru; gdy przeszkoda znika, łagodnie wraca.
+  // 👻 ściana między kamerą a ludzikiem, ale dalej niż SEE_R od ludzika → robi się przezroczysta (kamera zostaje w normalnej odległości);
+  // ściana tuż za plecami (obracanie się przy murze) → kamera podjeżdża bliżej, jak dotąd
+  var now2=performance.now(),f=1;walk.cols.forEach(function(w){w._see=false;});
+  for(var it=0;it<8;it++){f=camRay(px,py,pz,dx,dy,dz);var hw=camRay.hitW;if(f>=1||!hw||!hw.m||!SEE_ON)break;
+    var ex=Math.max(0,Math.abs(px-hw.x)-hw.hw),ez=Math.max(0,Math.abs(pz-hw.z)-hw.hd);if(Math.sqrt(ex*ex+ez*ez)<SEE_R)break; // za blisko ludzika — przybliżamy
+    hw._see=true;hw._seeT=now2;}
+  walk.cols.forEach(function(w){w._see=false;}); // oznaczenie tylko na obliczenie tej klatki — przezroczystość gaśnie płynnie w seeFade
+  seeFade(now2,dt);
+  var MIN=Math.min(L,0.45),k=Math.max(f,MIN/L); // najbliżej 45 cm od głowy — odstęp od muru ważniejszy
+  CCL.pa=0;
+  if(sw||CCL.k===undefined)CCL.k=k;
+  else if(k<CCL.k)CCL.k=k; // do ściany: natychmiast — nigdy nie wchodzi w mur
+  else CCL.k+=(k-CCL.k)*(1-Math.exp(-dt*3.5)); // od ściany: płynnie
+  cam.position.set(px+dx*CCL.k,py+dy*CCL.k,pz+dz*CCL.k);
+  CCL.near=CCL.k*L; // jak blisko ludzika jest kamera (do półprzezroczystości)
 }
 function rebuild(){
   if(root){scene.remove(root);root.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});}
@@ -684,7 +789,7 @@ function rebuild(){
     m.position.fromArray(p.position);m.castShadow=p.shadow!==false&&p.opacity===undefined;m.receiveShadow=true;m.userData.f=p._f;m.userData.k=p._k;root.add(m);
     maxY=Math.max(maxY,p.position[1]+p.size[1]/2);
     if(p.col){var g=p.ramp||p,c={x:g.position[0],z:g.position[2],hw:g.size[0]/2,hd:g.size[2]/2,y:g.position[1]-g.size[1]/2,h:g.size[1]};
-      if(p.ramp)c.ramp=[p.ramp.dir[0],p.ramp.dir[1],Math.abs(p.ramp.dir[0])?g.size[0]/2:g.size[2]/2];walk.cols.push(c);}
+      if(p.ramp)c.ramp=[p.ramp.dir[0],p.ramp.dir[1],Math.abs(p.ramp.dir[0])?g.size[0]/2:g.size[2]/2];else c.m=m;m.userData.op0=p.opacity!==undefined?p.opacity:1;walk.cols.push(c);}
   });
   scene.add(root);walk.box=new THREE.Box3().setFromObject(root);
   var ex=exportJSON();if(ex.lifts){root.userData.lifts=ex.lifts;LIFT.scanT=0;} // kabina i drzwi windy — jak w grze
@@ -779,8 +884,16 @@ function stepWalk(dt){
   var bx=walk.box,inside=!walk.fps&&bx&&walk.x>bx.min.x&&walk.x<bx.max.x&&walk.z>bx.min.z&&walk.z<bx.max.z;
   if(B.mode!=='budynki')root.children.forEach(function(m){var f=m.userData.f,kd=m.userData.k,above=inside&&(f>lvl||(kd==='roof'&&f>=lvl)); // Budynki: zwykły sufit, nic nie znika
     if(kd==='roof'){m.visible=!above;}else ghost(m,above);});
-  if(walk.fps){var ey=walk.y+1.6;cam.position.set(walk.x,ey,walk.z);cam.lookAt(walk.x-Math.sin(y)*Math.cos(walk.pitch)*10,ey-Math.sin(walk.pitch)*10,walk.z-Math.cos(y)*Math.cos(walk.pitch)*10);}
-  else{var pv=walk.y+CPIVY;cam.position.set(walk.x+Math.sin(y)*Math.cos(walk.pitch)*CDIST,pv+Math.sin(walk.pitch)*CDIST,walk.z+Math.cos(y)*Math.cos(walk.pitch)*CDIST);camClip(walk.x,pv,walk.z);cam.lookAt(walk.x,pv,walk.z);}
+  if(walk.fps){var ey=walk.y+1.6;if(cam.fov!==CAM_FOV){cam.fov=CAM_FOV;cam.updateProjectionMatrix();}if(renderer.clippingPlanes.length)renderer.clippingPlanes=[];cam.position.set(walk.x,ey,walk.z);cam.lookAt(walk.x-Math.sin(y)*Math.cos(walk.pitch)*10,ey-Math.sin(walk.pitch)*10,walk.z-Math.cos(y)*Math.cos(walk.pitch)*10);}
+  else{ // 🎥 na zewnątrz: kamera z GitHuba; w budynku: bliżej, przez prawe ramię, szerszy kąt — płynne przejście
+    var pv=walk.y+CPIVY,tb=inside?1:0;walk.inB=(walk.inB===undefined?tb:walk.inB)+(tb-(walk.inB===undefined?tb:walk.inB))*(1-Math.exp(-dt*IN_RATE));var b=walk.inB;
+    var dist=CDIST+(IN_DIST-CDIST)*b,fx=-Math.sin(y),fz=-Math.cos(y),rx=Math.cos(y),rz=-Math.sin(y),sh=IN_SHOULDER*b,py2=pv+IN_UP*b;
+    if(sh>0.01){var fs=camRay(walk.x,py2,walk.z,rx*sh,0,rz*sh);sh*=Math.max(0,fs);} // ramię nie wchodzi w ścianę obok
+    var px2=walk.x+rx*sh,pz2=walk.z+rz*sh;
+    cam.position.set(px2+Math.sin(y)*Math.cos(walk.pitch)*dist,py2+Math.sin(walk.pitch)*dist,pz2+Math.cos(y)*Math.cos(walk.pitch)*dist);
+    if(b>0.5)camClip(px2,py2,pz2);else{camClipOut(px2,py2,pz2);CCL.near=undefined;if(renderer.clippingPlanes.length)renderer.clippingPlanes=[];}walkFade();
+    var fov=CAM_FOV+(IN_FOV-CAM_FOV)*b;if(Math.abs(cam.fov-fov)>0.05){cam.fov=fov;cam.updateProjectionMatrix();}
+    cam.lookAt(px2,py2,pz2);}
 }
 function loop(){
   requestAnimationFrame(loop);var dt=Math.min(clock.getDelta(),0.05);
@@ -806,21 +919,77 @@ document.querySelectorAll('.step').forEach(function(b){b.onclick=function(){goSt
 
 // wygląd
 var roofEl=document.getElementById('roof');roofEl.checked=B.roof!==false;
-roofEl.onchange=function(){B.roof=roofEl.checked;save();dirty=true;};
+roofEl.onchange=function(){B.roof=roofEl.checked;terEl.disabled=!B.roof;save();dirty=true;};
+var terEl=document.getElementById('terrace');terEl.checked=!!B.terrace;terEl.disabled=B.roof===false;
+terEl.onchange=function(){B.terrace=terEl.checked;save();dirty=true;if(B.terrace&&!B.lifts.length&&typeof toast==='function')toast('Taras gotowy — postaw windę, żeby dało się na niego wyjechać');};
 if(!B.colors.cab)B.colors.cab='#b08d57';if(!B.colors.door)B.colors.door='#5f7f99'; // kolory windy (starsze projekty)
 [['c-wall','wall'],['c-floor','floor'],['c-stairs','stairs'],['c-roof','roof'],['c-cab','cab'],['c-door','door']].forEach(function(q){var el=document.getElementById(q[0]);el.value=B.colors[q[1]];
   el.oninput=function(){B.colors[q[1]]=el.value;save();dirty=true;};});
 var nameEl=document.getElementById('name');nameEl.value=B.name||'Budynek';nameEl.oninput=function(){B.name=nameEl.value;save();};
 
 // eksport
-function jsonText(){return JSON.stringify(exportJSON(),null,2);}
+function jsonText(){var o=exportJSON();o.src=JSON.parse(JSON.stringify(B));return JSON.stringify(o,null,2);} // .json z projektem w środku — da się go potem wczytać i edytować
+document.getElementById('prj-load').onclick=function(){document.getElementById('prj-file').click();};
+// === 🏠 DEMO: gotowe przykładowe budynki do wczytania i przerobienia ===
+var TB_DEMOS=[{"name":"Domek z tarasem","desc":"Parter większy niż piętro — z piętra winda wypuszcza na taras nad parterem. Schody w środku.","src":{"lifts":[{"r":3,"c":5,"d":2,"dd":[2,2]}],"mode":"budynki","w":8,"h":8,"floors":[[[0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,0],[0,1,0,1,1,1,1,0],[0,1,0,1,1,1,1,0],[0,0,0,0,0,0,0,0],[0,0,1,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]],"stairs":[{"f":0,"r":2,"c":2,"d":2}],"roof":true,"colors":{"wall":"#e8dcc6","floor":"#8a6a48","stairs":"#9c7a55","roof":"#b5533c","cab":"#b08d57","door":"#6b8f71"},"name":"Domek z tarasem","terrace":false}},{"name":"Kamienica z windą","desc":"Cztery piętra, schody na każde piętro i winda z tarasem na dachu.","src":{"lifts":[{"r":4,"c":7,"d":3,"dd":[3,3,3,3]}],"mode":"budynki","w":10,"h":10,"floors":[[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,0,0,0,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,0,0,0,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,0,0,0,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]]],"stairs":[{"f":0,"r":3,"c":3,"d":1},{"f":1,"r":5,"c":3,"d":1},{"f":2,"r":3,"c":3,"d":1}],"roof":true,"colors":{"wall":"#d9c7a8","floor":"#7b5a3c","stairs":"#9c7a55","roof":"#8e3b2f","cab":"#b08d57","door":"#5f7f99"},"name":"Kamienica z windą","terrace":true}},{"name":"Dom z dziedzińcem","desc":"Budynek dookoła otwartego dziedzińca. Winda na parterze wychodzi prosto na dziedziniec.","src":{"lifts":[{"r":4,"c":2,"d":1,"dd":[1,3]}],"mode":"budynki","w":10,"h":10,"floors":[[[0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0,0,0],[0,1,1,1,0,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,0,0,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0]]],"stairs":[{"f":0,"r":1,"c":4,"d":1}],"roof":true,"colors":{"wall":"#f0e6d2","floor":"#9c7a55","stairs":"#9c7a55","roof":"#a0522d","cab":"#b08d57","door":"#4f7a5a"},"name":"Dom z dziedzińcem","terrace":false}},{"name":"Wieża widokowa","desc":"Wąska wieża na pięć pięter. Winda wywozi na taras widokowy na samej górze.","src":{"lifts":[{"r":2,"c":2,"d":2,"dd":[2,2,2,2,2]}],"mode":"budynki","w":6,"h":6,"floors":[[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,1,1,0,0],[0,0,1,1,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,1,1,0,0],[0,0,1,1,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,1,1,0,0],[0,0,1,1,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,1,1,0,0],[0,0,1,1,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]],[[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,1,1,0,0],[0,0,1,1,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]]],"stairs":[],"roof":true,"colors":{"wall":"#c9ced4","floor":"#6d737a","stairs":"#9c7a55","roof":"#3d5a80","cab":"#e0b04a","door":"#3d5a80"},"name":"Wieża widokowa","terrace":true}},{"name":"Biurowiec schodkowy","desc":"Każde piętro węższe od poprzedniego — na najwyższym piętrze winda wypuszcza na taras nad niższym piętrem.","src":{"lifts":[{"r":3,"c":4,"d":2,"dd":[2,2,2]}],"mode":"budynki","w":10,"h":10,"floors":[[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,1,1,1,1,1,0],[0,1,1,1,0,0,0,1,1,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]],[[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,1,1,1,1,0,0,0,1,0],[0,1,1,1,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0]]],"stairs":[{"f":0,"r":5,"c":6,"d":3},{"f":1,"r":2,"c":7,"d":3}],"roof":true,"colors":{"wall":"#e4e8ec","floor":"#707880","stairs":"#9c7a55","roof":"#556b2f","cab":"#9aa4ae","door":"#2e4a62"},"name":"Biurowiec schodkowy","terrace":false}},{"name":"Labirynt","desc":"Klasyczny labirynt bez dachu — wejście od góry, wyjście od dołu. Idealny do polowania na boty.","src":{"lifts":[],"mode":"labirynt","w":12,"h":12,"floors":[[[0,0,0,0,0,0,0,0,0,0,1,1],[0,1,1,1,1,1,0,1,1,1,0,1],[0,1,0,0,0,1,0,1,0,1,0,1],[0,1,0,1,1,1,0,1,0,1,0,1],[0,1,0,1,0,0,0,1,0,0,0,1],[0,1,1,1,0,1,1,1,1,1,0,1],[0,0,0,1,0,1,0,0,0,1,0,1],[0,1,1,1,0,1,0,1,1,1,0,1],[0,1,0,0,0,1,0,1,0,0,0,1],[0,1,0,1,1,1,0,1,0,1,1,1],[0,1,0,1,0,0,0,1,0,1,0,0],[0,0,0,0,0,1,1,1,0,0,0,0]]],"stairs":[],"roof":false,"colors":{"wall":"#7a8b6f","floor":"#c2b280","stairs":"#9c7a55","roof":"#4b5a3f","cab":"#b08d57","door":"#5f7f99"},"name":"Labirynt"}}];
+function prjOpen(src){try{localStorage.setItem('tabby-budynki',JSON.stringify(src));}catch(e){alert('Nie udało się wczytać: '+e.message);return;}location.reload();}
+// okno demo w stylu Tabby Sceny: nocne tło, kafelki z podglądem 3D
+var demoThumbs={},demoR=null;
+function demoParts(src){var keep=B;try{B=JSON.parse(JSON.stringify(src));return exportJSON().parts;}finally{B=keep;}}
+function demoThumb(i){
+  if(demoThumbs[i])return demoThumbs[i];
+  try{var d=TB_DEMOS[i],parts=demoParts(d.src);
+    if(!demoR){demoR=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});demoR.setSize(640,400);demoR.shadowMap.enabled=true;}
+    var s=new THREE.Scene();s.background=new THREE.Color(0x8fb4d8);s.fog=new THREE.Fog(0x8fb4d8,90,220);
+    s.add(new THREE.HemisphereLight(0xcfe4ff,0x55663f,0.75));var sun=new THREE.DirectionalLight(0xfff1dc,0.9);sun.position.set(25,45,18);sun.castShadow=true;
+    sun.shadow.mapSize.set(1024,1024);var sc=sun.shadow.camera;sc.left=-70;sc.right=70;sc.top=70;sc.bottom=-70;sc.far=180;s.add(sun);
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:0x5d7048,roughness:0.95}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;s.add(ground);
+    var g=new THREE.Group();parts.forEach(function(p){if(p.hidden||p.shape==='pointlight')return;var z=p.size||[1,1,1],geo;
+      if(p.shape==='cylinder')geo=new THREE.CylinderGeometry(z[0],z[1],z[2],z[3]||12);else if(p.shape==='plane')geo=new THREE.PlaneGeometry(z[0],z[1]);else geo=new THREE.BoxGeometry(z[0],z[1],z[2]);
+      var m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:p.color||'#999',roughness:0.8,transparent:p.opacity!==undefined&&p.opacity<1,opacity:p.opacity!==undefined?+p.opacity:1,side:p.shape==='plane'?THREE.DoubleSide:THREE.FrontSide}));
+      if(p.position)m.position.fromArray(p.position);if(p.rotation)m.rotation.set(p.rotation[0],p.rotation[1],p.rotation[2]);m.castShadow=!(p.opacity<1);m.receiveShadow=true;g.add(m);});
+    s.add(g);var bb=new THREE.Box3().setFromObject(g),ctr=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3()),R=Math.max(sz.x,sz.z,sz.y*1.2);
+    var cam=new THREE.PerspectiveCamera(40,1.6,0.5,500);cam.position.set(ctr.x+R*0.95,ctr.y+R*0.8,ctr.z+R*1.05);cam.lookAt(ctr.x,ctr.y*0.6,ctr.z);
+    demoR.render(s,cam);var url=demoR.domElement.toDataURL('image/jpeg',0.86);
+    g.traverse(function(o){if(o.geometry)o.geometry.dispose();if(o.material)o.material.dispose();});ground.geometry.dispose();ground.material.dispose();
+    demoThumbs[i]=url;return url;}catch(e){console.warn('demo podgląd',e);return null;}}
+document.getElementById('demo-btn').onclick=function(){
+  var ov=document.createElement('div');ov.id='demo-ov';
+  ov.style.cssText="position:fixed;inset:0;z-index:999;overflow:auto;color:#f4efe6;font-family:'Nunito','Segoe UI',system-ui,sans-serif;"+
+    "background:radial-gradient(ellipse 120% 60% at 20% 110%,rgba(240,163,94,.28),transparent 60%),linear-gradient(#0a0e2a 0%,#141a44 55%,#2a2150 100%);padding:28px clamp(18px,5vw,64px) 48px";
+  var disp="'Fredoka','Trebuchet MS','Segoe UI',system-ui,sans-serif";
+  var h='<div style="max-width:1120px;margin:0 auto">'+
+    '<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:10px"><button data-x style="font:inherit;font-size:15px;color:#f4efe6;background:none;border:1px solid rgba(255,243,212,.16);border-radius:999px;padding:9px 18px;cursor:pointer">← Wróć</button>'+
+    '<h1 style="margin:0;font-family:'+disp+';font-weight:500;font-size:clamp(32px,4.4vw,46px);color:#fff3d4">Wybierz demo</h1></div>'+
+    '<p style="margin:0 0 30px;color:#b8b2cf;font-size:16px">Kliknij budynek, aby wczytać go jako projekt — obejrzysz go, przejdziesz się po nim albo przerobisz po swojemu. Wczytanie zastąpi obecny projekt.</p>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:24px">';
+  TB_DEMOS.forEach(function(d,i){var fl=d.src.floors.length,lf=(d.src.lifts||[]).length,st=(d.src.stairs||[]).length;
+    var info=(d.src.mode==='labirynt'?'🧩 Labirynt':'🏠 Budynki')+' • '+fl+' '+(fl===1?'kondygnacja':(fl<5?'kondygnacje':'kondygnacji'))+(lf?' • winda':'')+(st?' • schody':'');
+    h+='<button data-i="'+i+'" class="demo-tile" style="display:block;width:100%;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit;background:rgba(22,27,69,.9);border:1px solid rgba(255,243,212,.16);border-radius:18px;overflow:hidden;transition:border-color .2s">'+
+      '<div class="demo-shot" style="position:relative;aspect-ratio:16/10;background:#232a5c"><div style="position:absolute;inset:0;display:grid;place-items:center;color:#b8b2cf;font-size:14px">Rysuję podgląd…</div></div>'+
+      '<div style="padding:16px 18px 20px"><h3 style="margin:0 0 6px;font-family:'+disp+';font-weight:500;font-size:21px">'+d.name+'</h3>'+
+      '<p style="margin:0 0 12px;font-size:14.5px;line-height:1.5;color:#b8b2cf">'+d.desc+'</p><small style="font-size:13px;color:#f0a35e">'+info+'</small></div></button>';});
+  ov.innerHTML=h+'</div></div>';document.body.appendChild(ov);
+  ov.querySelectorAll('.demo-tile').forEach(function(t,i){t.onmouseenter=function(){t.style.borderColor='rgba(255,243,212,.5)';};t.onmouseleave=function(){t.style.borderColor='rgba(255,243,212,.16)';};
+    setTimeout(function(){var url=demoThumb(i),sh=t.querySelector('.demo-shot');if(url){sh.innerHTML='<img alt="" src="'+url+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">';}else sh.firstChild.textContent='Podgląd niedostępny';},40+i*80);});
+  var esc=function(e){if(e.key==='Escape'){ov.remove();document.removeEventListener('keydown',esc);}};document.addEventListener('keydown',esc);
+  ov.onclick=function(e){if(e.target.closest('[data-x]')){ov.remove();document.removeEventListener('keydown',esc);return;}var b=e.target.closest('[data-i]');if(!b)return;var d=TB_DEMOS[+b.dataset.i];
+    if(!confirm('Wczytać demo „'+d.name+'”? Obecny projekt zostanie zastąpiony.'))return;prjOpen(JSON.parse(JSON.stringify(d.src)));};};
+document.getElementById('prj-file').onchange=function(){var f=this.files&&this.files[0];this.value='';if(!f)return;
+  var rd=new FileReader();rd.onload=function(){var d;try{d=JSON.parse(rd.result);}catch(e){alert('To nie jest plik projektu (zły JSON).');return;}
+    var src=d&&d.src?d.src:(d&&d.floors&&d.w?d:null);
+    if(!src||!src.floors||!src.w){alert('Ten plik to gotowy budynek bez projektu (pobrany starszą wersją Tabby budynki), więc nie da się go edytować.\n\nOd teraz „Pobierz .json” zapisuje też projekt — takie pliki wczytasz bez problemu.');return;}
+    if(!confirm('Wczytać budynek „'+(src.name||d.name||'Budynek')+'”? Obecny projekt zostanie zastąpiony.'))return;
+    try{localStorage.setItem('tabby-budynki',JSON.stringify(src));}catch(e){alert('Nie udało się wczytać: '+e.message);return;}
+    location.reload();};
+  rd.readAsText(f);};
 document.getElementById('copy-btn').onclick=function(){
   var d=exportJSON();if(!d.parts.length){toast('Budynek jest pusty');return;}
   var t=jsonText();
   function fallback(){var ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('JSON skopiowany — wklej w Tabby Editor');}
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('JSON skopiowany — wklej w Tabby Editor');},fallback);else fallback();
 };
-document.getElementById('dl-btn').onclick=function(){
+var _dl=document.getElementById('dl-btn');if(_dl)_dl.onclick=function(){
   var d=exportJSON();if(!d.parts.length){toast('Budynek jest pusty');return;}
   var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([jsonText()],{type:'application/json'}));
   a.download=(d.name||'budynek').toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/gi,'-').replace(/^-|-$/g,'')+'.json';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},500);

@@ -629,6 +629,11 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <div id="proj-msg" style="font-size:11px;font-weight:bold;text-align:center;margin-top:8px;display:none"></div>
         <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Projekt to Twoja praca w edytorze (plik <b>.tabby</b>). Chrome i Edge zapisują go prosto do folderu <b>„Tabby – moje projekty”</b>. Inne przeglądarki pobierają plik do „Pobranych”. Edytor robi też autozapis co 30 s.</div>
       </div>
+      <div class="ep-lbl">Tabby-pokój</div>
+      <div style="border:2px solid rgba(63,185,80,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(63,185,80,0.04)">
+        <button class="ep-exp" id="room-open" style="background:#238636;margin-bottom:0">🏠 Tabby-pokój</button>
+        <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Twój osobisty pokój z kodem. Pokaż w nim swoje obiekty, zaproś kogoś kodem lub linkiem i testujcie razem. Goście kopiują kod obiektu do siebie. Otwiera się w osobnej karcie — praca w edytorze zostaje.</div>
+      </div>
       <div class="ep-lbl">Wczytaj scenę</div>
       <div style="border:2px solid rgba(210,153,34,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(210,153,34,0.04)">
         <div style="color:#888;font-size:11px;line-height:1.6;margin-bottom:10px">Wczytaj gotową grę/scenę z pliku <b style="color:#d29922">.html</b> — obiekty i ich rozmieszczenie zostaną zaimportowane do edytora.</div>
@@ -7412,6 +7417,8 @@ function init(){
   });
   // Tabby budynki — osobna strona w tym samym folderze, otwiera się w osobnej karcie (jak Tabby Store)
   document.getElementById('bud-btn').addEventListener('click',function(e){e.stopPropagation();window.open('tabby-budynki.html','tabby-budynki');});
+  // Tabby-pokój — osobna strona w tym samym folderze, otwiera się w osobnej karcie (jak Tabby budynki)
+  document.getElementById('room-open').addEventListener('click',function(e){e.stopPropagation();window.open('tabby-pokoj.html','tabby-pokoj');});
 
   document.getElementById('ed-export-html').addEventListener('click',function(){if(tbMpNeed())return;tbSpawnCheck(function(){doExportHTML();},tbPlFocus);});
   document.getElementById('ed-export-zip').addEventListener('click',function(){if(tbMpNeed())return;tbSpawnCheck(function(){doExportZIP();},tbPlFocus);});

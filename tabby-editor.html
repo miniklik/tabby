@@ -2542,7 +2542,8 @@ function drnStep(dt){
   // kamera
   var p=camPitch,D=6.5;
   if(DRN.own&&DRN.stage==='fly'){
-    var dp=0.15+(p-0.3)*0.55,fx=-Math.sin(camYaw),fz=-Math.cos(camYaw);
+    DRN.gimS=(DRN.gimS||0)+((DRN.gim||0)-(DRN.gimS||0))*Math.min(1,dt*8); // 🎥 gimbal (rolka myszy) — płynnie jak w prawdziwym dronie
+    var dp=Math.max(-0.45,Math.min(1.5,0.15+(p-0.3)*0.55+DRN.gimS)),fx=-Math.sin(camYaw),fz=-Math.cos(camYaw);
     cam.position.set(DRN.x,DRN.y-0.12,DRN.z);cam.lookAt(DRN.x+fx*Math.cos(dp)*10,DRN.y-0.12-Math.sin(dp)*10,DRN.z+fz*Math.cos(dp)*10);
   }else if(DRN.stage!=='landed'){
     var at=DRK.aimT||0; // 🎯 PPM: celowanie jak u ludzika — kamera bliżej, nad prawym bokiem drona, celownik obok drona
@@ -2572,7 +2573,7 @@ function drnStep(dt){
   if(DRN.stage!=='landed'){drnHud(true);drnHudMode(DRK.on?'flyk':'fly');var u=DRN.ui,bf=DRN.bat/drvNum(a.battery,90),alt=Math.max(0,DRN.y-drnCollide(DRN.x,DRN.z,DRN.y)[2]); // wysokość nad tym, co pod dronem
     u.bar.style.width=Math.round(bf*100)+'%';u.bar.className=bf<0.15?'no':(bf<0.35?'lo':'');
     u.s.textContent='Bateria '+Math.round(bf*100)+'% • wys. '+alt.toFixed(0)+' m • odl. '+dist.toFixed(0)+' / '+R+' m'+(DRN.stage==='return'?' • powrót…':'')+drkHudTxt();
-    if(DRN.own)u.oh.textContent='ALT '+alt.toFixed(1)+' m\nDIST '+dist.toFixed(0)+' m';}
+    if(DRN.own)u.oh.textContent='ALT '+alt.toFixed(1)+' m\nDIST '+dist.toFixed(0)+' m\nGIMBAL '+Math.round(-(DRN.gimS||0)*57.3)+'°';}
   else drnHud(false);
   drnNoise(DRN.stage==='landed'?0:DRN.noise+(DRN.own?0.04:0));
 }
@@ -2713,6 +2714,10 @@ function drkReset(){
   DRK.fall.forEach(function(B){scene.remove(B.m);});DRK.fall=[];drkBeam(false);drkCross(false);
   DRK.on=false;DRK.g=null;DRK.stand=null;DRK.bombs=[];DRK.spot=null;DRK.lamp=null;DRK.tip=null;DRK.light=false;DRK.lmb=false;DRK.list=null;DRK.charging=false;
 }
+window.addEventListener('wheel',function(e){ // 🎥 rolka w widoku z drona (FPV): gimbal góra/dół
+  if(!(drnFlying()&&DRN.own&&DRN.stage!=='landed'))return;
+  e.preventDefault();e.stopImmediatePropagation();DRN.gim=Math.max(-0.35,Math.min(1.35,(DRN.gim||0)+(e.deltaY>0?0.08:-0.08)));
+},{capture:true,passive:false});
 window.addEventListener('mousedown',function(e){if(e.button===0&&DRK.on&&drnFlying()&&DRN.stage==='fly'&&document.pointerLockElement){DRK.lmb=true;}},true);
 window.addEventListener('mouseup',function(e){if(e.button===0)DRK.lmb=false;},true);
 document.addEventListener('pointerlockchange',function(){if(!document.pointerLockElement)DRK.lmb=false;});

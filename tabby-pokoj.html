@@ -4596,7 +4596,7 @@ function rmShow(S){ // pokaż obiekt na postumencie / obrotnicy (albo pusty)
   if(ped&&big<0.6)k=Math.min(2.2,0.6/big); // malutkie rzeczy (np. pistolet) trochę powiększone, żeby było co oglądać
   g.scale.setScalar(k);g.position.set(-c.x*k,-bb.min.y*k,-c.z*k);
   var H=new THREE.Group();H.add(g);H.position.y=ped?1.25:0.14;H.userData.k=k;S.G.add(H);S.disp=H;
-  S.plate=rmPlate(S.data.name);S.plate.position.set(0,(ped?1.25:0.14)+sz.y*k+0.7,0);S.G.add(S.plate);
+  var dn=(S.o&&RM.dl&&RM.dl[S.o.id])||0;S.plateY=(ped?1.25:0.14)+sz.y*k+0.7;S.plateN=dn;S.plate=rmPlate(S.data.name+(dn?'  📥 '+dn:''));S.plate.position.set(0,S.plateY,0);S.G.add(S.plate);
   S.ring.material.color.setHex(ped?0x58a6ff:0xf2c200);if(S.beam){S.beam.visible=true;}
   if(!ped){var r=Math.min(3,Math.max(sz.x,sz.z)*k/2);S.col={x:S.x,z:S.z,hw:r*0.8,hd:r*0.8,y:0,h:Math.max(1,sz.y*k),_rm:1};wCols.push(S.col);}
 }
@@ -4611,7 +4611,7 @@ function rmLayout(){ // rozstaw obiekty: sala główna = 10 najnowszych, sala ka
   function put(list,src){list.forEach(function(S,i){var o=src[i]||null;rmSlotOn(S,true);if(S.o===o&&S.disp!==undefined&&(o?S.disp:S.plate))return;S.o=o;S.data=o?o.d:null;rmShow(S);});}
   put(A,newest);
   if(veh){P.forEach(function(S){rmSlotOn(S,false);});put(B,inCat);}else{B.forEach(function(S){rmSlotOn(S,false);});put(P,inCat);}
-  if(RM.title)rmTitle();RM.doors.forEach(rmDoorSign);
+  if(RM.title)rmTitle();RM.doors.forEach(rmDoorSign);if(RM.dlB)rmDlBoard();
 }
 function rmCount(){return {n:RM.objs.length};}
 
@@ -4755,8 +4755,8 @@ function rmOpen(kind,S){
     var vw=RM.ui.view;vw.style.display='block';var d=S.data,I=rmInfo(d);
     vw.querySelector('#rm-vn').textContent=d.name;
     var rows=[['Działanie',I.act],['Części',I.parts],['Rozmiar',rmFmt(I.w)+' × '+rmFmt(I.h)+' × '+rmFmt(I.d)+' m']];if(I.cat)rows.splice(1,0,['Kategoria',I.cat]);if(I.lights)rows.push(['Światła',I.lights]);
-    rows.push(['Miejsce',S.hall==='A'?'⭐ Sala główna (najnowsze)':'Sala: '+rmCatName(RM.cat)]);
-    vw.querySelector('#rm-vi').innerHTML=rows.map(function(r){return '<div class="rm-row"><span>'+rmEsc(r[0])+'</span><b>'+rmEsc(r[1])+'</b></div>';}).join('')+(I.desc?'<div style="font-size:12.5px;color:#9aa4b2;margin-top:8px">'+rmEsc(I.desc)+'</div>':'');
+    rows.push(['📥 Pobrania','__DL__']);rows.push(['Miejsce',S.hall==='A'?'⭐ Sala główna (najnowsze)':'Sala: '+rmCatName(RM.cat)]);
+    vw.querySelector('#rm-vi').innerHTML=rows.map(function(r){return '<div class="rm-row"><span>'+rmEsc(r[0])+'</span>'+(r[1]==='__DL__'?'<b id="rm-vdl">'+((S.o&&RM.dl[S.o.id])||0)+'</b>':'<b>'+rmEsc(r[1])+'</b>')+'</div>';}).join('')+(I.desc?'<div style="font-size:12.5px;color:#9aa4b2;margin-top:8px">'+rmEsc(I.desc)+'</div>':'');
     vw.querySelector('#rm-vmsg').textContent='';var trb=vw.querySelector('#rm-try');trb.style.display=rmCanTry(d)?'inline-block':'none';var del=vw.querySelector('#rm-del');del.style.display=RM.guest?'none':'inline-block';del.textContent='🗑 Usuń z pokoju';
     setTimeout(function(){rmPvSet(vw.querySelector('#rm-pv2'),d);},0);
   }
@@ -4794,7 +4794,7 @@ function rmAddConfirm(){
   rmToast('✅ „'+rmEsc(O.d.name)+'” stoi w sali głównej<br><span style="font-weight:normal;font-size:13px">i za drzwiami w kategorii '+rmEsc(rmCatName(O.cat))+'</span>',3600);
 }
 function rmCopy(){var S=RM.open&&RM.open.S;if(!S)return;var m=RM.ui.view.querySelector('#rm-vmsg');
-  rmClip(JSON.stringify(S.data),function(ok){m.style.color=ok?'#3fb950':'#ff7b72';m.textContent=ok?'📋 Skopiowano! Wklej w edytorze Tabby (pole „Wklej JSON”).':'Nie udało się skopiować do schowka.';});}
+  rmClip(JSON.stringify(S.data),function(ok){if(ok)rmCloudDl(S.o);m.style.color=ok?'#3fb950':'#ff7b72';m.textContent=ok?'📋 Skopiowano! Wklej w edytorze Tabby (pole „Wklej JSON”).':'Nie udało się skopiować do schowka.';});}
 function rmDel(){var O=RM.open;if(!O||!O.S||RM.guest)return;var b=RM.ui.view.querySelector('#rm-del');
   if(!O.del){O.del=1;b.textContent='Na pewno? Kliknij jeszcze raz';return;}
   var nm=O.S.data.name,k=RM.objs.indexOf(O.S.o);if(k>=0){rmCloudDel(RM.objs[k].id);RM.objs.splice(k,1);}rmLayout();rmSave();rmSendState();rmClose();rmToast('🗑 Usunięto „'+rmEsc(nm)+'”');}
@@ -5185,7 +5185,7 @@ function rmCloudSync(){
     Object.keys(server).forEach(function(id){if(!local[id]){try{RM.objs.push({d:JSON.parse(server[id].d),t:server[id].t,id:id});changed=true;}catch(e){}}if(RM.cl.synced.indexOf(id)<0)RM.cl.synced.push(id);});
     RM.objs.forEach(function(o){if(!server[o.id])rmCloudPut(o);}); // nowe lokalne → do chmury
     if(j.owner!==RM.name)rmCloudOwner();
-    RM.cl.ok=true;rmSave();if(changed){rmLayout();rmSendState();}rmCloudSt('ok');});
+    RM.cl.ok=true;rmSave();if(changed){rmLayout();rmSendState();}rmCloudSt('ok');rmDlTake(j.objs,j.tot||0);});
 }
 function rmCloudSt(s){RM.cl.st=s;var e=RM.ui&&RM.ui.hud&&RM.ui.hud.querySelector('#rm-cl');if(!e)return;
   e.innerHTML=s==='ok'?(RM.guest?'<span style="color:#3fb950">☁ Obiekty wczytane z chmury</span>':'<span style="color:#3fb950">☁ Pokój zapisany w chmurze — goście wejdą także, gdy Cię nie ma</span>'):
@@ -5200,10 +5200,29 @@ function rmCloudGuest(){
     if(!j.ok){if(!RM.gotState)rmCloudSt('none');return;}
     if(!RM.gotState){RM.owner=j.owner||'';RM.objs=[];(j.objs||[]).forEach(function(o){try{RM.objs.push({d:JSON.parse(o.d),t:o.t,id:o.id});}catch(e){}});
       RM.sig='cloud';rmLayout();rmMon('idle');}
-    RM.cloudGot=true;rmHud();rmCloudSt('ok');
+    RM.cloudGot=true;rmHud();rmCloudSt('ok');rmDlTake(j.objs,j.tot||0);
     rmFriendSeen(RM.code,j.owner||RM.owner,(j.objs||[]).map(function(o){return o.id;}));
     var g=RM.ui&&RM.ui.hud.querySelector('#rm-gst');if(g&&!RM.gotState)g.textContent='Gospodarza nie ma teraz w pokoju — oglądasz jego obiekty z chmury.';});
 }
+// ---------- 📥 LICZNIKI POBRAŃ: centrala liczy, ile osób skopiowało kod assetu (jedna osoba = raz przy danym assecie) ----------
+RM.dl={};RM.dlTot=0;
+function rmUid(){var u='';try{u=localStorage.getItem('tabby-uid')||'';}catch(e){}
+  if(!/^[A-Za-z0-9_-]{8,40}$/.test(u)){u='u'+rmKeyGen().slice(0,20);try{localStorage.setItem('tabby-uid',u);}catch(e){}}return u;}
+function rmDlTake(list,tot){var ch=false;(list||[]).forEach(function(o){var n=o.dl||0;if(RM.dl[o.id]!==n){RM.dl[o.id]=n;ch=true;}});
+  if(tot!==undefined&&tot!==RM.dlTot){RM.dlTot=tot;ch=true;}if(ch)rmDlShow();}
+function rmDlShow(){rmDlBoard();RM.slots.forEach(function(S){if(S.disp&&S.o&&S.plate&&S.plateY!==undefined){var n=RM.dl[S.o.id]||0;if(S.plateN===n)return;
+  rmFree(S.plate);S.plate=rmPlate(S.data.name+(n?'  📥 '+n:''));S.plate.position.set(0,S.plateY,0);S.G.add(S.plate);S.plateN=n;}});}
+function rmDlBoard(){ // tablica nad telebimem w sali głównej
+  if(!RM.dlB){var c=rmCanvas(1024,160);RM.dlB={cv:c,tx:new THREE.CanvasTexture(c)};var m=new THREE.Mesh(new THREE.PlaneGeometry(7.2,1.125),new THREE.MeshBasicMaterial({map:RM.dlB.tx}));
+    m.rotation.y=Math.PI;m.position.set(0,7.3,15.93);scene.add(m);}
+  var x=RM.dlB.cv.getContext('2d'),n=RM.dlTot||0,k=RM.objs.length;x.fillStyle='#10151d';x.fillRect(0,0,1024,160);x.fillStyle='#3fb950';x.fillRect(0,0,1024,8);
+  x.textAlign='center';x.fillStyle='#fff';x.font='bold 64px sans-serif';x.fillText('📥 Pobrano '+n+' '+(n===1?'raz':'razy'),512,92);
+  x.fillStyle='#9aa4b2';x.font='30px sans-serif';x.fillText((RM.guest?'assety z tego pokoju':'Twoje assety')+' • obiektów w pokoju: '+k,512,138);RM.dlB.tx.needsUpdate=true;}
+function rmCloudDl(o){if(!o||!o.id||!RM.guest||!rmCloudOn()||rmLoad().code===RM.code)return;
+  fetch(rmCloudUrl(RM.code),{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({op:'dl',id:o.id,u:rmUid()})}).then(function(r){return r.json();}).then(function(j){
+    if(!j||!j.ok)return;RM.dl[o.id]=j.dl;RM.dlTot=j.tot;rmDlShow();var vi=RM.open&&RM.open.S&&RM.open.S.o===o&&RM.ui.view.querySelector('#rm-vdl');if(vi)vi.textContent=j.dl;}).catch(function(){});}
+setInterval(function(){if(!rmCloudOn()||document.hidden)return;rmCloudGet(RM.code,true,function(j){if(j&&j.ok)rmDlTake(j.ids,j.tot);});},45000); // na bieżąco
+
 // ---------- ⭐ pokoje znajomych ----------
 function rmFriends(){try{return JSON.parse(localStorage.getItem(RM_FR)||'[]');}catch(e){return [];}}
 function rmFriendsSave(L){try{localStorage.setItem(RM_FR,JSON.stringify(L));}catch(e){}}
@@ -5404,7 +5423,7 @@ function rmTick(dt){
     else if(own.slots)own.slots.forEach(function(s,i){if(!s)return;try{RM.objs.push({d:JSON.parse(s),t:i,id:rmNewId()});}catch(e){}}); // stary zapis pokoju
     var oc=own.cl||{};RM.cl.key=oc.key||rmKeyGen();RM.cl.claimed=!!oc.claimed;RM.cl.synced=oc.synced||[];RM.cl.del=oc.del||[];
   }
-  rmLayout();
+  rmLayout();rmDlBoard();
   rmEnsureUI();rmMon('idle');if(!RM.guest)rmSave();
   try{RM.bc=new BroadcastChannel('tabby-pokoj-'+RM.code);RM.bc.onmessage=function(e){rmMsg(e.data);};}catch(e){RM.bc=null;}
   rmWsOpen();if(RM.guest)rmCloudGuest();else rmCloudInit();

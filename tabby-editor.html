@@ -453,6 +453,9 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
               <option value="sound">Odtwórz dźwięk</option>
               <option value="teleport">Teleportuj gracza</option>
               <option value="physics">🎈 Fizyka — klocek / piłka</option>
+              <option value="cstation">🚡 Kolejka: stacja dolna</option>
+              <option value="cpole">🚡 Kolejka: słup</option>
+              <option value="ctop">🚡 Kolejka: stacja górna</option>
               <option value="">Brak</option>
               <!-- ukryte: tylko do wyświetlania akcji, które przychodzą z assetu (drzwi, światło) -->
               <option value="open" hidden>Z assetu: otwieranie</option>
@@ -1477,6 +1480,7 @@ function drvEnter(obj,others){
 // przywraca wszystko, co pojazd zniszczył lub odrzucił (edytor: przycisk „Odbuduj” i zapis gry)
 function drvRestoreAll(){
   if(typeof phyRestoreAll==='function')phyRestoreAll(); // 🎈 klocki i piłki wracają na swoje miejsca
+  if(typeof kolRestore==='function')kolRestore(); // 🚡 kabiny wracają na stacje
   if(typeof glsRestoreAll==='function')glsRestoreAll(); // wybite szyby wracają
   if(typeof enmRestoreAll==='function')enmRestoreAll(); // cyborgi wracają całe
   if(typeof misRestoreAll==='function')misRestoreAll(); // wysadzone budynki wracają
@@ -2085,6 +2089,7 @@ function wpnHud(on){
 // ---------- klatka: poza postaci, kamera nad ramieniem, broń w widoku z oczu, efekty ----------
 function wpnUpdate(dt,offs){
   if(typeof phyTick==='function')phyTick(dt); // 🎈 fizyka obiektów
+  if(typeof kolTick==='function')kolTick(dt); // 🚡 kolejka linowa
   if(DRV._rider&&!DRV.t){DRV._rider=false;charGroup.rotation.x=0;charGroup.rotation.z=0;['legL','legR','armL','armR'].forEach(function(n){if(bp[n])bp[n].rotation.set(0,0,0);});if(bp.head)bp.head.rotation.x=0;}
   drnTick(dt);fogTick(dt);winTick(dt);perfTick(dt);raceTick(dt);drnTricksTick();rngTick(dt);liftTick(dt);enmTick(dt);misTick(dt);wflTick(dt);if(typeof mpTick==='function')mpTick(dt);CCL.f=(CCL.f||0)+1;
   WPN.cd=Math.max(0,WPN.cd-dt);
@@ -5225,6 +5230,144 @@ function phyTick(dt){
 function phyHit(obj,dir){var o=obj;while(o&&!(o.userData&&o.userData._phyB))o=o.parent;if(!o)return false;var b=o.userData._phyB;
   var f=9/Math.max(0.4,Math.cbrt(b.m));b.v.addScaledVector(dir,f);b.v.y+=f*0.35;b.w.set(Math.random()*8-4,Math.random()*8-4,Math.random()*8-4);b.sleep=0;b.moved=true;return true;}
 
+// ---------- 🚡 KOLEJKA LINOWA (akcje cstation / cpole / ctop): stacja dolna → słupy → stacja górna, dwie kabiny jak na Kasprowy ----------
+// Linia = elementy w kolejności stawiania: 'cstation' zaczyna linię, kolejne 'cpole' to słupy, 'ctop' ją zamyka.
+// Silnik sam dobudowuje wygląd stacji i słupów, rysuje liny i wozi gracza kabiną. Ustawienia: cpole.h (wysokość słupa), cstation.speed (m/s).
+var KOL={lines:[],sig:'',chk:0,ride:null,keep:null,prompt:null,grp:null};
+var KOL_ATT=4.9,KOL_TR=[-2.2,2.2],KOL_ACC=0.9;
+function kolMat(c,o){o=o||{};o.color=c;if(o.roughness===undefined)o.roughness=0.7;return new THREE.MeshStandardMaterial(o);}
+var KOLM=null;function kolMats(){if(KOLM)return KOLM;KOLM={con:kolMat(0x9aa1ab,{roughness:0.95}),dark:kolMat(0x3b4048,{roughness:0.5,metalness:0.4}),red:kolMat(0xc8323a,{roughness:0.5}),
+  white:kolMat(0xf2f2f2,{roughness:0.4}),steel:kolMat(0x7d8590,{roughness:0.4,metalness:0.6}),glass:new THREE.MeshStandardMaterial({color:0x9fd8ff,transparent:true,opacity:0.22,roughness:0.05,metalness:0.1,depthWrite:false}),
+  rope:new THREE.MeshStandardMaterial({color:0x2a2d33,roughness:0.6,metalness:0.5}),yel:kolMat(0xf2c200),wood:kolMat(0x8a6a48,{roughness:0.8})};return KOLM;}
+function kolBox(g,w,h,d,m,x,y,z,sh){var b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);if(sh!==false){b.castShadow=true;b.receiveShadow=true;}b.userData._kolPart=1;g.add(b);return b;}
+function kolCyl(g,r1,r2,h,m,x,y,z,seg){var c=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||12),m);c.position.set(x,y,z);c.castShadow=true;c.userData._kolPart=1;g.add(c);return c;}
+function kolStation(top){var M=kolMats(),g=new THREE.Group(),W=11.2;
+  kolBox(g,W,3,9.6,M.con,0,-1.42,0);kolBox(g,W,0.1,1.2,M.con,0,0.03,5.4);
+  kolBox(g,W-0.4,0.15,0.45,M.con,0,0.155,4.925);kolBox(g,W-0.4,0.15,0.45,M.con,0,0.305,4.475); // dwa schodki
+  kolBox(g,W-0.4,0.02,0.06,M.yel,0,0.235,5.13,false);kolBox(g,W-0.4,0.02,0.06,M.yel,0,0.385,4.68,false);
+  [[-4.35,1.9],[0,2.0],[4.35,1.9]].forEach(function(q){kolBox(g,q[1],0.45,7.6,M.con,q[0],0.225,0.2);}); // perony
+  [-3.38,-1.02,1.02,3.38].forEach(function(x){kolBox(g,0.08,0.02,7.4,M.yel,x,0.46,0.2,false);});
+  kolBox(g,W-0.2,0.45,1.4,M.con,0,0.225,-3.9);kolBox(g,W+0.2,7.0,0.3,M.white,0,3.5,-4.85);
+  [[-5.45,-4.65],[5.45,-4.65],[-5.45,4.65],[5.45,4.65],[0,4.65]].forEach(function(q){kolBox(g,0.35,7.2,0.35,M.dark,q[0],3.6,q[1]);});
+  kolBox(g,0.2,1.0,9.3,M.white,-5.45,0.95,0);kolBox(g,0.2,1.0,9.3,M.white,5.45,0.95,0);
+  kolBox(g,W+1.2,0.35,10.4,M.red,0,7.35,0);kolBox(g,W+1.4,0.5,0.4,M.dark,0,7.0,5.0);
+  var wg=new THREE.Group();wg.position.set(0,KOL_ATT,-3.1);var wh=new THREE.Mesh(new THREE.TorusGeometry(2.2,0.14,8,40),M.steel);wh.rotation.x=Math.PI/2;wg.add(wh);
+  wg.add(new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.6,12),M.dark));for(var k=0;k<4;k++){var sp=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.12,0.18),M.dark);sp.rotation.y=k*Math.PI/4;wg.add(sp);}
+  g.add(wg);kolBox(g,0.6,KOL_ATT-0.3,0.6,M.dark,0,(KOL_ATT-0.3)/2,-3.1);
+  var c=document.createElement('canvas');c.width=1024;c.height=128;var x=c.getContext('2d');x.fillStyle='#10151d';x.fillRect(0,0,1024,128);x.fillStyle='#c8323a';x.fillRect(0,0,1024,8);x.fillStyle='#fff';x.font='bold 66px sans-serif';x.textAlign='center';
+  x.fillText(top?'🚡 Górna stacja':'🚡 Dolna stacja',512,90);var sg=new THREE.Mesh(new THREE.PlaneGeometry(6.4,0.8),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));sg.position.set(0,6.3,4.85);g.add(sg);
+  var sg2=sg.clone();sg2.rotation.y=Math.PI;sg2.position.z=-5.02;g.add(sg2);g.userData.wheel=wg;return g;}
+function kolPoleM(h){var M=kolMats(),g=new THREE.Group();kolBox(g,2.0,1.0,2.0,M.con,0,0.2,0);kolCyl(g,0.32,0.55,h,M.steel,0,h/2,0,10);
+  for(var y=2;y<h-1;y+=2.2)kolBox(g,0.9,0.08,0.08,M.dark,0,y,0,false);
+  kolBox(g,6.6,0.4,0.55,M.dark,0,h,0);kolBox(g,0.25,2.2,0.25,M.dark,-1.6,h-1.0,0);kolBox(g,0.25,2.2,0.25,M.dark,1.6,h-1.0,0);
+  [-2.7,-1.7,1.7,2.7].forEach(function(x){var r=kolCyl(g,0.28,0.28,0.18,M.steel,x,h+0.3,0,16);r.rotation.z=Math.PI/2;});
+  var l=new THREE.Mesh(new THREE.SphereGeometry(0.12,8,6),new THREE.MeshBasicMaterial({color:0xff3b30}));l.position.set(0,h+0.75,0);g.add(l);return g;}
+function kolCabin(){var M=kolMats(),g=new THREE.Group();kolBox(g,1.2,0.35,1.5,M.dark,0,0,0);
+  [[-0.5,-0.5],[-0.5,0.5],[0.5,-0.5],[0.5,0.5]].forEach(function(q){var w=kolCyl(g,0.17,0.17,0.12,M.steel,q[0],0.17,q[1],14);w.rotation.z=Math.PI/2;});
+  kolBox(g,0.12,1.85,0.12,M.dark,0,-1.05,-0.35);kolBox(g,0.12,1.85,0.12,M.dark,0,-1.05,0.35);var F=-4.45;
+  kolBox(g,2.6,0.16,3.4,M.red,0,-1.92,0);kolBox(g,2.4,0.12,3.2,M.dark,0,F-0.06,0);
+  [[-1.15,-1.55],[1.15,-1.55],[-1.15,1.55],[1.15,1.55]].forEach(function(q){kolBox(g,0.1,2.45,0.1,M.white,q[0],F+1.22,q[1]);});
+  kolBox(g,2.3,2.4,0.04,M.glass,0,F+1.2,-1.58,false);kolBox(g,2.3,2.4,0.04,M.glass,0,F+1.2,1.58,false);
+  [-1.17,1.17].forEach(function(x){kolBox(g,0.06,1.0,3.1,M.red,x,F+0.5,0);kolBox(g,0.06,0.25,3.1,M.white,x,F+2.3,0);kolBox(g,0.06,1.2,0.08,M.white,x,F+1.6,0);var hr=kolCyl(g,0.03,0.03,3.0,M.steel,x*0.92,F+1.1,0,8);hr.rotation.x=Math.PI/2;});
+  kolBox(g,0.5,0.45,2.6,M.wood,-0.85,F+0.22,0);kolBox(g,0.5,0.45,2.6,M.wood,0.85,F+0.22,0);
+  var lamp=new THREE.PointLight(0xfff1d6,0.6,6,1.5);lamp.position.set(0,F+2.2,0);g.add(lamp);return g;}
+// ---------- teren: plac pod stacją jest wyrównany ----------
+var _kolTH=tbTerrH;
+tbTerrH=function(x,z){var h=_kolTH(x,z);for(var l=0;l<KOL.lines.length;l++){var P=KOL.lines[l].pcs;for(var i=0;i<P.length;i++){var p=P[i];if(p.t==='pole')continue;
+  var d=Math.hypot(x-p.x,z-p.z);if(d>=15)continue;var k=d<=8.5?1:1-(d-8.5)/6.5;k=k*k*(3-2*k);h=h+(p.gy-h)*k;}}return h;};
+function kolLY(p){return p.t==='top'?p.ry+Math.PI:p.ry;}
+function kolSag(L){return Math.min(4,0.022*L);}
+function kolIsKol(pa){var t=pa&&pa.action&&pa.action.type;return (t==='cstation'||t==='cpole'||t==='ctop')&&pa.gr;}
+function kolMembers(){return wpnPlaced().filter(kolIsKol);}
+function kolSig(M){return M.map(function(pa){var g=pa.gr,a=pa.action;return a.type+':'+g.position.x.toFixed(2)+','+g.position.z.toFixed(2)+','+g.position.y.toFixed(2)+','+g.rotation.y.toFixed(2)+','+(a.h||'')+','+(g.visible?1:0);}).join('|');}
+function kolClearAll(){KOL.lines.forEach(function(L){L.cabs.forEach(function(c){scene.remove(c);});if(L.grp)scene.remove(L.grp);});
+  for(var i=wCols.length-1;i>=0;i--)if(wCols[i]._kol)wCols.splice(i,1);KOL.lines=[];}
+function kolRebuild(M){
+  var old=KOL.lines;kolClearAll();var cur=null;
+  M.forEach(function(pa){if(pa._col){var i=wCols.indexOf(pa._col);if(i>=0)wCols.splice(i,1);delete pa._col;}}); // stację i słup obsługują własne kolizje
+  M.forEach(function(pa){var t=pa.action.type,g=pa.gr,p={t:t==='cstation'?'low':t==='cpole'?'pole':'top',x:g.position.x,z:g.position.z,h:Math.max(6,Math.min(40,+pa.action.h||14)),ry0:g.rotation.y,pa:pa};
+    if(p.t==='low'){cur={pcs:[p],cabs:[],s:0,v:0,dir:1,state:'idle',wait:0,sw:[0,0],swv:[0,0],yawS:[undefined,undefined],segs:[],len:0,wheel:[],vmax:Math.max(2,Math.min(15,+pa.action.speed||7))};KOL.lines.push(cur);}
+    else if(cur&&!cur.done){cur.pcs.push(p);if(p.t==='top')cur.done=true;}});
+  KOL.lines.forEach(function(L){L.pcs.forEach(function(p){if(p.t!=='pole')p.gy=_kolTH(p.x,p.z);});});
+  if(TBTER.on)TBTER._dirty=true; // ziemia wokół stacji wyrówna się przy najbliższej klatce
+  KOL.lines.forEach(function(L,li){kolBuildLine(L);var o=old[li];if(o&&o.done&&L.done&&Math.abs(o.len-L.len)<0.5){L.s=o.s;L.v=o.v;L.dir=o.dir;L.state=o.state;L.wait=o.wait;}});
+  // gracz był w kabinie, a linia zmieniła się pod nim — wysiada
+  if(KOL.ride&&!KOL.lines[KOL.ride.li])kolExit(true);
+}
+function kolYaw(P,i){var p=P[i],a=P[i-1],b=P[i+1];
+  if(p.t==='low')return b?Math.atan2(b.x-p.x,b.z-p.z):p.ry0;
+  if(p.t==='top')return a?Math.atan2(p.x-a.x,p.z-a.z)+Math.PI:p.ry0;
+  var d1=a?Math.atan2(p.x-a.x,p.z-a.z):0;if(!b)return d1;var d2=Math.atan2(b.x-p.x,b.z-p.z);return Math.atan2(Math.sin(d1)+Math.sin(d2),Math.cos(d1)+Math.cos(d2));}
+function kolBuildLine(L){var P=L.pcs;L.grp=new THREE.Group();scene.add(L.grp);L.wheel=[];
+  P.forEach(function(p,i){if(p.t==='pole')p.gy=tbTerrH(p.x,p.z);p.ry=kolYaw(P,i);var g=p.pa.gr;
+    var m=g.userData._kolM;if(m)g.remove(m); // wygląd stacji / słupa wisi pod obiektem z edytora
+    m=p.t==='pole'?kolPoleM(p.h):kolStation(p.t==='top');m.position.set(0,p.gy-g.position.y,0);m.rotation.y=p.ry-g.rotation.y;g.add(m);g.userData._kolM=m;if(m.userData.wheel)L.wheel.push(m.userData.wheel);
+    if(p.t==='pole')wCols.push({x:p.x,z:p.z,hw:0.6,hd:0.6,y:p.gy,h:p.h,_kol:1});
+    else{var c=Math.cos(p.ry),s=Math.sin(p.ry);[[-4.35,0.2,1.9,7.6,0.45],[0,0.2,2.0,7.6,0.45],[4.35,0.2,1.9,7.6,0.45],[0,-3.9,11.0,1.4,0.45],[0,4.475,10.8,0.45,0.38],[0,4.925,10.8,0.45,0.23]].forEach(function(q){
+      wCols.push({x:p.x+q[0]*c+q[1]*s,z:p.z-q[0]*s+q[1]*c,hw:Math.abs(q[2]/2*c)+Math.abs(q[3]/2*s),hd:Math.abs(q[2]/2*s)+Math.abs(q[3]/2*c),y:p.gy,h:q[4],_kol:1});});}});
+  var S=P.map(function(p){return {x:p.x,z:p.z,y:p.t==='pole'?p.gy+p.h+0.3:p.gy+KOL_ATT,p:p};});L.segs=[];L.len=0;var M=kolMats();
+  for(var k=0;k+1<S.length;k++){var A=S[k],B=S[k+1],hl=Math.hypot(B.x-A.x,B.z-A.z),sag=kolSag(hl),len=Math.hypot(hl,B.y-A.y);L.segs.push({A:A,B:B,L:len,sag:sag,s0:L.len});L.len+=len;
+    [KOL_TR[0]-0.5,KOL_TR[0]+0.5,KOL_TR[1]-0.5,KOL_TR[1]+0.5].forEach(function(off){var ya=kolLY(A.p),yb=kolLY(B.p),pts=[];
+      for(var j=0;j<=24;j++){var t=j/24,ax=A.x+Math.cos(ya)*off,az=A.z-Math.sin(ya)*off,bx=B.x+Math.cos(yb)*off,bz=B.z-Math.sin(yb)*off;pts.push(new THREE.Vector3(ax+(bx-ax)*t,A.y+(B.y-A.y)*t-4*sag*t*(1-t)+0.15,az+(bz-az)*t));}
+      L.grp.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,0.045,6,false),M.rope));});}
+  if(P.length>1)P.forEach(function(p){if(p.t==='pole')return;var ly=kolLY(p),c=Math.cos(ly),s=Math.sin(ly),bx=-Math.sin(p.ry)*3.0,bz=-Math.cos(p.ry)*3.0;
+    [KOL_TR[0]-0.5,KOL_TR[0]+0.5,KOL_TR[1]-0.5,KOL_TR[1]+0.5].forEach(function(off){var a=new THREE.Vector3(p.x+c*off,p.gy+KOL_ATT+0.15,p.z-s*off),b=new THREE.Vector3(p.x+c*off+bx,p.gy+KOL_ATT+0.15,p.z-s*off+bz);
+      L.grp.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.LineCurve3(a,b),4,0.045,6,false),M.rope));});});
+  L.cabs=[kolCabin(),kolCabin()];L.cabs.forEach(function(c){scene.add(c);});if(!L.done){L.cabs[1].visible=false;L.s=0;}kolPlaceCab(L);}
+function kolAt(L,s,off){off=off||0;var P=L.pcs;
+  if(!L.segs.length){var p=P[0];return {x:p.x+Math.cos(kolLY(p))*off,y:p.gy+KOL_ATT,z:p.z-Math.sin(kolLY(p))*off,yaw:p.ry,seg:-1};}
+  for(var i=0;i<L.segs.length;i++){var g=L.segs[i];if(s<=g.s0+g.L||i===L.segs.length-1){var t=Math.max(0,Math.min(1,(s-g.s0)/g.L)),A=g.A,B=g.B,ya=kolLY(A.p),yb=kolLY(B.p);
+    var ax=A.x+Math.cos(ya)*off,az=A.z-Math.sin(ya)*off,bx=B.x+Math.cos(yb)*off,bz=B.z-Math.sin(yb)*off;
+    return {x:ax+(bx-ax)*t,y:A.y+(B.y-A.y)*t-4*g.sag*t*(1-t),z:az+(bz-az)*t,yaw:Math.atan2(B.x-A.x,B.z-A.z),seg:i};}}}
+function kolCabS(L,k){return k===0?L.s:L.len-L.s;}
+function kolPlaceCab(L){L.cabs.forEach(function(c,k){var a=kolAt(L,kolCabS(L,k),KOL_TR[k]);c.position.set(a.x,a.y,a.z);c.rotation.order='YXZ';
+  if(L.yawS[k]===undefined)L.yawS[k]=a.yaw;var dy=a.yaw-L.yawS[k];while(dy>Math.PI)dy-=2*Math.PI;while(dy<-Math.PI)dy+=2*Math.PI;L.yawS[k]+=dy*0.15;
+  c.rotation.y=L.yawS[k];c.rotation.x=L.sw[k];c.updateMatrixWorld(true);});}
+function kolEd(){return typeof edDriveTarget!=='undefined';}
+function kolWalking(){return !kolEd()||(typeof pLock!=='undefined'&&pLock&&!edDriveTarget);}
+function kolSnd(k){try{var ac=wpnAC(),t=ac.currentTime;
+  if(k==='bell'){wpnTone(ac,t,0.5,'sine',1320,1320,0.06,ac.destination);wpnTone(ac,t+0.25,0.6,'sine',990,990,0.06,ac.destination);}
+  else if(k==='go')wpnTone(ac,t,0.9,'sawtooth',60,110,0.03,ac.destination);else if(k==='stop')wpnTone(ac,t,0.7,'sawtooth',110,50,0.03,ac.destination);
+  else if(k==='pole')wpnTone(ac,t,0.25,'triangle',180,90,0.05,ac.destination);}catch(e){}}
+function kolTick(dt){
+  KOL.chk-=dt;if(KOL.chk<=0){KOL.chk=0.2;var M=kolMembers(),sg=kolSig(M);
+    if(sg!==KOL.sig||M.some(function(pa){return !pa.gr.userData._kolM||pa.gr.userData._kolM.parent!==pa.gr;})){KOL.sig=sg;kolRebuild(M);}}
+  if(!KOL.lines.length){kolPrompt('');return;}dt=Math.min(dt,0.05);
+  KOL.lines.forEach(function(L,li){if(!L.done)return;var acc=0;
+    if(L.state==='board'){L.wait-=dt;if(L.wait<=0){L.state='run';L.dir=L.s<=0.01?1:-1;kolSnd('go');}}
+    if(L.state==='run'){var goal=L.dir>0?L.len:0,rem=Math.abs(goal-L.s),vt=Math.min(L.vmax,Math.sqrt(2*KOL_ACC*rem)+0.25);
+      var nv=L.v<vt?Math.min(vt,L.v+KOL_ACC*dt):Math.max(vt,L.v-KOL_ACC*1.5*dt);acc=(nv-L.v)/Math.max(dt,1e-3);L.v=nv;
+      var ps=[kolAt(L,kolCabS(L,0)).seg,kolAt(L,kolCabS(L,1)).seg];L.s+=L.v*L.dir*dt;
+      for(var k=0;k<2;k++){if(kolAt(L,kolCabS(L,k)).seg!==ps[k]){L.swv[k]+=0.18*(L.v/L.vmax)*(k===0?L.dir:-L.dir);if(KOL.ride&&KOL.ride.li===li&&KOL.ride.c===k)kolSnd('pole');}}
+      if((L.dir>0&&L.s>=L.len)||(L.dir<0&&L.s<=0)){L.s=goal;L.v=0;L.state='idle';kolSnd('stop');}}
+    for(var j=0;j<2;j++){var aj=acc*(j===0?L.dir:-L.dir);L.swv[j]+=(-L.sw[j]*2.6-L.swv[j]*0.9-aj*0.025)*dt;L.sw[j]+=L.swv[j]*dt;L.sw[j]=Math.max(-0.25,Math.min(0.25,L.sw[j]));}
+    kolPlaceCab(L);L.wheel.forEach(function(w){w.rotation.y+=L.v*L.dir*dt/2.2;});});
+  kolPrompt(kolWalking()?kolPromptTxt():'');
+}
+function kolNear(){ // {li, n: 0 dół / 1 góra} — przy której stacji stoi gracz
+  for(var i=0;i<KOL.lines.length;i++){var L=KOL.lines[i];if(!L.done)continue;var a=L.pcs[0],b=L.pcs[L.pcs.length-1];
+    if(Math.hypot(charX-a.x,charZ-a.z)<7.5&&Math.abs(charY-a.gy)<3)return {li:i,n:0};
+    if(Math.hypot(charX-b.x,charZ-b.z)<7.5&&Math.abs(charY-b.gy)<3)return {li:i,n:1};}return null;}
+function kolCabAt(L,n){if(L.state!=='idle')return -1;var low=L.s<=0.01?0:1;return n===0?low:1-low;}
+function kolPromptTxt(){if(KOL.ride){var L=KOL.lines[KOL.ride.li];return !L?'':L.state==='idle'?'🚪 Wysiądź (E)':L.state==='board'?'🚡 Ruszamy…':'';}
+  if(typeof driveTarget!=='undefined'&&driveTarget)return '';var q=kolNear();if(!q)return '';var L2=KOL.lines[q.li];
+  return L2.state==='idle'?'🚡 Wsiądź do kabiny '+(kolCabAt(L2,q.n)===0?'A':'B')+' (E)':'🚡 Kabiny w drodze — za chwilę będą na stacjach';}
+function kolPrompt(t){if(!KOL.prompt){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:30;background:rgba(16,21,29,.88);color:#fff;border:1px solid #30363d;border-radius:10px;padding:8px 16px;font:bold 15px sans-serif;pointer-events:none;display:none';document.body.appendChild(d);KOL.prompt=d;}
+  if(KOL.prompt._t!==t){KOL.prompt._t=t;KOL.prompt.textContent=t;KOL.prompt.style.display=t?'block':'none';}}
+function kolUse(){
+  if(KOL.ride){var L=KOL.lines[KOL.ride.li];if(L&&L.state!=='idle')return true;kolExit();return true;}
+  var q=kolNear();if(!q)return false;var L2=KOL.lines[q.li];if(L2.state!=='idle')return true;
+  KOL.ride={li:q.li,c:kolCabAt(L2,q.n)};KOL.keep={w:WSP,r:RSP,j:JF};WSP=0;RSP=0;JF=0;L2.state='board';L2.wait=1.6;kolSnd('bell');kolPin();return true;}
+function kolExit(lost){var R=KOL.ride;KOL.ride=null;if(KOL.keep){WSP=KOL.keep.w;RSP=KOL.keep.r;JF=KOL.keep.j;KOL.keep=null;}
+  var L=R&&KOL.lines[R.li];if(!L||lost)return;var low=L.s<=0.01,onLow=(R.c===0)===low,p=onLow?L.pcs[0]:L.pcs[L.pcs.length-1],ly=kolLY(p),c=Math.cos(ly),s=Math.sin(ly);
+  var off=KOL_TR[R.c];off+=off<0?-2.15:2.15;charX=p.x+c*off+Math.sin(p.ry)*1.5;charZ=p.z-s*off+Math.cos(p.ry)*1.5;charY=p.gy+0.45;velY=0;if(charGroup)charGroup.position.set(charX,charY,charZ);}
+function kolPin(){var R=KOL.ride;if(!R)return;var L=KOL.lines[R.li];if(!L){kolExit(true);return;}var v=new THREE.Vector3(0,-4.43,0.3);L.cabs[R.c].localToWorld(v);
+  charX=v.x;charY=v.y;charZ=v.z;velY=0;if(typeof onGr!=='undefined')onGr=true;if(charGroup)charGroup.position.set(charX,charY,charZ);}
+function kolRestore(){if(KOL.ride)kolExit();KOL.lines.forEach(function(L){L.s=0;L.v=0;L.state='idle';L.sw=[0,0];L.swv=[0,0];kolPlaceCab(L);});}
+window.addEventListener('keydown',function(e){if(e.code!=='KeyE'||e.repeat||!kolWalking())return;if(/INPUT|TEXTAREA|SELECT/.test((e.target&&e.target.tagName)||''))return;
+  if(!KOL.ride&&!kolNear())return;if(kolUse()){e.stopImmediatePropagation();e.preventDefault();}},true);
+var _kolUpd=update;update=function(dt){kolPin();_kolUpd(dt);kolPin();}; // gracz w kabinie jedzie razem z nią
+
 //@@WEAPON_CORE_END
 
 var OCOL=['#58a6ff','#3fb950','#f85149','#d29922','#bc8cff','#f778ba'];
@@ -5471,6 +5614,11 @@ function showActParams(type,existing){
     ap.innerHTML='<input id="act-src" placeholder="dzwieki/plik.mp3" value="'+(existing&&existing.src?existing.src:'')+'">';
   }else if(type==='light'){
     ap.innerHTML='<label style="font-size:11px;color:#888">Moc:</label><input id="act-lint" placeholder="1.5" value="'+(existing&&existing.intensity?existing.intensity:'1.5')+'" style="width:50px"><label style="font-size:11px;color:#888">Zasieg:</label><input id="act-ldist" placeholder="12" value="'+(existing&&existing.distance?existing.distance:'12')+'" style="width:50px">';
+  }else if(type==='cstation'||type==='cpole'||type==='ctop'){
+    var E2=existing||{},L2='style="font-size:11px;color:#888"';
+    ap.innerHTML=(type==='cpole'?'<label '+L2+'>Wysokość słupa:</label><input id="act-kh" value="'+(E2.h||14)+'" style="width:44px"> <span '+L2+'>m (6–40)</span>':
+      type==='cstation'?'<label '+L2+'>Prędkość kabin:</label><input id="act-ksp" value="'+(E2.speed||7)+'" style="width:44px"> <span '+L2+'>m/s (2–15)</span>':'<span '+L2+'>Zamyka linię — od tej chwili kabiny jeżdżą.</span>')+
+      '<div style="font-size:10.5px;color:#888;margin-top:4px;width:100%">Kolejność stawiania = trasa: stacja dolna → słupy → stacja górna. Liny rysują się same, dwie kabiny jeżdżą jak na Kasprowy. W grze: E przy peronie — wsiadasz.</div>';
   }else if(type==='physics'){
     var E=existing||{},L='style="font-size:11px;color:#888"';
     ap.innerHTML='<label '+L+'>Kształt:</label><select id="act-pshape" style="width:auto"><option value="box"'+(E.shape!=='ball'?' selected':'')+'>📦 pudełko</option><option value="ball"'+(E.shape==='ball'?' selected':'')+'>⚽ piłka</option></select>'+
@@ -6526,7 +6674,7 @@ function doExportHTML(opts){
   var inject='\n// === OBIEKTY ===\n';
   for(var fn in funcs)inject+=funcs[fn]+'\n';
   if(calls.length>0)inject+='// pozycje\n'+calls.join('\n')+'\n';
-  var wCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate&&!w._rng&&!w._lift&&!w._enm)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
+  var wCalls=[];wCols.forEach(function(w){if(!w._poRef&&!w._gate&&!w._rng&&!w._lift&&!w._enm&&!w._kol)wCalls.push('wCols.push({x:'+w.x.toFixed(2)+',z:'+w.z.toFixed(2)+',hw:'+w.hw.toFixed(2)+',hd:'+w.hd.toFixed(2)+',y:'+(w.y||0).toFixed(2)+',h:'+(w.h||2.5).toFixed(2)+tabbyWallExtra(w)+'});');});
   if(wCalls.length>0)inject+='// sciany kolizji\n'+wCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
@@ -6817,13 +6965,27 @@ var AI_PROMPT = [
 '   Skrzynka z nabojami: "action": {"type": "ammo", "amount": 45, "name": "Amunicja 9 mm"} — E dodaje naboje do zapasu trzymanej broni.',
 '   Karabin: "stance": "rifle" (kolba przy barku, czesc kolby z "role": "stock"), "auto": true (seria przy trzymaniu LPM), "sound": "rifle".',
 '   Kaliber: "caliber": "7.62" w broni i w skrzynce z amunicja — skrzynka pasuje tylko do broni o tym samym kalibrze (domyslnie 9 mm).',
-'10. "drone" — dron z wlasnym ladowiskiem: E bierze drona razem z ladowiskiem, F kladzie ladowisko przed graczem i startuje, WASD lot, Spacja/Shift gora/dol, Tab kamera drona, F powrot na ladowisko, T zostaw drona (sam wraca na ladowisko)',
+'9. "drone" — dron z wlasnym ladowiskiem: E bierze drona razem z ladowiskiem, F kladzie ladowisko przed graczem i startuje, WASD lot, Spacja/Shift gora/dol, Tab kamera drona, F powrot na ladowisko, T zostaw drona (sam wraca na ladowisko)',
 '   "action": {"type": "drone", "name": "Dron zwiadowczy", "speed": 9, "range": 80, "battery": 90}; smigla z "role": "prop" (kreca sie), diody z "role": "led" (mrugaja); przod drona w -Z.',
 '',
 '   Czesc z "col": true jest widoczna i ma wlasna kolizje (sciany, podlogi i schody budynkow z Tabby budynki).',
 '   Czesc z "role": "bud" to czesc budynku: gdy ludzik jest w srodku, pietra nad jego glowa robia sie przezroczyste; "role": "roof" (dach) znika calkiem.',
-'9. Strefa kolizji: czesc z "hidden": true jest niewidoczna w grze, ale ma kolizje',
+'10. Strefa kolizji: czesc z "hidden": true jest niewidoczna w grze, ale ma kolizje',
 '   (w edytorze widac ja jako polprzezroczysta czerwona bryle). Np. niewidzialna sciana albo pudlo kolizji wokol domu.',
+'',
+'11. "physics" — FIZYKA: obiekt skacze, toczy sie, odlatuje od gracza, pojazdu, drona i strzalu, odbija sie od scian',
+'   "action": {"type": "physics", "shape": "ball", "grav": 0.3, "bounce": 0.7, "mass": 0.4}',
+'   shape: "ball" (toczy sie — pilka, kula) albo "box" (koziolkuje i kladzie sie plasko — karton, klocek, skrzynia)',
+'   grav: 1 = ziemska grawitacja, 0.3 = jak na placu zabaw; bounce: 0 = nie skacze, 0.9 = pilka kauczukowa;',
+'   mass: 0.3 = lekki (balon, pilka plazowa), 1 = zwykly, 5 = ciezki (glaz). Obiekt z fizyka NIE ma czesci z "col": true.',
+'',
+'12. KOLEJKA LINOWA (jak na Kasprowy: dwie kabiny, jedna jedzie w gore, druga w dol) — trzy osobne obiekty:',
+'   "action": {"type": "cstation", "speed": 7}  — stacja dolna (speed = predkosc kabin w m/s, 2-15)',
+'   "action": {"type": "cpole", "h": 14}  — slup (h = wysokosc 6-40 m); slupow moze byc dowolnie duzo',
+'   "action": {"type": "ctop"}  — stacja gorna (zamyka linie)',
+'   Silnik SAM dobudowuje wyglad stacji (perony, schodki, dach, kolo linowe, dwie kabiny) i slupow oraz rysuje liny.',
+'   Parts tych obiektow to tylko mala plyta-znacznik: [{"shape":"box","size":[1.2,0.1,1.2],"color":"#9aa1ab","position":[0,0.05,0]}].',
+'   Kolejnosc stawiania = trasa: stacja dolna, slupy co 20-35 m, na koncu stacja gorna. Gracz wsiada przy peronie klawiszem E.',
 '',
 'Jesli uzytkownik nie prosi o interakcje - nie dodawaj pola "action".',
 'Jesli prosi o obiekt ktory "sie otwiera", "mowi", "przenosi" - dodaj odpowiednia akcje.',
@@ -6838,6 +7000,7 @@ var AI_PROMPT = [
 '- Tabliczka, znak, plakat → action: text',
 '- Samochod, quad, traktor, czolg, pojazd → action: drive (kola z role!)',
 '- Pistolet, rewolwer, karabin, strzelba → action: weapon (role muzzle i grip!), chyba ze ma byc tylko dekoracja',
+'- Pilka, balon, karton, klocek do zabawy → action: physics',
 '',
 'Tworzac te obiekty ZAWSZE dodawaj im akcje — nawet jesli uzytkownik nie powiedzial.',
 'Assety z funkcja sa gotowe do uzycia od razu. To jest standard tego silnika.',
@@ -6903,93 +7066,52 @@ var AI_PROMPT = [
 'Jesli nie — dostaniesz sam obiekt bez akcji.'
 ].join('\n');
 
-var AI_SCENE_PROMPT = [
-'Jestem uzytkownikiem Tabby — silnika 3D w przegladarce (Three.js r128).',
-'Potrzebuje od ciebie GOTOWEJ SCENY / SWIATA do wczytania w moim edytorze.',
+var AI_SCENE_PROMPT = (function(){ // zasady obiektów brane z AI_PROMPT — zawsze takie same; wynik = plik projektu .tabby
+  var ob=AI_PROMPT.split('\n'),i0=ob.indexOf('=== FORMAT PLIKU JSON ==='),i1=ob.indexOf('=== PRZYKLADY ===');
+  var rules=ob.slice(i0,i1).filter(function(l){return l.indexOf('Odpowiedz TYLKO plikiem JSON')<0;});
+  return [
+'Jestem uzytkownikiem Tabby — silnika gier 3D w przegladarce (Three.js r128).',
+'Potrzebuje od ciebie GOTOWEJ SCENY / SWIATA jako PLIKU PROJEKTU TABBY (.tabby, czyli JSON).',
+'NIE pisz zadnego kodu ani wlasnego silnika — silnik Tabby ma juz postac, kamere, kolizje, teren,',
+'pore dnia, pojazdy, bron, drona, fizyke i kolejke linowa. Ty oddajesz tylko DANE sceny.',
 '',
-'=== FORMAT SCENY ===',
+'=== FORMAT PLIKU PROJEKTU ===',
 '',
-'Scena to plik HTML z dwoma kluczowymi elementami:',
+'{',
+'  "format": "tabby-project", "version": 1, "name": "Nazwa sceny",',
+'  "objects": [ { "name": "...", "parts": [ ... ], "action": { ... } }, ... ],',
+'  "placed":  [ { "oi": 0, "x": 10, "z": -5, "rotY": 0, "col": true }, ... ],',
+'  "dn":  { "time": 12, "speed": 0, "auto": false, "fog": 0, "season": "summer", "snow": 0.5, "snowH": 0.2 },',
+'  "ter": { "on": false, "h": 12, "size": 60, "oct": 4, "flat": 30, "seed": 42 }',
+'}',
 '',
-'1) var A = { ... } — slownik TYPOW obiektow (assety)',
-'2) function buildWorld(){ ... } — rozmieszczenie obiektow na mapie',
+'- objects — TYPY obiektow (kazdy typ tylko raz). Format obiektu i akcje opisane nizej.',
+'- placed — ROZMIESZCZENIE: kazdy wpis to jedna postawiona kopia typu nr "oi" (indeks w objects, liczony od 0).',
+'  x, z — pozycja w metrach (mapa ok. -100..100; gracz startuje w 0,0 — zostaw tam wolne miejsce);',
+'  rotY — obrot w radianach; col — true: gracz i pojazdy sie zatrzymuja (domy, drzewa, mury), false: przechodzi (kwiaty, trawa);',
+'  y — opcjonalnie wysokosc nad ziemia (np. lampa na stole);',
+'  action — WAZNE: obiekt interaktywny musi miec swoja akcje TAKZE w placed (skopiuj ja z objects), np.',
+'  { "oi": 3, "x": 5, "z": 8, "rotY": 0, "col": false, "action": { "type": "drive", "speed": 10, "turnSpeed": 2, "grip": 0.07 } }',
+'- dn — pora dnia: time 0-24 (12 = poludnie), auto true = czas plynie (speed np. 0.05); fog 0-1 = mgla;',
+'  season "summer" albo "winter" (snow = opad sniegu 0-1, snowH = grubosc pokrywy).',
+'- ter — gory: on true wlacza teren; h = wysokosc gor w m, size = szerokosc pagorkow, flat = promien plaskiego srodka, seed = inny ksztalt.',
+'  Kolejka linowa najlepiej wyglada z terenem: stacja dolna na plaskim srodku, gorna wyzej na zboczu, slupy pomiedzy.',
 '',
-'=== DEFINICJA OBIEKTU (w var A) ===',
+'=== SKALA SCENY ===',
+'- Mala: ok. 40x40 m, 40-60 postawionych obiektow • Srednia: ok. 80x80 m, 80-150 • Duza: cala mapa, 150-300.',
+'- Powtarzalne rzeczy (drzewa, ploty, latarnie, kamienie) to JEDEN typ w objects i wiele wpisow w placed.',
+'- Rozstawiaj naturalnie: rozne obroty, lekko nieregularne odstepy; drogi i chodniki z odcinkow.',
 '',
-'klucz:{name:"Nazwa",parts:[',
-'  {shape:"box",size:[szer,wys,gleb],color:"#rrggbb",position:[x,y,z]},',
-'  {shape:"cylinder",size:[rGora,rDol,wys,seg],color:"#rrggbb",position:[x,y,z]},',
-'  {shape:"sphere",size:[r,segW,segH],color:"#rrggbb",position:[x,y,z]},',
-'  {shape:"cone",size:[r,wys,seg],color:"#rrggbb",position:[x,y,z]},',
-'  {shape:"pointlight",size:[r],color:"#rrggbb",position:[x,y,z],intensity:1.5,distance:12}',
-']}',
+'=== ZASADY OBIEKTOW (te same co przy pojedynczym obiekcie) ===',
+''].concat(rules).concat([
+'=== ODPOWIEDZ ===',
+'Odpowiedz JEDNYM poprawnym JSON-em projektu (bez komentarzy i bez dodatkowego tekstu).',
+'Uzytkownik zapisze go jako plik nazwa.tabby i otworzy w edytorze: Opcje → Otworz projekt.',
 '',
-'=== ROZMIESZCZANIE (w buildWorld) ===',
-'',
-'placeObj(A.klucz, x, z, obrotY, akcja, kolizja);',
-'',
-'- x, z — pozycja na mapie (siatka co 5 jednostek)',
-'- obrotY — obrot w radianach (0, Math.PI/2, Math.PI, -Math.PI/2)',
-'- akcja — null lub obiekt:',
-'  {type:"text",message:"Tekst..."} — wyswietla tekst po nacisnieciu E',
-'  {type:"open",angle:1.5708} — otwiera/zamyka obiekt (drzwi)',
-'  {type:"teleport",tx:10,tz:-20} — przenosi gracza',
-'  {type:"light",intensity:1.5,distance:12} — zapala/gasi swiatlo',
-'- kolizja — true (gracz nie przechodzi) lub false',
-'',
-'=== WAZNE ZASADY ===',
-'',
-'- Postac gracza ma ~1.9 wys. Drzewo ~3-5, dom ~4, latarnia ~3, krzak ~0.5',
-'- Y w gore. Obiekt na ziemi: dolna krawedz y=0, srodek boxy na y=wys/2',
-'- Uzywaj Math.PI/2 itp. do obrotow (nie stopnie)',
-'- Budynki, drzewa, mury: kolizja=true. Kwiaty, grzyby, trawa: false',
-'- Segmenty: 6-8 (lowpoly styl)',
-'- Kazdy obiekt w var A musi miec unikalne parts z co najmniej 3-4 elementami',
-'- Interaktywne obiekty (NPC, skrzynie, drzwi, latarnie) ZAWSZE maja akcje',
-'- Kolory stonowane, realistyczne: drewno #885533, liscie #338833, kamien #888888',
-'',
-'=== SKALA MAPY ===',
-'',
-'- Mala scena: ~30x30 jednostek, 40-60 obiektow',
-'- Srednia scena: ~60x60, 80-120 obiektow',
-'- Duza scena: ~100x100, 150+ obiektow',
-'- Uzyj for-loopow dla powtarzalnych elementow (drogi, chodniki, ploty)',
-'',
-'=== PRZYKLAD KOMPLETNEGO OBIEKTU ===',
-'',
-'tree:{name:"Drzewo",parts:[',
-'  {shape:"cylinder",size:[0.15,0.2,2.0,6],color:"#885533",position:[0,1.0,0]},',
-'  {shape:"sphere",size:[1.1,7,5],color:"#338833",position:[0,2.6,0]}]},',
-'',
-'=== PRZYKLAD placeObj ===',
-'',
-'placeObj(A.tree,10,5,0,null,false);',
-'placeObj(A.lamp,3,-8,0,{type:"light",intensity:1.5,distance:12},false);',
-'placeObj(A.guard,0,10,Math.PI,{type:"text",message:"Stoj! Kto idzie?"},false);',
-'placeObj(A.house,8,-10,0,null,true);',
-'',
-'=== STRUKTURA PLIKU HTML ===',
-'',
-'Plik musi byc KOMPLETNYM, GRYWALNYM HTML z silnikiem Three.js.',
-'Struktura:',
-'- <script src Three.js r128 z CDN>',
-'- Wewnatrz (function(){ ... })(); (IIFE):',
-'  1. Zmienne: scene, cam, renderer, charGroup, wCols=[], placedObjs=[]',
-'  2. function buildChar() — postac gracza (lowpoly ludzik)',
-'  3. function buildObj(data,x,z) — buduje obiekt z parts na scenie',
-'  4. function placeObj(data,x,z,ry,action,col) — buduje + zapisuje + kolizja',
-'  5. var A = { ... } — definicje obiektow',
-'  6. function buildWorld() { ... } — rozmieszczenie',
-'  7. function collide(), update(), animate() — fizyka i petla gry',
-'  8. function init() — tworzy scene, swiatla, ground, wywoluje buildChar() i buildWorld()',
-'  9. init(); — start',
-'',
-'WAZNE: buildWorld() WEWNATRZ init(), PO stworzeniu scene i ground!',
-'Kolejnosc w init: scene → swiatla → ground → buildChar() → buildWorld() → animate()',
-'',
-'Teraz napisz jaka scene chcesz — opisz temat, obiekty, rozmiar.',
-'Oddam kompletny plik HTML gotowy do grania i do wczytania w edytorze.'
-].join('\n');
+'Teraz napisz jaka scene chcesz — temat, klimat, co ma sie w niej dziac, jak duza.'
+  ]).join('\n');
+})();
+
 
 // === INIT ===
 // ramka "Kolizja z pojazdem" dla całego obiektu (panel Edytor)
@@ -8107,6 +8229,8 @@ function init(){
       var ei=document.getElementById('act-lint'),ed=document.getElementById('act-ldist');
       action.intensity=ei?parseFloat(ei.value)||1.5:1.5;
       action.distance=ed?parseFloat(ed.value)||12:12;
+    }else if(type==='cpole'){var eh=document.getElementById('act-kh'),hv=eh?parseFloat(String(eh.value).replace(',','.')):14;action.h=Math.max(6,Math.min(40,isNaN(hv)?14:hv));
+    }else if(type==='cstation'){var esp=document.getElementById('act-ksp'),sv=esp?parseFloat(String(esp.value).replace(',','.')):7;action.speed=Math.max(2,Math.min(15,isNaN(sv)?7:sv));
     }else if(type==='physics'){
       var gv=function(id,d){var e=document.getElementById(id),v=e?parseFloat(String(e.value).replace(',','.')):NaN;return isNaN(v)?d:v;};
       var es0=document.getElementById('act-pshape');action.shape=es0&&es0.value==='ball'?'ball':'box';

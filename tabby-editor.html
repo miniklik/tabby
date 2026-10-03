@@ -5344,8 +5344,15 @@ function kolTick(dt){
       if((L.dir>0&&L.s>=L.len)||(L.dir<0&&L.s<=0)){L.s=goal;L.v=0;L.state='idle';kolSnd('stop');}}
     for(var j=0;j<2;j++){var aj=acc*(j===0?L.dir:-L.dir);L.swv[j]+=(-L.sw[j]*2.6-L.swv[j]*0.9-aj*0.025)*dt;L.sw[j]+=L.swv[j]*dt;L.sw[j]=Math.max(-0.25,Math.min(0.25,L.sw[j]));}
     kolPlaceCab(L,1-Math.exp(-Math.max(0.15,L.v)*dt/3));L.wheel.forEach(function(w){w.rotation.y+=L.v*L.dir*dt/2.2;});}); // skręt kabiny rozłożony na ok. 3 m jazdy
+  kolCam(dt);
   kolPrompt(kolWalking()?kolPromptTxt():'');
 }
+// 🎥 kamera w czasie jazdy: po ruszeniu płynnie odjeżdża do tyłu (widok z daleka, jak przy samochodzie), przed stacją wraca do postaci
+function kolCam(dt){if(typeof CDIST==='undefined')return;var R=KOL.ride,L=R&&KOL.lines[R.li],z=0;
+  if(R&&KOL.cd0===undefined)KOL.cd0=CDIST;if(KOL.cd0===undefined)return;
+  if(L&&L.state==='run'){var goal=L.dir>0?L.len:0,rem=Math.abs(goal-L.s),gone=L.len-rem;z=Math.max(0,Math.min(1,Math.min(gone-4,rem-6)/16));z=z*z*(3-2*z);}
+  var tgt=KOL.cd0+11*z;CDIST+=(tgt-CDIST)*(1-Math.exp(-dt*1.4));
+  if(!R&&Math.abs(CDIST-KOL.cd0)<0.03){CDIST=KOL.cd0;KOL.cd0=undefined;}}
 function kolNear(){ // {li, n: 0 dół / 1 góra} — przy której stacji stoi gracz
   for(var i=0;i<KOL.lines.length;i++){var L=KOL.lines[i];if(!L.done)continue;var a=L.pcs[0],b=L.pcs[L.pcs.length-1];
     if(Math.hypot(charX-a.x,charZ-a.z)<7.5&&Math.abs(charY-a.gy)<3)return {li:i,n:0};

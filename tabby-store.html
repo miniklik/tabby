@@ -46,6 +46,8 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
 .pill[data-cat="wyscigi"].active{background:#39d353;border-color:#39d353}
 .pill[data-cat="strzelnica"].active{background:#ff9a3a;border-color:#ff9a3a}
 .pill[data-cat="wrogowie"].active{background:#e5484d;border-color:#e5484d}
+.pill[data-cat="zabawa"].active{background:#ff7ab6;border-color:#ff7ab6}
+.pill[data-cat="kolejka"].active{background:#c8323a;border-color:#c8323a}
 .stats{font-size:12px;color:var(--text-dim);padding:14px 24px 0;max-width:1320px;margin:0 auto}
 
 /* GRID */
@@ -70,6 +72,8 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
 .tag-strzelnica{background:rgba(255,154,58,.18);color:#ffb26a}
 .tag-wrogowie{background:rgba(229,72,77,.18);color:#ff8a8d}
 .tag-strefy{background:rgba(229,72,77,.16);color:#ff8d8f}
+.tag-zabawa{background:rgba(255,122,182,.16);color:#ff9cc8}
+.tag-kolejka{background:rgba(200,50,58,.18);color:#ff8a8f}
 .card-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:12px}
 .card-meta{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-dim);margin-bottom:12px}
 .meta-parts{display:flex;align-items:center;gap:3px}
@@ -135,6 +139,8 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
     <button class="pill" data-cat="wyscigi">🏁 Wyścigi</button>
     <button class="pill" data-cat="strzelnica">🎯 Strzelnica</button>
     <button class="pill" data-cat="wrogowie">🧍 Postacie</button>
+    <button class="pill" data-cat="zabawa">🎈 Plac zabaw</button>
+    <button class="pill" data-cat="kolejka">🚡 Kolejka</button>
   </div>
 </div>
 <div class="stats" id="stats"></div>
@@ -2250,6 +2256,71 @@ var ASSETS = [
       {"shape": "box", "size": [0.02, 0.45, 0.7], "color": "#ffcc33", "position": [0, 1.95, 0.35]}
     ],
     action:{"type": "objective", "n": 1, "kind": "reach", "text": "Dojdź tutaj", "r": 6}
+  },
+  {
+    name:"Piłka plażowa",
+    category:["zabawa", "interaktywny"],
+    desc:"🎈 Fizyka: lekka i skoczna piłka z paskami — toczy się, odbija i odlatuje od gracza, pojazdu, drona i strzału. Grawitacja jak na placu zabaw (0.3). Zmień kolory i ustawienia w Interakcji.",
+    parts:[
+      {"shape": "sphere", "size": [0.45, 24, 16], "color": "#e5484d", "position": [0, 0.45, 0]},
+      {"shape": "cylinder", "size": [0.456, 0.456, 0.14, 28], "color": "#ffffff", "position": [0, 0.45, 0]},
+      {"shape": "cylinder", "size": [0.454, 0.454, 0.12, 28], "color": "#2f81f7", "position": [0, 0.45, 0], "rotation": [1.5708, 0, 0]}
+    ],
+    action:{"type": "physics", "shape": "ball", "grav": 0.3, "bounce": 0.7, "mass": 0.4}
+  },
+  {
+    name:"Karton",
+    category:["zabawa", "interaktywny"],
+    desc:"🎈 Fizyka: karton z taśmą — koziołkuje po uderzeniu i kładzie się płasko. Wjedź w stos kartonów autem!",
+    parts:[
+      {"shape": "box", "size": [0.9, 0.7, 0.9], "color": "#c8a165", "position": [0, 0.35, 0]},
+      {"shape": "box", "size": [0.92, 0.71, 0.16], "color": "#e8d9b0", "position": [0, 0.35, 0]},
+      {"shape": "box", "size": [0.3, 0.2, 0.01], "color": "#ffffff", "position": [0.2, 0.4, 0.452]}
+    ],
+    action:{"type": "physics", "shape": "box", "grav": 0.3, "bounce": 0.3, "mass": 1}
+  },
+  {
+    name:"Duży klocek",
+    category:["zabawa", "interaktywny"],
+    desc:"🎈 Fizyka: ciężki żółty klocek z wypustkami. Trudniej go popchnąć, ładnie się przewraca.",
+    parts:[
+      {"shape": "box", "size": [1.2, 1.0, 1.2], "color": "#f2c200", "position": [0, 0.5, 0]},
+      {"shape": "cylinder", "size": [0.17, 0.17, 0.16, 16], "color": "#f2c200", "position": [-0.3, 1.08, -0.3]},
+      {"shape": "cylinder", "size": [0.17, 0.17, 0.16, 16], "color": "#f2c200", "position": [-0.3, 1.08, 0.3]},
+      {"shape": "cylinder", "size": [0.17, 0.17, 0.16, 16], "color": "#f2c200", "position": [0.3, 1.08, -0.3]},
+      {"shape": "cylinder", "size": [0.17, 0.17, 0.16, 16], "color": "#f2c200", "position": [0.3, 1.08, 0.3]}
+    ],
+    action:{"type": "physics", "shape": "box", "grav": 0.3, "bounce": 0.45, "mass": 2.5}
+  },
+  {
+    name:"Kolejka — stacja dolna",
+    category:["kolejka", "interaktywny"],
+    desc:"🚡 Początek linii jak na Kasprowy. Silnik sam dobudowuje budynek z peronami, schodkami i dwiema kabinami. Postaw ją pierwszą, potem słupy, na końcu stację górną — liny rysują się same. Ustawienie: prędkość kabin.",
+    parts:[
+      {"shape": "box", "size": [1.2, 0.1, 1.2], "color": "#9aa1ab", "position": [0, 0.05, 0]}
+    ],
+    preview:[{"shape": "box", "size": [11.2, 0.5, 9.6], "color": "#9aa1ab", "position": [0, 0.25, 0]}, {"shape": "box", "size": [10.8, 0.15, 0.45], "color": "#9aa1ab", "position": [0, 0.08, 5.0]}, {"shape": "box", "size": [1.9, 0.45, 7.6], "color": "#9aa1ab", "position": [-4.35, 0.72, 0.2]}, {"shape": "box", "size": [2.0, 0.45, 7.6], "color": "#9aa1ab", "position": [0, 0.72, 0.2]}, {"shape": "box", "size": [1.9, 0.45, 7.6], "color": "#9aa1ab", "position": [4.35, 0.72, 0.2]}, {"shape": "box", "size": [11.4, 7.0, 0.3], "color": "#f2f2f2", "position": [0, 4.0, -4.85]}, {"shape": "box", "size": [12.4, 0.35, 10.4], "color": "#c8323a", "position": [0, 7.85, 0]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [-5.45, 4.1, -4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [5.45, 4.1, -4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [-5.45, 4.1, 4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [5.45, 4.1, 4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [0, 4.1, 4.65]}, {"shape": "cylinder", "size": [2.2, 2.2, 0.2, 24], "color": "#7d8590", "position": [0, 5.4, -3.1]}, {"shape": "box", "size": [2.6, 0.16, 3.4], "color": "#c8323a", "position": [-2.2, 3.45, 0]}, {"shape": "box", "size": [2.4, 0.12, 3.2], "color": "#3b4048", "position": [-2.2, 0.95, 0]}, {"shape": "box", "size": [0.06, 1.0, 3.1], "color": "#c8323a", "position": [-3.37, 1.45, 0]}, {"shape": "box", "size": [0.06, 1.0, 3.1], "color": "#c8323a", "position": [-1.03, 1.45, 0]}, {"shape": "box", "size": [2.3, 2.4, 0.04], "color": "#9fd8ff", "position": [-2.2, 2.15, 1.58]}, {"shape": "box", "size": [0.12, 1.9, 0.12], "color": "#3b4048", "position": [-2.2, 4.4, 0]}],
+    action:{"type": "cstation", "speed": 7}
+  },
+  {
+    name:"Kolejka — słup",
+    category:["kolejka", "interaktywny"],
+    desc:"🚡 Słup kolejki z szerokim ramieniem na dwa tory. Stawiaj co 20–35 m po trasie. Ustawienie: wysokość 6–40 m.",
+    parts:[
+      {"shape": "box", "size": [1.0, 0.1, 1.0], "color": "#9aa1ab", "position": [0, 0.05, 0]}
+    ],
+    preview:[{"shape": "box", "size": [2.0, 1.0, 2.0], "color": "#9aa1ab", "position": [0, 0.2, 0]}, {"shape": "cylinder", "size": [0.32, 0.55, 14, 10], "color": "#7d8590", "position": [0, 7, 0]}, {"shape": "box", "size": [6.6, 0.4, 0.55], "color": "#3b4048", "position": [0, 14, 0]}, {"shape": "cylinder", "size": [0.28, 0.28, 0.18, 16], "color": "#7d8590", "position": [-2.7, 14.3, 0], "rotation": [0, 0, 1.5708]}, {"shape": "cylinder", "size": [0.28, 0.28, 0.18, 16], "color": "#7d8590", "position": [-1.7, 14.3, 0], "rotation": [0, 0, 1.5708]}, {"shape": "cylinder", "size": [0.28, 0.28, 0.18, 16], "color": "#7d8590", "position": [1.7, 14.3, 0], "rotation": [0, 0, 1.5708]}, {"shape": "cylinder", "size": [0.28, 0.28, 0.18, 16], "color": "#7d8590", "position": [2.7, 14.3, 0], "rotation": [0, 0, 1.5708]}],
+    action:{"type": "cpole", "h": 14}
+  },
+  {
+    name:"Kolejka — stacja górna",
+    category:["kolejka", "interaktywny"],
+    desc:"🚡 Koniec linii — zamyka trasę i od tej chwili kabiny jeżdżą. Ziemia wokół stacji sama się wyrównuje, więc śmiało stawiaj ją na zboczu.",
+    parts:[
+      {"shape": "box", "size": [1.2, 0.1, 1.2], "color": "#9aa1ab", "position": [0, 0.05, 0]}
+    ],
+    preview:[{"shape": "box", "size": [11.2, 0.5, 9.6], "color": "#9aa1ab", "position": [0, 0.25, 0]}, {"shape": "box", "size": [10.8, 0.15, 0.45], "color": "#9aa1ab", "position": [0, 0.08, 5.0]}, {"shape": "box", "size": [1.9, 0.45, 7.6], "color": "#9aa1ab", "position": [-4.35, 0.72, 0.2]}, {"shape": "box", "size": [2.0, 0.45, 7.6], "color": "#9aa1ab", "position": [0, 0.72, 0.2]}, {"shape": "box", "size": [1.9, 0.45, 7.6], "color": "#9aa1ab", "position": [4.35, 0.72, 0.2]}, {"shape": "box", "size": [11.4, 7.0, 0.3], "color": "#f2f2f2", "position": [0, 4.0, -4.85]}, {"shape": "box", "size": [12.4, 0.35, 10.4], "color": "#c8323a", "position": [0, 7.85, 0]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [-5.45, 4.1, -4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [5.45, 4.1, -4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [-5.45, 4.1, 4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [5.45, 4.1, 4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [0, 4.1, 4.65]}, {"shape": "cylinder", "size": [2.2, 2.2, 0.2, 24], "color": "#7d8590", "position": [0, 5.4, -3.1]}, {"shape": "box", "size": [2.6, 0.16, 3.4], "color": "#c8323a", "position": [-2.2, 3.45, 0]}, {"shape": "box", "size": [2.4, 0.12, 3.2], "color": "#3b4048", "position": [-2.2, 0.95, 0]}, {"shape": "box", "size": [0.06, 1.0, 3.1], "color": "#c8323a", "position": [-3.37, 1.45, 0]}, {"shape": "box", "size": [0.06, 1.0, 3.1], "color": "#c8323a", "position": [-1.03, 1.45, 0]}, {"shape": "box", "size": [2.3, 2.4, 0.04], "color": "#9fd8ff", "position": [-2.2, 2.15, 1.58]}, {"shape": "box", "size": [0.12, 1.9, 0.12], "color": "#3b4048", "position": [-2.2, 4.4, 0]}],
+    action:{"type": "ctop"}
   }
 ];
 
@@ -2338,7 +2409,7 @@ function initPreview(canvas, asset, idx){
   ground.receiveShadow = true;
   scene.add(ground);
 
-  var mesh = buildPreviewMesh(asset.parts);
+  var mesh = buildPreviewMesh(asset.preview || asset.parts); // preview: sam wygląd w sklepie (np. stacja kolejki, którą silnik dobudowuje w grze)
   scene.add(mesh);
 
   var box = new THREE.Box3().setFromObject(mesh);
@@ -2504,7 +2575,7 @@ function renderCards(){
     asset.category.forEach(function(cat){
       var tag = document.createElement('span');
       tag.className = 'tag tag-' + cat;
-      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria',strefy:'Strefy',wyscigi:'Wyścigi',strzelnica:'Strzelnica',wrogowie:'Postacie'};
+      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria',strefy:'Strefy',wyscigi:'Wyścigi',strzelnica:'Strzelnica',wrogowie:'Postacie',zabawa:'Plac zabaw',kolejka:'Kolejka'};
       tag.textContent = labels[cat] || cat;
       tags.appendChild(tag);
     });

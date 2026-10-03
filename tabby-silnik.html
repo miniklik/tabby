@@ -38,6 +38,8 @@
    wpnAC(), wpnTone(ac,t,len,typ,f0,f1,głośność,ac.destination) — dźwięki z syntezatora
    phyTick / phyHit                      — 🎈 fizyka obiektów (action type 'physics')
    KOL, kolTick, kolUse                  — 🚡 kolejka linowa (akcje cstation / cpole / ctop, linie w kolejności stawiania)
+   tabbyInstance()                       — przy starcie gry skleja zwykłe klocki obiektów w jedną bryłę (szyby, światła,
+                                           części z rolą zostają osobno); kopie nieruchomych obiektów → InstancedMesh
    dnTime, dnSpeed, dnPaused, TBFOG.v, winSet(on,opad,grubość) — pora dnia, mgła, zima
 
  ▶ FORMAT OBIEKTU (asset JSON — ten sam w edytorze, sklepie i Tabby-pokoju)
@@ -4289,65 +4291,76 @@ camOff.aim={"y":0,"angle":0,"dist":0};
 camOff.indoor={"y":0,"angle":0,"dist":0,"fov":0};
 
 
-// === TABBY INSTANCING: takie same statyczne obiekty rysowane jednym poleceniem ===
-// Każdy obiekt (np. sosna z 4 części) jest sklejany w jedną bryłę z kolorami w wierzchołkach,
-// a wszystkie jego kopie trafiają do jednego InstancedMesh (jedna tabelka pozycji).
-// Zwykłe zostają: obiekty z akcją, z kołami, ze światłem, z efektami pojazdu, z przezroczystością.
+// === TABBY INSTANCING: sklejanie obiektów, żeby karta graficzna rysowała je jak najmniej razy ===
+// 1) Nieruchomy obiekt: zwykłe klocki → jedna bryła z kolorami w wierzchołkach, a wszystkie jego kopie → jeden InstancedMesh.
+//    Części specjalne (szyby, światła i ich poświata, części z rolą, niewidzialne strefy, świecące) ZOSTAJĄ osobno —
+//    sklejamy resztę („częściowe sklejanie”: domek z 40 klocków i szybą = 2 rysowania zamiast 40).
+// 2) Obiekt z akcją (pojazd, drzwi, fizyka…): sklejamy zwykłe klocki wewnątrz obiektu — koła, siedzenia, szyby zostają ruchome.
+// Obiekty, które mogą się rozpaść od uderzenia pojazdem, i akcje z ruchomymi częściami (broń, wrogowie, dron…) zostają bez zmian.
+var TB_MERGE_ACT={drive:1,open:1,text:1,teleport:1,sound:1,physics:1,cstation:1,cpole:1,ctop:1,ammo:1,objective:1};
+function tbMergeOk(c,g,lamp){
+  if(!c.isMesh||c.parent!==g||c.children.length||!c.visible)return false;
+  var mt=c.material,u=c.userData||{};
+  if(!mt||!mt.isMeshStandardMaterial||mt.map||mt.transparent||mt.vertexColors)return false;
+  if(mt.emissive&&(mt.emissive.r+mt.emissive.g+mt.emissive.b)>0.001)return false; // świecące okna itp.
+  if(u._role||u._isGlow||u._hidden||u._kolPart||u._noMerge)return false;
+  if(lamp&&c.geometry&&c.geometry.type==='SphereGeometry')return false; // klosz lampy (silnik go szuka po kształcie)
+  return !!(c.geometry&&c.geometry.attributes&&c.geometry.attributes.position);
+}
+function tbMergeGeo(list){ // klocki (dzieci jednej grupy) → jedna geometria w układzie tej grupy
+  var pos=[],nor=[],col=[];
+  list.forEach(function(m){m.updateMatrix();var geo=m.geometry.clone();geo.applyMatrix4(m.matrix);if(geo.index)geo=geo.toNonIndexed();
+    var p=geo.attributes.position.array,n=geo.attributes.normal?geo.attributes.normal.array:null,c=m.material.color;
+    for(var i=0;i<p.length;i++){pos.push(p[i]);nor.push(n?n[i]:0);}for(var v=0;v<p.length/3;v++)col.push(c.r,c.g,c.b);geo.dispose();});
+  var mg=new THREE.BufferGeometry();mg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));mg.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  mg.setAttribute('color',new THREE.Float32BufferAttribute(col,3));mg.computeBoundingSphere();mg.computeBoundingBox();return mg;}
+function tbMergeMat(){return new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.7,metalness:0.05});}
+function tbSplit(g){var lamp=false;g.traverse(function(c){if(c.isLight)lamp=true;});var M=[],K=[];
+  g.children.forEach(function(c){(tbMergeOk(c,g,lamp)?M:K).push(c);});return {M:M,K:K};}
 function tabbyInstance(){
   if(!THREE.InstancedMesh)return;
-  var dyn=[];
+  var dyn=[],brk=[],before=0,after=0;
   if(typeof placedActions!=='undefined')placedActions.forEach(function(pa){if(pa.gr)dyn.push(pa.gr);});
-  if(typeof wCols!=='undefined')wCols.forEach(function(w){
+  if(typeof wCols!=='undefined')wCols.forEach(function(w){ // obiekty, które pojazd może rozbić — ich klocki muszą zostać osobno
     if(!w.veh)return;var o=null;
     if(w.veh.obj&&typeof drvFindGroup==='function')o=drvFindGroup(w);
     else if(typeof drvFindMesh==='function'){var m=drvFindMesh(w);if(m){o=m;while(o.parent&&o.parent!==scene)o=o.parent;}}
-    if(o)dyn.push(o);
+    if(o)brk.push(o);
   });
-  function ok(g){
-    if(!g.userData||!g.userData._tb||g.userData._inst||g.userData.action||dyn.indexOf(g)>=0)return false;
-    var good=g.children.length>0;
-    g.traverse(function(c){
-      if(c===g)return;
-      if(c.isLight||c.isPoints||c.isLine){good=false;return;}
-      if(c.isMesh){var mt=c.material;
-        if(!mt||!mt.isMeshStandardMaterial||mt.map||mt.transparent||!c.visible||(c.userData&&(c.userData._role||c.userData._isGlow||c.userData._hidden))||c.parent!==g)good=false;}
-      else good=false;
-    });
-    return good;
-  }
-  var buckets={},meshesBefore=0;
-  scene.children.slice().forEach(function(g){if(ok(g)){(buckets[g.userData._tb]=buckets[g.userData._tb]||[]).push(g);}});
+  function cnt(g){var n=0;g.traverse(function(c){if(c.isMesh&&c.visible)n++;});return n;}
+  // ---- 1) nieruchome obiekty ----
+  var buckets={};
+  scene.children.slice().forEach(function(g){
+    if(!g.userData||!g.userData._tb||g.userData._inst||g.userData.action||dyn.indexOf(g)>=0||brk.indexOf(g)>=0||!g.children.length)return;
+    var sp=tbSplit(g);if(!sp.M.length)return;
+    var key=g.userData._tb+'|'+sp.M.length+'|'+sp.K.length;(buckets[key]=buckets[key]||[]).push({g:g,sp:sp});
+  });
   var made=0,objs=0;
   Object.keys(buckets).forEach(function(key){
-    var list=buckets[key];if(!list.length||(list.length===1&&list[0].children.length<2))return; // pojedynczy obiekt: sklejamy części w jedną bryłę
-    var t=list[0],pos=[],nor=[],col=[];
-    t.children.forEach(function(m){
-      m.updateMatrix();
-      var geo=m.geometry.clone();geo.applyMatrix4(m.matrix);
-      if(geo.index)geo=geo.toNonIndexed();
-      var p=geo.attributes.position.array,n=geo.attributes.normal?geo.attributes.normal.array:null,c=m.material.color;
-      for(var i=0;i<p.length;i++){pos.push(p[i]);nor.push(n?n[i]:0);}
-      for(var v=0;v<p.length/3;v++)col.push(c.r,c.g,c.b);
-      geo.dispose();
-    });
-    var mg=new THREE.BufferGeometry();
-    mg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
-    mg.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
-    mg.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
-    mg.computeBoundingSphere();
-    var mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.7});
-    var im=new THREE.InstancedMesh(mg,mat,list.length);
-    list.forEach(function(g,i){g.updateMatrixWorld(true);im.setMatrixAt(i,g.matrixWorld);});
-    // sfera obejmująca wszystkie kopie — cała grupa znika z rysowania, gdy jest poza kadrem
-    var bs=mg.boundingSphere,pts=[],v=new THREE.Vector3();
-    list.forEach(function(g){v.copy(bs.center).applyMatrix4(g.matrixWorld);pts.push(v.clone());});
+    var list=buckets[key],t=list[0];
+    if(list.length===1&&t.sp.M.length<2)return; // jeden klocek na krzyż — nie ma czego sklejać
+    var mg=tbMergeGeo(t.sp.M),im=new THREE.InstancedMesh(mg,tbMergeMat(),list.length);
+    list.forEach(function(e,i){e.g.updateMatrixWorld(true);im.setMatrixAt(i,e.g.matrixWorld);before+=cnt(e.g);});
+    var bs=mg.boundingSphere,pts=[],v=new THREE.Vector3(); // sfera obejmująca wszystkie kopie — znika z rysowania poza kadrem
+    list.forEach(function(e){v.copy(bs.center).applyMatrix4(e.g.matrixWorld);pts.push(v.clone());});
     var big=new THREE.Sphere().setFromPoints(pts);big.radius+=bs.radius*1.2;mg.boundingSphere=big;
-    im.instanceMatrix.needsUpdate=true;im.castShadow=true;im.receiveShadow=true;im.frustumCulled=true;
-    im.userData._inst=key;scene.add(im);
-    list.forEach(function(g){meshesBefore+=g.children.length;scene.remove(g);g.traverse(function(c){if(c.isMesh){c.geometry.dispose();c.material.dispose();}});});
+    im.instanceMatrix.needsUpdate=true;im.castShadow=true;im.receiveShadow=true;im.frustumCulled=true;im.userData._inst=key;scene.add(im);after++;
+    list.forEach(function(e){
+      e.sp.M.forEach(function(m){e.g.remove(m);m.geometry.dispose();m.material.dispose();});
+      if(!e.sp.K.length){scene.remove(e.g);}else after+=cnt(e.g); // części specjalne zostają w obiekcie
+    });
     made++;objs+=list.length;
   });
-  window.__tabbyInst={typy:made,obiekty:objs,siatkiPrzed:meshesBefore,siatkiPo:made};
+  // ---- 2) obiekty z akcją: sklejamy zwykłe klocki wewnątrz obiektu ----
+  var actM=0;
+  if(typeof placedActions!=='undefined')placedActions.forEach(function(pa){
+    var g=pa.gr,t=pa.action&&pa.action.type;if(!g||!TB_MERGE_ACT[t]||brk.indexOf(g)>=0||g.userData._merged)return;
+    var sp=tbSplit(g);if(sp.M.length<2)return;
+    var b0=cnt(g),mesh=new THREE.Mesh(tbMergeGeo(sp.M),tbMergeMat());mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData._merged=1;
+    sp.M.forEach(function(m){g.remove(m);m.geometry.dispose();m.material.dispose();});g.add(mesh);g.userData._merged=1;
+    before+=b0;after+=cnt(g);actM++;
+  });
+  window.__tabbyInst={typy:made,obiekty:objs,zAkcja:actM,siatkiPrzed:before,siatkiPo:after};
 }
 
 tabbyInstance();

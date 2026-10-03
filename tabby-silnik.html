@@ -2033,13 +2033,17 @@ function fogTick(dt){
   var wv=(typeof TBWIN!=='undefined'&&TBWIN.on)?0.3+TBWIN.fall*0.25:0;
   var fc=F.fbase.clone().lerp(milk,Math.min(1,v*0.85+wv));
   scene.fog.color.copy(fc);F.flast.copy(fc);
-  scene.fog.near=0.008+0.018*v+((typeof TBWIN!=='undefined'&&TBWIN.on)?0.012*TBWIN.fall:0);          // gęstość tła (+ zadymka zimą)
+  scene.fog.near=0.004+0.022*v+((typeof TBWIN!=='undefined'&&TBWIN.on)?0.012*TBWIN.fall:0);          // gęstość tła (+ zadymka zimą)
   scene.fog.far=0.26*Math.pow(v,1.4);    // gęstość przy ziemi
   // niebo: im głębiej w mgle kamera, tym bardziej mleczne
   var cy=cam?cam.position.y:2,k=Math.min(1,v*1.15*Math.exp(-Math.max(0,cy)/14)+wv*0.55); // zimą niebo bardziej szare
   var bg=F.base.clone().lerp(fc,k);scene.background.copy(bg);F.last.copy(bg);
-  fogPuffs(dt,fc);fogHalos(dt,lum);
+  fogPuffs(dt,fc);fogHalos(dt,lum);fogOuter();
 }
+// ziemia poza planszą (do horyzontu), żeby przy dalekim widoku nie było widać krawędzi świata
+function fogOuter(){var F=TBFOG;if(!F.outer){var m=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshStandardMaterial({color:0x556644,roughness:0.95}));
+    m.rotation.x=-Math.PI/2;m.position.y=-0.15;m.raycast=function(){};m.userData._outer=1;scene.add(m);F.outer=m;}
+  var g=typeof tbTerrGround==='function'?tbTerrGround():null;if(g&&g.material&&g.material.color&&!F.outer.material.color.equals(g.material.color))F.outer.material.color.copy(g.material.color);}
 // płynące kłęby mgły wokół kamery
 function fogPuffs(dt,fc){
   var F=TBFOG,v=F.v,N=36;
@@ -3828,7 +3832,7 @@ var KOL={lines:[],sig:'',chk:0,ride:null,keep:null,prompt:null,grp:null};
 var KOL_ATT=4.9,KOL_TR=[-2.2,2.2],KOL_ACC=0.9;
 function kolMat(c,o){o=o||{};o.color=c;if(o.roughness===undefined)o.roughness=0.7;return new THREE.MeshStandardMaterial(o);}
 var KOLM=null;function kolMats(){if(KOLM)return KOLM;KOLM={con:kolMat(0x9aa1ab,{roughness:0.95}),dark:kolMat(0x3b4048,{roughness:0.5,metalness:0.4}),red:kolMat(0xc8323a,{roughness:0.5}),
-  white:kolMat(0xf2f2f2,{roughness:0.4}),steel:kolMat(0x7d8590,{roughness:0.4,metalness:0.6}),glass:new THREE.MeshStandardMaterial({color:0x9fd8ff,transparent:true,opacity:0.22,roughness:0.05,metalness:0.1,depthWrite:false}),
+  white:kolMat(0xf2f2f2,{roughness:0.4}),steel:kolMat(0x7d8590,{roughness:0.4,metalness:0.6}),glass:new THREE.MeshPhongMaterial({color:0x9fd8ff,specular:0xffffff,shininess:110,transparent:true,opacity:0.28,depthWrite:false,side:THREE.DoubleSide}),
   rope:new THREE.MeshStandardMaterial({color:0x2a2d33,roughness:0.6,metalness:0.5}),yel:kolMat(0xf2c200),wood:kolMat(0x8a6a48,{roughness:0.8})};return KOLM;}
 function kolBox(g,w,h,d,m,x,y,z,sh){var b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);if(sh!==false){b.castShadow=true;b.receiveShadow=true;}b.userData._kolPart=1;g.add(b);return b;}
 function kolCyl(g,r1,r2,h,m,x,y,z,seg){var c=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||12),m);c.position.set(x,y,z);c.castShadow=true;c.userData._kolPart=1;g.add(c);return c;}
@@ -4212,7 +4216,7 @@ function initTouch(){
 function init(){
   scene=new THREE.Scene();scene.background=new THREE.Color(0x667799);
   scene.fog=new THREE.Fog(0x667799,40,120);
-  cam=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,0.05,200);
+  cam=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,0.05,500);
   renderer=new THREE.WebGLRenderer({antialias:true});
   renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;

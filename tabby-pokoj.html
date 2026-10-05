@@ -6068,6 +6068,16 @@ function rmFrHere(){var o=[];if(RM.guest)o.push({c:RM.code,n:RM.owner||'Gospodar
   Object.keys(RM.rem).forEach(function(k){var R=RM.rem[k];if(R.home&&/^[A-Z0-9]{4}$/.test(R.home)&&R.home!==rmLoad().code&&!o.some(function(q){return q.c===R.home;}))o.push({c:R.home,n:R.nm||'Gość'});});return o;}
 function rmFrTxt(){var L=rmFriends(),d=new Date(),t='Tabby — pokoje znajomych\n(zapisane '+d.toLocaleDateString('pl-PL')+')\n\n';
   L.forEach(function(f){t+=(f.n||'Pokój')+' — '+f.c+'\n'+rmFrLinkFor(f.c)+'\n\n';});if(!L.length)t+='(lista jest pusta)\n';return t;}
+function rmWelcome(){if(RM.open)return;rmOpen('fr');var b=rmPanel();b.style.display='block';
+  b.innerHTML='<div style="font-size:20px;font-weight:bold;margin-bottom:8px">👋 Witaj w swoim prywatnym pokoju!</div>'+
+    '<div style="font-size:14px;margin-bottom:10px">Twój kod pokoju: <b style="font-family:monospace;font-size:18px;letter-spacing:3px;color:#f2c200">'+rmEsc(RM.code)+'</b></div>'+
+    '<div style="font-size:13.5px;color:#c9d1d9;line-height:1.7">'+
+    '➕ <b>Konsola „Wklej kod”</b> (pod monitorem) — wstawiasz tu swoje assety: kod z edytora, ze sklepu albo od AI.<br>'+
+    '🔗 <b>Zaproś do pokoju</b> (menu w lewym górnym rogu) — link dla znajomych; zobaczą Twoje assety i Ciebie.<br>'+
+    '📇 <b>Pulpit „Znajomi”</b> (prawa ściana) — zapisujesz pokoje innych i odwiedzasz je jednym E.<br>'+
+    '🐱 <b>Wejście do Tabby</b> (lewa ściana) — program do tworzenia gier 3D.</div>'+
+    '<div style="margin-top:14px;text-align:right"><button class="rm-b rm-g" id="rm-wok" style="margin:0">Zaczynam!</button></div>';
+  b.querySelector('#rm-wok').onclick=rmClose;}
 function rmBookOpen(){rmOpen('fr');var b=rmPanel();b.style.display='block';var L=rmFriends(),H=rmFrHere(),saved=function(c){return L.some(function(f){return f.c===c;});};
   var hs=H.length?H.map(function(q,i){var on=saved(q.c);return '<div class="rm-row" style="align-items:center;gap:8px"><span><b style="color:#e6edf3">'+rmEsc(q.n)+'</b>'+(q.host?' <span style="color:#9aa4b2;font-size:12px">(gospodarz)</span>':'')+' <span style="font-family:monospace;letter-spacing:1px;color:#9fd0ff">'+rmEsc(q.c)+'</span></span>'+
       (on?'<span style="color:#3fb950;font-size:13px;white-space:nowrap">✓ zapisany</span>':'<button class="rm-b rm-g" data-sv="'+i+'" style="padding:4px 12px;margin:0">Zapisz</button>')+'</div>';}).join(''):
@@ -6245,6 +6255,7 @@ function rmEnsureUI(){
     '.rm-g{background:#3fb950;color:#04130a}.rm-y{background:#f2c200;color:#1d1600}.rm-u{background:#58a6ff;color:#03101f}.rm-r{background:#da3633;color:#fff}.rm-n{background:transparent;border:1px solid #3a4250;color:#c9d1d9}'+
     '.rm-t{width:100%;box-sizing:border-box;height:150px;resize:vertical;background:#0d1117;color:#c9d1d9;border:1px solid #3a4250;border-radius:9px;padding:8px;font:12px/1.4 monospace}'+
     '.rm-row{display:flex;justify-content:space-between;border-bottom:1px solid #21262d;padding:5px 0}.rm-row span:first-child{color:#8b949e}'+
+    '@keyframes rmBl{0%,100%{border-color:#f2c200;box-shadow:0 0 0 0 rgba(242,194,0,0)}50%{border-color:#fff3a0;box-shadow:0 0 14px 2px rgba(242,194,0,.55)}}.rm-blink{animation:rmBl 1.4s ease-in-out infinite}'+
     '#rm-hud input{background:#0d1117;border:1px solid #3a4250;color:#fff;border-radius:7px;padding:4px 6px;font-size:13px}';
   document.head.appendChild(st);
   var add=document.createElement('div');add.className='rm-p';add.id='rm-add';add.style.cssText+=';left:16px;top:50%;transform:translateY(-50%);width:390px;max-width:92vw;max-height:94vh;overflow:auto;padding:16px';
@@ -6284,16 +6295,23 @@ function rmToast(t,ms){if(!RM.ui)return;var el=RM.ui.toast;el.innerHTML=t;el.sty
 function rmLink(){var u=location.protocol==='file:'?'https://miniklik.github.io/tabby/tabby-pokoj.html':location.href.split('#')[0].split('?')[0];return u+'?pokoj='+RM.code;} // z dysku: link do pokoju na GitHubie (działa u każdego)
 function rmHud(){
   var h=RM.ui.hud;
-  if(RM.guest)h.innerHTML='👀 <b>Gość</b> w pokoju <b style="font-family:monospace;letter-spacing:1px">'+rmEsc(RM.code)+'</b>'+(RM.owner?' • gospodarz: <b>'+rmEsc(RM.owner)+'</b>':'')+
-    '<br><span style="color:#9aa4b2;font-size:12px">Twoje imię:</span> <input id="rm-nm" maxlength="14" style="width:110px"> <button class="rm-b rm-n" id="rm-home" style="padding:4px 9px;font-size:12px">🏠 Mój pokój</button>'+
+  if(RM.guest)h.innerHTML='<div id="rm-hh">👀 <b>Gość</b> w pokoju <b style="font-family:monospace;letter-spacing:1px">'+rmEsc(RM.code)+'</b>'+(RM.owner?' • gospodarz: <b>'+rmEsc(RM.owner)+'</b>':'')+'</div><div id="rm-hb">'+
+    '<span style="color:#9aa4b2;font-size:12px">Twoje imię:</span> <input id="rm-nm" maxlength="14" style="width:110px"> '+(function(){var mc=rmEsc(rmLoad().code||''),was=false;try{was=!!localStorage.getItem('tabby-pokoj-byl');}catch(e){}
+      return was?'<button class="rm-b rm-n" id="rm-home" style="padding:4px 9px;font-size:12px">🏠 Mój pokój <span style="font-family:monospace">'+mc+'</span></button>':
+        '<div class="rm-blink" id="rm-home" style="margin-top:6px;padding:7px 9px;border:2px solid #f2c200;border-radius:9px;background:rgba(242,194,0,.1);cursor:pointer;line-height:1.35">'+
+        '🏠 <b style="color:#f2c200">Odwiedź swój prywatny pokój</b> <b style="font-family:monospace;letter-spacing:1px">'+mc+'</b><br><span style="font-size:12px;color:#c9d1d9">W nim wstawiasz swoje assety i dzielisz się nimi z innymi</span></div>';})()+
     ''+
-    '<div id="rm-gst" style="font-size:12px;color:#d29922"></div><div id="rm-cl" style="font-size:11.5px;margin-top:3px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e;margin-top:3px"></div>';
-  else h.innerHTML='<div style="width:330px"></div><div style="font-size:15px;margin-bottom:6px">🏠 <b>Mój pokój</b> • kod <b style="font-family:monospace;font-size:15px;letter-spacing:2px">'+rmEsc(RM.code)+'</b></div>'+
+    '<div id="rm-gst" style="font-size:12px;color:#d29922"></div><div id="rm-cl" style="font-size:11.5px;margin-top:3px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e;margin-top:3px"></div></div>';
+  else h.innerHTML='<div id="rm-hh" style="font-size:15px;margin-bottom:6px">🏠 <b>Mój pokój</b> • kod <b style="font-family:monospace;font-size:15px;letter-spacing:2px">'+rmEsc(RM.code)+'</b></div><div id="rm-hb"><div style="width:330px"></div>'+
     '<div style="margin-bottom:5px"><span style=\"color:#9aa4b2;font-size:12px;display:inline-block;width:96px\">Twoje imię</span><input id="rm-nm" maxlength="14" style="width:150px"></div>'+
     '<div style="margin-bottom:4px"><span style=\"color:#9aa4b2;font-size:12px;display:inline-block;width:96px\">Odwiedź pokój</span><input id="rm-vc" maxlength="4" placeholder="KOD" style="width:70px;text-transform:uppercase;font-family:monospace;letter-spacing:2px"> <button class="rm-b rm-n" id="rm-go" style="padding:4px 10px;font-size:12px;margin:0 0 0 4px">Wejdź</button></div>'+
     '<div style="display:flex;gap:6px;margin:8px 0 6px"><button class="rm-b rm-u" id="rm-inv" style="flex:1;padding:6px 8px;font-size:12.5px;margin:0;white-space:nowrap">🔗 Zaproś do pokoju</button><button class="rm-b rm-n" id="rm-key" style="flex:1;padding:6px 8px;font-size:12.5px;margin:0;white-space:nowrap">🔑 Klucz pokoju</button></div>'+
     '<div id="rm-box"></div>'+
-    '<div style="border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:5px"><div id="rm-cl" style="font-size:11.5px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e"></div></div>';
+    '<div style="border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:5px"><div id="rm-cl" style="font-size:11.5px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e"></div></div></div>';
+  (function(){var hh=h.querySelector('#rm-hh'),hb=h.querySelector('#rm-hb');if(!hh||!hb)return;var mini=false;try{mini=localStorage.getItem('tabby-pokoj-mini')==='1';}catch(e){} // ▾ / ▸ zwijanie menu (pamięta przeglądarka)
+    var tg=document.createElement('span');tg.style.cssText='float:right;margin-left:12px;color:#9aa4b2;font-size:15px;user-select:none';hh.appendChild(tg);hh.style.cursor='pointer';hh.style.userSelect='none';
+    var mb=hh.style.marginBottom;function ap(){hb.style.display=mini?'none':'';tg.textContent=mini?'▸':'▾';hh.title=mini?'Rozwiń menu':'Zwiń menu';hh.style.marginBottom=mini?'0':mb;}ap();
+    hh.onclick=function(){mini=!mini;try{localStorage.setItem('tabby-pokoj-mini',mini?'1':'0');}catch(er){}ap();};})();
   var nm=h.querySelector('#rm-nm');nm.value=RM.name;nm.oninput=function(){RM.name=nm.value.trim()||'Gracz';if(typeof rmCloudOwner==='function')rmCloudOwner();try{var o=JSON.parse(localStorage.getItem('tabby-mp')||'{}');o.name=RM.name;localStorage.setItem('tabby-mp',JSON.stringify(o));}catch(e){}if(!RM.guest)rmMon('idle');rmSendState();};
   var lk=h.querySelector('#rm-lnk');if(lk)lk.onclick=function(){rmClip(rmLink(),function(ok){rmToast(ok?'🔗 Link skopiowany — wklej go gościowi<br><span style="font-weight:normal;font-size:13px">'+(location.protocol==='file:'?'⚠ Plik jest otwarty z dysku — taki link zadziała tylko na tym komputerze. Otwórz pokój z GitHuba, wtedy link działa u każdego.':'Gość może być na innym komputerze — łączycie się przez Twoją centralę')+'</span>':'Skopiuj ręcznie: '+rmEsc(rmLink()),4000);});};
   var go=h.querySelector('#rm-go');if(go)go.onclick=function(){var c=h.querySelector('#rm-vc').value.trim().toUpperCase();if(c.length!==4){rmToast('Wpisz 4-znakowy kod pokoju');return;}location.href=location.href.split('#')[0].split('?')[0]+'?pokoj='+c;};
@@ -7140,7 +7158,9 @@ function rmTick(dt){
     try{var mp=JSON.parse(localStorage.getItem('tabby-mp')||'{}');RM.name=mp.name||'';if(mp.col)RM.col=mp.col;}catch(e){}
   if(!RM.name)RM.name='Gracz '+Math.floor(10+Math.random()*89);
   var q=(location.search.match(/[?&]pokoj=([A-Za-z0-9]{4})/)||[])[1],own=rmLoad();
-  if(!own.code){own.code=rmCode();}RM.code=own.code;
+  if(!own.code){own.code=rmCode();if(q&&own.code===q.toUpperCase())own.code=rmCode();
+    if(q){try{localStorage.setItem(RM_KEY,JSON.stringify({code:own.code,objs:[]}));}catch(e){}}} // gość od pierwszej wizyty ma swój stały pokój (pusty) — gospodarz może go od razu zapisać
+  RM.code=own.code;
   if(q){RM.guest=true;RM.code=q.toUpperCase();} // link z kodem = wejście jako gość (też do własnego pokoju — tak testujesz w drugiej karcie)
   scene.children.forEach(function(o){if(o.isMesh&&o.geometry&&o.geometry.type==='PlaneGeometry'&&o.geometry.parameters.width===200)o.visible=false;}); // trawa spod sali
   fogTick=function(){};if(scene.fog){scene.fog.near=0;scene.fog.far=0;} // w zamkniętej sali bez mgły
@@ -7153,6 +7173,8 @@ function rmTick(dt){
     var oc=own.cl||{};RM.cl.key=oc.key||rmKeyGen();RM.cl.claimed=!!oc.claimed;RM.cl.synced=oc.synced||[];RM.cl.del=oc.del||[];
   }
   rmLayout();rmDlBoard();
+  if(!RM.guest){var byl=false;try{byl=!!localStorage.getItem('tabby-pokoj-byl');localStorage.setItem('tabby-pokoj-byl','1');}catch(e){byl=true;}
+    if(!byl&&!RM.objs.length)setTimeout(rmWelcome,900);} // 👋 pierwszy raz we własnym pokoju
   rmEnsureUI();rmMon('idle');if(!RM.guest)rmSave();
   try{RM.bc=new BroadcastChannel('tabby-pokoj-'+RM.code);RM.bc.onmessage=function(e){rmMsg(e.data);};}catch(e){RM.bc=null;}
   rmWsOpen();if(RM.guest)rmCloudGuest();else rmCloudInit();

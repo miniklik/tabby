@@ -6072,33 +6072,59 @@ var _trnEdit0=trnEdit;
 // 🧹 Nowy świat: zostaje sama zajezdnia (asset) z krótkim torem
 function kWipe(){if(!confirm('Wyczyścić wszystkie tory tej zajezdni? Zostanie sama zajezdnia z krótkim torem.'))return;kPush();var net=kDefaultNet(KM.pa);kRestore(JSON.stringify(net));kAll(true);trnMsg('🧹 Tory wyczyszczone.');}
 // ⛰ teren: tor leży na wygładzonym terenie, kropki dokładają wysokość ponad teren (nasyp)
-var _lineGeo0=lineGeo;lineGeo=function(L,stack){if(KM.geo[L.id])return KM.geo[L.id];var g=_lineGeo0(L,stack);if(!g||g._terr)return g;
-  var P=g.pts,n=P.length,raw=new Array(n),win=30;for(var i=0;i<n;i++)raw[i]=kTerrY(P[i].x,P[i].z);
-  var d0=KM.deps.length?kTerrY(KM.deps[0].x,KM.deps[0].z):0;
-  for(var j=0;j<n;j++){var a=j,b=j;while(a>0&&P[j].s-P[a-1].s<win/2)a--;while(b<n-1&&P[b+1].s-P[j].s<win/2)b++;var sum=0;for(var k=a;k<=b;k++)sum+=raw[k];var base=sum/(b-a+1);
-    if(P[j].s<g.f0)base=L.start.t==='dep'?kTerrY(g.S.x,g.S.z):base;if(P[j].s>g.f1)base=kTerrY(g.E.x,g.E.z);P[j].h=P[j].y||0;P[j].base=base;P[j].y=P[j].h+base;}
-  g._terr=true;return g;};
-var _triGeo0=triGeo;triGeo=function(t,stack){var r=_triGeo0(t,stack);if(r&&!r._terr){[r.l1,r.l2].forEach(function(P){P.forEach(function(q){q.y=kTerrY(q.x,q.z);q.base=q.y;q.h=0;});});r._terr=true;}return r;};
-var _kAt0=kAt;
-// klik w mapę: punkt na terenie (kilka przybliżeń), a nie na płaskiej ziemi
-function trnGroundHit(e){var r=renderer.domElement.getBoundingClientRect(),m=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),rc=new THREE.Raycaster();rc.setFromCamera(m,cam);
-  var d=rc.ray.direction,o=rc.ray.origin;if(d.y>-0.001)return null;var y=0,p=null;for(var it=0;it<4;it++){var t=(y-o.y)/d.y;if(t<0)return p;p={x:o.x+d.x*t,z:o.z+d.z*t};y=kTerrY(p.x,p.z);}return p;}
-// nasyp od toru do terenu (a nie do zera), filary wiaduktu też do terenu
-function kEmbank(G,P){var KM2=kMats(),runs=[],cur=null;P.forEach(function(q){if((q.h||0)>0.05){if(!cur){cur=[];runs.push(cur);}cur.push(q);}else cur=null;});
+// ⛰ TEREN USTĘPUJE TOROM: tory zawsze na poziomie zajezdni (+ wysokość kropek); góry przy torze robią wąwóz, doliny dostają nasyp
+var KM_TRAW=tbTerrH; // teren bez wąwozów (z niego bierzemy poziom zajezdni)
+function kY0(){var d=KM.deps[0];return d?KM_TRAW(d.x,d.z):0;}
+var _lineGeo0=lineGeo;lineGeo=function(L,stack){if(KM.geo[L.id])return KM.geo[L.id];var g=_lineGeo0(L,stack);if(!g||g._terr)return g;var y0=kY0();
+  g.pts.forEach(function(q){q.h=q.y||0;q.base=y0;q.y=y0+q.h;});g._terr=true;return g;};
+var _triGeo0=triGeo;triGeo=function(t,stack){var r=_triGeo0(t,stack);if(r&&!r._terr){var y0=kY0();[r.l1,r.l2].forEach(function(P){P.forEach(function(q){q.y=y0;q.base=y0;q.h=0;});});r._terr=true;}return r;};
+// trzy siatki co 2 m wokół torów:
+//  CUT — wąwóz w górach (widać go w siatce terenu i chodzi się po nim),
+//  TUN — przejście przez tunel (tylko do chodzenia: góra nad tunelem zostaje),
+//  FIL — nasyp i pomost wiaduktu (tylko do chodzenia: wygląd daje siatka nasypu)
+var KCV={on:false,x0:0,z0:0,nx:1,nz:1,c:2,cut:null,tun:null,fil:null,sig:''},KM_MESH=false;
+function kCarveBuild(){var pts=[],y0=kY0();
+  KM.lines.forEach(function(L){var g=lineGeo(L);if(!g)return;var T=g.tun||[],last=-9;g.pts.forEach(function(q){if(q.s-last<1.5)return;last=q.s;var inT=false;for(var t=0;t<T.length;t++)if(q.s>T[t][0]-1&&q.s<T[t][1]+1)inT=true;pts.push({x:q.x,z:q.z,y:q.y,t:inT,f:q.y-KM_TRAW(q.x,q.z)});});});
+  KM.tris.forEach(function(t){var g=triGeo(t);if(!g)return;[g.l1,g.l2].forEach(function(P){for(var i=0;i<P.length;i+=3)pts.push({x:P[i].x,z:P[i].z,y:P[i].y,t:false,f:P[i].y-KM_TRAW(P[i].x,P[i].z)});});});
+  if(!pts.length){KCV.on=false;return;}var mnx=1e9,mxx=-1e9,mnz=1e9,mxz=-1e9;pts.forEach(function(q){mnx=Math.min(mnx,q.x);mxx=Math.max(mxx,q.x);mnz=Math.min(mnz,q.z);mxz=Math.max(mxz,q.z);});
+  KM.deps.forEach(function(d){[DEP_BACK-6,DEP_EXIT+6].forEach(function(z){var p=depPt(d,z);mnx=Math.min(mnx,p.x);mxx=Math.max(mxx,p.x);mnz=Math.min(mnz,p.z);mxz=Math.max(mxz,p.z);});});
+  var M=46,c=2;KCV.x0=mnx-M;KCV.z0=mnz-M;KCV.nx=Math.min(400,Math.ceil((mxx-mnx+2*M)/c)+1);KCV.nz=Math.min(400,Math.ceil((mxz-mnz+2*M)/c)+1);KCV.c=c;
+  var N=KCV.nx*KCV.nz,CUT=new Float32Array(N),TUN=new Float32Array(N),FIL=new Float32Array(N);for(var i=0;i<N;i++){CUT[i]=1e9;TUN[i]=1e9;FIL[i]=-1e9;}
+  function each(px,pz,r,fn){var i0=Math.max(0,Math.floor((px-r-KCV.x0)/c)),i1=Math.min(KCV.nx-1,Math.ceil((px+r-KCV.x0)/c)),j0=Math.max(0,Math.floor((pz-r-KCV.z0)/c)),j1=Math.min(KCV.nz-1,Math.ceil((pz+r-KCV.z0)/c));
+    for(var j=j0;j<=j1;j++)for(var ii=i0;ii<=i1;ii++){var d=Math.hypot(KCV.x0+ii*c-px,KCV.z0+j*c-pz);if(d<=r)fn(j*KCV.nx+ii,d);}}
+  pts.forEach(function(q){
+    if(q.t)each(q.x,q.z,6,function(k,d){var v=q.y-0.08+Math.max(0,d-2.9)*4;if(v<TUN[k])TUN[k]=v;}); // tunel: płaska podłoga, strome ściany
+    else each(q.x,q.z,40,function(k,d){var v=q.y-0.08+Math.max(0,d-3.6)*0.75;if(v<CUT[k])CUT[k]=v;}); // wąwóz 1 : 1,3
+    if(q.f>0.15&&!q.t){if(q.f<=7)each(q.x,q.z,2.1+q.f*1.5+1,function(k,d){var v=q.y-0.1-Math.max(0,d-2.1)/1.5;if(v>FIL[k])FIL[k]=v;}); // nasyp
+      else each(q.x,q.z,2.6,function(k,d){var v=d<=2.3?q.y-0.3:-1e9;if(v>FIL[k])FIL[k]=v;});}}); // pomost wiaduktu
+  KM.deps.forEach(function(d){for(var z=DEP_BACK-4;z<=DEP_EXIT+4;z+=2){for(var x=-6;x<=6;x+=3){var p=depPt(d,z),px=p.x+Math.cos(d.ry)*x,pz=p.z-Math.sin(d.ry)*x;each(px,pz,30,function(k,dd){var v=y0+Math.max(0,dd-3)*0.75;if(v<CUT[k])CUT[k]=v;});}}}); // plac pod zajezdnią
+  KM.stops.forEach(function(st){var g=stopGeo(st);if(g)each(g.x,g.z,40,function(k,d){var v=y0+Math.max(0,d-6)*0.75;if(v<CUT[k])CUT[k]=v;});});
+  KCV.cut=CUT;KCV.tun=TUN;KCV.fil=FIL;KCV.on=true;}
+function kGrid(A,x,z,empty){var c=KCV.c,fx=(x-KCV.x0)/c,fz=(z-KCV.z0)/c;if(fx<0||fz<0||fx>=KCV.nx-1||fz>=KCV.nz-1)return empty;var i=Math.floor(fx),j=Math.floor(fz),tx=fx-i,tz=fz-j,n=KCV.nx;
+  var a=A[j*n+i],b=A[j*n+i+1],cc=A[(j+1)*n+i],d=A[(j+1)*n+i+1];if(Math.abs(a)>1e8||Math.abs(b)>1e8||Math.abs(cc)>1e8||Math.abs(d)>1e8){var m=empty>0?Math.min(a,b,cc,d):Math.max(a,b,cc,d);return Math.abs(m)>1e8?empty:m;}
+  return a+(b-a)*tx+(cc-a)*tz+(a-b-cc+d)*tx*tz;}
+tbTerrH=function(x,z){var h=KM_TRAW(x,z);if(!KCV.on)return h;
+  if(typeof TBTER!=='undefined'&&TBTER.on){var c=kGrid(KCV.cut,x,z,1e9);if(c<h)h=c;}
+  if(KM_MESH)return h; // siatka terenu: tylko wąwozy (tunel i nasyp mają własny wygląd)
+  var t=kGrid(KCV.tun,x,z,1e9);if(t<h)h=t;var f=kGrid(KCV.fil,x,z,-1e9);if(f>h)h=f;return h;};
+var _tbTerrApplyK=tbTerrApply;tbTerrApply=function(){KM_MESH=true;try{_tbTerrApplyK();}finally{KM_MESH=false;}};
+function kCarveRefresh(){var on=typeof TBTER!=='undefined'&&TBTER.on,sig=kSnap()+'|'+(on?TBTER.seed+'/'+TBTER.h+'/'+TBTER.size+'/'+TBTER.oct+'/'+TBTER.flat:'off');if(sig===KCV.sig)return;KCV.sig=sig;kCarveBuild();if(on)TBTER._dirty=true;}
+// nasyp: od toru w dół do terenu (tam, gdzie dolina albo kropka podniesiona); powyżej 7 m — wiadukt na filarach
+function kEmbank(G,P){var KM2=kMats(),runs=[],cur=null;P.forEach(function(q){q._f=q.y-KM_TRAW(q.x,q.z);if(q._f>0.15){if(!cur){cur=[];runs.push(cur);}cur.push(q);}else cur=null;});
   runs.forEach(function(R){if(R.length<2)return;var pos=[],idx=[];
-    for(var i=0;i<R.length;i++){var a=R[Math.max(0,i-1)],b=R[Math.min(R.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,h=Math.min(R[i].h,7),y=R[i].base+h,top=2.1,bot=top+h*1.5;
-      var lx=R[i].x-nx*bot,lz=R[i].z-nz*bot,rx=R[i].x+nx*bot,rz=R[i].z+nz*bot;
-      pos.push(lx,kTerrY(lx,lz)-0.2,lz, R[i].x-nx*top,y,R[i].z-nz*top, R[i].x+nx*top,y,R[i].z+nz*top, rx,kTerrY(rx,rz)-0.2,rz);
+    for(var i=0;i<R.length;i++){var a=R[Math.max(0,i-1)],b=R[Math.min(R.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,f=Math.min(R[i]._f,7),y=R[i].y-Math.max(0,R[i]._f-7)*0,top=2.1,bot=top+f*1.5;
+      var lx=R[i].x-nx*bot,lz=R[i].z-nz*bot,rx=R[i].x+nx*bot,rz=R[i].z+nz*bot,yb=R[i]._f>7?R[i].y-7:null;
+      pos.push(lx,(yb!==null?yb:KM_TRAW(lx,lz))-0.2,lz, R[i].x-nx*top,R[i].y,R[i].z-nz*top, R[i].x+nx*top,R[i].y,R[i].z+nz*top, rx,(yb!==null?yb:KM_TRAW(rx,rz))-0.2,rz);
       if(i){var k=i*4,p=k-4;idx.push(p,k,p+1,p+1,k,k+1, p+1,k+1,p+2,p+2,k+1,k+2, p+2,k+2,p+3,p+3,k+2,k+3);}}
-    var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();var m=new THREE.Mesh(g,KM2.grass);m.receiveShadow=true;m.castShadow=true;G.add(m);
-    var acc=0;for(var j=1;j<R.length;j++){acc+=Math.hypot(R[j].x-R[j-1].x,R[j].z-R[j-1].z);if(R[j].h>7&&acc>12){acc=0;var bb=kTerrY(R[j].x,R[j].z),hh=R[j].y-0.35-bb,pl=new THREE.Mesh(new THREE.BoxGeometry(1.6,hh,1.6),KM2.conc);pl.position.set(R[j].x,bb+hh/2,R[j].z);pl.castShadow=true;G.add(pl);}}
-    if(R.some(function(q){return q.h>7;}))G.add(kRib(R.map(function(q){return {x:q.x,z:q.z,y:q.h>7?q.y:-50};}),2.3,-0.3,KM2.conc));});}
-// zajezdnie i przystanki na wysokości terenu
-var _trnBT0=trnBuildTrack;trnBuildTrack=function(){_trnBT0();if(!TRN.trackG)return;TRN.trackG.children.forEach(function(o){if(o.userData&&o.userData._dep){o.position.y=kTerrY(o.position.x,o.position.z);}});
+    var hi=R.some(function(q){return q._f>7;});
+    if(!hi||R.some(function(q){return q._f<=7;})){var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();var m=new THREE.Mesh(g,KM2.grass);m.receiveShadow=true;m.castShadow=true;G.add(m);}
+    var acc=0;for(var j=1;j<R.length;j++){acc+=Math.hypot(R[j].x-R[j-1].x,R[j].z-R[j-1].z);if(R[j]._f>7&&acc>12){acc=0;var bb=KM_TRAW(R[j].x,R[j].z),hh=R[j].y-0.35-bb,pl=new THREE.Mesh(new THREE.BoxGeometry(1.6,hh,1.6),KM2.conc);pl.position.set(R[j].x,bb+hh/2,R[j].z);pl.castShadow=true;G.add(pl);}}
+    if(hi)G.add(kRib(R.map(function(q){return {x:q.x,z:q.z,y:q._f>7?q.y:-50};}),2.3,-0.3,KM2.conc));});}
+var _trnBT0=trnBuildTrack;trnBuildTrack=function(){_trnBT0();if(!TRN.trackG)return;var y0=kY0();TRN.trackG.children.forEach(function(o){if(o.userData&&o.userData._dep){o.position.y=y0;}});wCols.forEach(function(w){if(w._trn)w.y=y0;});kCarveRefresh();
   // budynek zajezdni 1 doczepiony do assetu: klik w zajezdnię w edytorze ją zaznacza, przesuwanie assetu przesuwa budynek
   if(KM.dep0M&&KM.dep0M.parent)KM.dep0M.parent.remove(KM.dep0M);KM.dep0M=null;var pa=KM.pa,d0=KM.deps[0];if(!pa||!pa.gr||!d0)return;
   var m=TRN.trackG.children.filter(function(o){return o.userData&&o.userData._dep&&!o.userData._stop&&Math.hypot(o.position.x-d0.x,o.position.z-d0.z)<0.5;})[0];if(!m)return;
-  TRN.trackG.remove(m);m.position.set(0,kTerrY(d0.x,d0.z)-pa.gr.position.y,0);m.rotation.set(0,0,0);pa.gr.add(m);KM.dep0M=m;};
+  TRN.trackG.remove(m);m.position.set(0,kY0()-pa.gr.position.y,0);m.rotation.set(0,0,0);pa.gr.add(m);KM.dep0M=m;};
 var _depModel0=depModel;depModel=function(f){var g=_depModel0(f);g.userData._dep=1;return g;};
 var _stopModel0=stopModel;stopModel=function(){var g=_stopModel0();g.userData._dep=1;g.userData._stop=1;return g;};
 setInterval(function(){try{kBind();}catch(e){}},300);

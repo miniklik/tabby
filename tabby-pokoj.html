@@ -5946,6 +5946,158 @@ function rmDoorSign(D){ // napis nad drzwiami: wybrana kategoria (w trybie wybor
     x.fillText(D.armed?'otwarte — wejdź':'E — wybierz kategorię',512,215);}
   D.sign.tx.needsUpdate=true;D.strip.color.setHex(pk?0x58a6ff:(D.armed?0x3fb950:0x58a6ff));
 }
+// ---------- 🐱 ŚCIANA TABBY w sali głównej: mural (logo, księżyc, miasteczko), dach z kotem, przejście z deszczem znaków → strona Tabby ----------
+var TW={mx:null,mt:null,mc:null,t:0},TC={g:null,z:-7,yaw:Math.PI/2,st:'lie',t:0,dur:6,tz:0,wt:0,low:1,sit:0,bl:3,P:null};
+var TW_X=-9.0,TW_OP=1.6,TW_OH=4.2,TW_RX=-8.25,TW_RY=6.33;
+function rmTabbyUrl(){return /^https?:/.test(location.protocol)?new URL('./',location.href).href:'https://miniklik.github.io/tabby/';}
+function rmTabbyMural(){var W=4096,H=1152,S=128,c=rmCanvas(W,H),x=c.getContext('2d');
+  function X(z){return (16-z)*S;}function Y(y){return (9-y)*S;}
+  var g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#16142f');g.addColorStop(0.45,'#2a2350');g.addColorStop(0.7,'#5a3d6e');g.addColorStop(0.86,'#b0697e');g.addColorStop(1,'#2a1f3d');x.fillStyle=g;x.fillRect(0,0,W,H);
+  var r=1234567;function rnd(){r=(r*16807)%2147483647;return r/2147483647;}
+  for(var i=0;i<260;i++){var sx=rnd()*W,sy=rnd()*H*0.55,a=0.3+rnd()*0.7;x.fillStyle='rgba(255,255,255,'+a.toFixed(2)+')';x.fillRect(sx,sy,rnd()<0.15?4:2,rnd()<0.15?4:2);}
+  var mx=X(-7),my=Y(7.35),mR=250,gl=x.createRadialGradient(mx,my,mR*0.8,mx,my,mR*2.1);gl.addColorStop(0,'rgba(255,236,180,0.45)');gl.addColorStop(1,'rgba(255,236,180,0)');x.fillStyle=gl;x.fillRect(mx-mR*2.2,my-mR*2.2,mR*4.4,mR*4.4);
+  x.fillStyle='#fff3c8';x.beginPath();x.arc(mx,my,mR,0,Math.PI*2);x.fill();
+  x.fillStyle='rgba(225,205,150,0.45)';[[-60,-70,38],[70,-20,26],[-20,60,46],[90,90,20],[-110,30,18],[30,-120,16]].forEach(function(q){x.beginPath();x.arc(mx+q[0],my+q[1],q[2],0,Math.PI*2);x.fill();});
+  x.textBaseline='alphabetic';x.font='bold 270px "Arial Rounded MT Bold","Nunito","Trebuchet MS",sans-serif';x.fillStyle='#fff1d6';x.shadowColor='rgba(255,230,180,0.55)';x.shadowBlur=40;
+  var lx=X(14.6),ly=Y(7.0);x.fillText('Tabby',lx,ly);var lw=x.measureText('Tabby').width;x.shadowBlur=0;
+  x.font='64px "Trebuchet MS",sans-serif';x.fillStyle='#cdbadf';x.fillText('Gry z pudełek.',lx+lw+50,ly-14);
+  var hx=0;while(hx<W){var hw=150+rnd()*260,hh=(0.9+rnd()*2.4)*S,base=H;x.fillStyle=rnd()<0.5?'#241f40':'#2b2549';x.fillRect(hx,base-hh,hw,hh);
+    x.beginPath();x.moveTo(hx-12,base-hh);x.lineTo(hx+hw/2,base-hh-(0.5+rnd()*1.2)*S);x.lineTo(hx+hw+12,base-hh);x.closePath();x.fill();
+    var nw=Math.floor(rnd()*3);for(var k=0;k<nw;k++){x.fillStyle=rnd()<0.7?'#f2b55a':'#ffd98a';x.fillRect(hx+20+rnd()*(hw-60),base-hh+30+rnd()*(hh-90),26,34);}
+    hx+=hw+8+rnd()*40;}
+  var px0=X(4.4),px1=X(-4.4),py0=Y(5.4),py1=Y(4.3);x.fillStyle='rgba(10,9,24,0.88)';x.strokeStyle='#3fff6a';x.lineWidth=6;
+  x.beginPath();if(x.roundRect)x.roundRect(px0,py0,px1-px0,py1-py0,26);else x.rect(px0,py0,px1-px0,py1-py0);x.fill();x.stroke();
+  x.textAlign='center';x.fillStyle='#fff1d6';x.font='bold 66px "Trebuchet MS",sans-serif';x.fillText('🐱 Wejście do Tabby',(px0+px1)/2,py0+70);
+  x.fillStyle='#7dff9a';x.font='44px "Trebuchet MS",sans-serif';x.fillText('tworzenie gier 3D',(px0+px1)/2,py0+124);x.textAlign='left';
+  x.clearRect(X(TW_OP),Y(TW_OH),X(-TW_OP)-X(TW_OP),H); // otwór w ścianie
+  return c;}
+function rmTabbyRain(dt){var M=TW;M.t-=dt;if(M.t>0)return;M.t=0.045;var c=M.mc,x=c.getContext('2d'),W=c.width,H=c.height,fs=20,n=Math.floor(W/fs);
+  if(!M.drops){M.drops=[];for(var i=0;i<n;i++)M.drops.push(Math.random()*-40);}
+  x.fillStyle='rgba(0,8,3,0.14)';x.fillRect(0,0,W,H);x.font='bold '+fs+'px monospace';var ch='TABBY0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホ';
+  for(var j=0;j<n;j++){var y=M.drops[j]*fs;x.fillStyle='#d6ffe0';x.fillText(ch[Math.floor(Math.random()*ch.length)],j*fs,y);x.fillStyle='#22d65a';x.fillText(ch[Math.floor(Math.random()*ch.length)],j*fs,y-fs);
+    M.drops[j]+=1;if(y>H&&Math.random()>0.965)M.drops[j]=Math.random()*-12;}
+  M.mt.needsUpdate=true;}
+function rmCatBox(G,w,h,d,m,x,y,z){var b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);b.position.set(x,y,z);b.castShadow=true;G.add(b);return b;}
+function rmCatBuild(){var fur=rmMat(0x1d1925,{roughness:0.85}),fur2=rmMat(0x2a2434,{roughness:0.85}),eye=new THREE.MeshBasicMaterial({color:0xc8ff4a}),pink=rmMat(0x6b4757);
+  var g=new THREE.Group(),B=new THREE.Group();g.add(B);var P={B:B,legs:[],tail:[],eyes:[]};
+  rmCatBox(B,0.42,0.42,0.95,fur,0,0.58,0);rmCatBox(B,0.44,0.06,0.2,fur2,0,0.8,-0.15);rmCatBox(B,0.44,0.06,0.2,fur2,0,0.8,0.15);
+  var hd=new THREE.Group();hd.position.set(0,0.88,0.5);B.add(hd);P.head=hd;
+  rmCatBox(hd,0.44,0.38,0.36,fur,0,0.12,0.06);rmCatBox(hd,0.22,0.15,0.12,fur2,0,0.03,0.29);rmCatBox(hd,0.06,0.04,0.02,pink,0,0.08,0.355);
+  [-1,1].forEach(function(s){var e=new THREE.Mesh(new THREE.ConeGeometry(0.1,0.22,4),fur);e.position.set(s*0.13,0.4,0.02);e.rotation.y=Math.PI/4;e.castShadow=true;hd.add(e);
+    var ey=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.07,0.02),eye);ey.position.set(s*0.1,0.17,0.245);hd.add(ey);P.eyes.push(ey);});
+  [[0.13,0.33],[-0.13,0.33],[0.13,-0.33],[-0.13,-0.33]].forEach(function(q,i){var L=new THREE.Group();L.position.set(q[0],0.4,q[1]);B.add(L);rmCatBox(L,0.12,0.38,0.12,fur,0,-0.19,0);P.legs.push(L);});
+  var par=B,base=new THREE.Vector3(0,0.66,-0.47);for(var k=0;k<4;k++){var T=new THREE.Group();T.position.copy(k?new THREE.Vector3(0,0,-0.26):base);par.add(T);rmCatBox(T,0.09,0.09,0.28,k%2?fur2:fur,0,0,-0.13);P.tail.push(T);par=T;}
+  g.userData.P=P;return g;}
+function rmCatPick(){var C=TC,z;do{z=-14+Math.random()*28;}while(Math.abs(z-C.z)<5);C.tz=z;C.st='walk';C.t=0;}
+function rmCatTick(dt){var C=TC;if(!C.g)return;dt=Math.min(dt,0.05);C.t+=dt;var P=C.g.userData.P,tm=performance.now()*0.001;
+  if((C.st==='lie'||C.st==='sit')&&C.t>C.dur){if(C.st==='lie'){C.st='rise';C.t=0;}else rmCatPick();}
+  else if(C.st==='rise'&&C.low<0.03)rmCatPick();
+  var walking=false;
+  if(C.st==='walk'){var d=C.tz-C.z,want=d>0?0:Math.PI,dy=Math.atan2(Math.sin(want-C.yaw),Math.cos(want-C.yaw));
+    if(Math.abs(dy)>0.04)C.yaw+=Math.sign(dy)*Math.min(Math.abs(dy),dt*2.4);
+    else{C.yaw=want;var st=Math.min(Math.abs(d),dt*0.75);C.z+=Math.sign(d)*st;C.wt+=st*8;walking=true;
+      if(Math.abs(d)<0.03){var r=Math.random();if(r<0.35){C.st='sit';C.dur=3+Math.random()*3;}else if(r<0.7){C.st='lie';C.dur=6+Math.random()*6;}else rmCatPick();C.t=0;}}}
+  C.low+=((C.st==='lie'?1:0)-C.low)*Math.min(1,dt*(C.st==='lie'?1.6:2.2));C.sit+=((C.st==='sit'?1:0)-C.sit)*Math.min(1,dt*2.5);
+  var B=P.B,lo=C.low,si=C.sit,sw=walking?Math.sin(C.wt):0;
+  B.position.y=-lo*0.32-si*0.1+(walking?Math.abs(Math.sin(C.wt))*0.025:0);B.rotation.x=-si*0.5;
+  P.legs[0].rotation.x=-1.45*lo+sw*0.55-si*0.15;P.legs[3].rotation.x=-1.45*lo*0+1.4*lo-sw*0.55-si*1.3;
+  P.legs[1].rotation.x=-1.45*lo-sw*0.55-si*0.15;P.legs[2].rotation.x=1.4*lo+sw*0.55-si*1.3;
+  var sws=Math.sin(tm*(walking?3:1.6));P.tail[0].rotation.x=0.55-lo*0.5+si*0.4;P.tail[0].rotation.y=lo*1.0+sws*(lo>0.5?0.15:0.35);
+  for(var k=1;k<P.tail.length;k++){P.tail[k].rotation.x=-0.25+lo*0.15;P.tail[k].rotation.y=sws*0.25+lo*0.35;}
+  P.head.rotation.y=(lo>0.5||si>0.5)?Math.sin(tm*0.45)*0.45:0;P.head.rotation.x=lo*0.15;
+  C.bl-=dt;var bk=C.bl<0.12;if(C.bl<0)C.bl=2.5+Math.random()*4;P.eyes.forEach(function(e){e.scale.y=bk?0.15:1;});
+  C.g.position.set(TW_RX,TW_RY+0.07-0.026,C.z);C.g.rotation.y=C.yaw;}
+function rmTabbyWall(){
+  var mc=rmTabbyMural(),mt=new THREE.CanvasTexture(mc),mur=new THREE.Mesh(new THREE.PlaneGeometry(32,9),new THREE.MeshBasicMaterial({map:mt,alphaTest:0.5}));
+  mur.rotation.y=Math.PI/2;mur.position.set(TW_X+0.012,4.5,0);scene.add(mur);
+  // przejście: deszcz znaków za otworem
+  var rc=rmCanvas(256,336),rx=rc.getContext('2d');rx.fillStyle='#000';rx.fillRect(0,0,256,336);TW.mc=rc;TW.mt=new THREE.CanvasTexture(rc);
+  var por=new THREE.Mesh(new THREE.PlaneGeometry(TW_OP*2,TW_OH),new THREE.MeshBasicMaterial({map:TW.mt}));por.rotation.y=Math.PI/2;por.position.set(-9.25,TW_OH/2,0);scene.add(por);
+  var gm=new THREE.MeshBasicMaterial({color:0x3fff6a});[[0,TW_OH+0.05,0.08,TW_OP*2+0.16],[TW_OH/2,0,TW_OH+0.1,0.08]].forEach(function(q,i){if(i===0){var m=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.08,q[3]),gm);m.position.set(TW_X+0.03,q[1],0);scene.add(m);}
+    else[-1,1].forEach(function(s){var m2=new THREE.Mesh(new THREE.BoxGeometry(0.05,q[2],0.08),gm);m2.position.set(TW_X+0.03,q[0],s*(TW_OP+0.04));scene.add(m2);});});
+  var fl=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.012,TW_OP*2),new THREE.MeshBasicMaterial({color:0x1d6b35,transparent:true,opacity:0.55,depthWrite:false}));fl.position.set(-8.3,0.008,0);scene.add(fl);
+  var gl=new THREE.PointLight(0x3fff6a,0.7,7,1.6);gl.position.set(-8.2,2.2,0);scene.add(gl);
+  wCols.push({x:-9.2,z:0,hw:0.25,hd:TW_OP,y:0,h:TW_OH,_rm:1}); // przez otwór się nie przechodzi — E otwiera Tabby
+  // dach wzdłuż ściany
+  var rf=rmMat(0x17131f,{roughness:0.9}),rf2=rmMat(0x100d17,{roughness:0.9}),Lr=31.4,sl=Math.atan2(0.55,0.85);
+  [-1,1].forEach(function(s){var m=new THREE.Mesh(new THREE.BoxGeometry(1.03,0.12,Lr),s>0?rf:rf2);m.position.set(TW_RX+s*0.42,TW_RY-0.29,0);m.rotation.z=-s*sl;m.castShadow=true;m.receiveShadow=true;scene.add(m);});
+  var cap=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.14,Lr+0.1),rf2);cap.position.set(TW_RX,TW_RY,0);cap.castShadow=true;scene.add(cap);
+  var gut=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,Lr),rmMat(0x3b4048,{roughness:0.5,metalness:0.4}));gut.position.set(TW_RX+0.88,TW_RY-0.6,0);scene.add(gut);
+  [[-8.75,12.5],[-8.75,-13.2]].forEach(function(q){var ch=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.85,0.5),rmMat(0x1c1726,{roughness:0.9}));ch.position.set(q[0],TW_RY+0.2,q[1]);ch.castShadow=true;scene.add(ch);});
+  var sk=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.9),new THREE.MeshBasicMaterial({color:0xffd56a,side:THREE.DoubleSide}));sk.rotation.order='YXZ';sk.rotation.set(-Math.PI/2+sl,Math.PI/2,0);
+  sk.position.set(TW_RX+0.45,TW_RY-0.25,9.5);scene.add(sk);
+  TC.g=rmCatBuild();TC.g.scale.setScalar(1.3);scene.add(TC.g);rmCatTick(0.016);}
+function rmGoTabby(){var u=rmTabbyUrl();if(document.pointerLockElement)document.exitPointerLock();
+  try{var ac=wpnAC(),t=ac.currentTime;wpnTone(ac,t,0.5,'sine',300,1200,0.05,ac.destination);wpnTone(ac,t+0.12,0.4,'triangle',600,1800,0.03,ac.destination);}catch(e){}
+  var w=window.open(u,'_blank');rmToast(w?'🐱 Otwieram Tabby w nowej karcie — pokój zostaje otwarty':'🐱 Przeglądarka zablokowała nową kartę — wejdź tu: <b>'+rmEsc(u)+'</b>',4000);}
+// ---------- 📇 ŚCIANA ZNAJOMYCH (prawa ściana sali głównej): małe tabliczki z pokojami znajomych + pulpit (zapisz gościa / wpisz kod / notatnik) ----------
+// Lista = ta sama co dawne „Pokoje znajomych” (pamięć tej przeglądarki). Każdy widzi tu swoją listę — także gość.
+var FW={cv:null,tx:null,hov:-1,aim:-1,t:0,L:[],cols:19,rows:9,z0:-15.2,y1:8.15,pw:1.5,ph:0.55,pz:1.6,py:0.65};
+function rmFrOrder(){if(FW.order)return FW.order;var o=[];for(var i=0;i<FW.cols*FW.rows;i++)o.push(i); // kolejne tabliczki: od środka nad pulpitem na boki i w górę
+  function sc(i){var c=i%FW.cols,r=Math.floor(i/FW.cols),zc=FW.z0+c*FW.pz+FW.pw/2;return Math.abs(zc)/FW.pz+(FW.rows-1-r)*1.25+(zc<0?0.01:0);}
+  o.sort(function(a,b){return sc(a)-sc(b);});FW.order=o;return o;}
+function rmFrSlot(i){var c=i%FW.cols,r=Math.floor(i/FW.cols);return {z:FW.z0+c*FW.pz,y:FW.y1-r*FW.py};} // lewy górny róg tabliczki
+function rmFrLinkFor(code){var u=location.protocol==='file:'?'https://miniklik.github.io/tabby/tabby-pokoj.html':location.href.split('#')[0].split('?')[0];return u+'?pokoj='+code;}
+function rmFrWall(){if(!FW.cv)return;var S=128,W=4096,H=1152,x=FW.cv.getContext('2d'),L=rmFriends();FW.L=L;
+  function X(z){return (z+16)*S;}function Y(y){return (9-y)*S;}
+  x.fillStyle='#1e232b';x.fillRect(0,0,W,H);x.fillStyle='#f0a35e';x.fillRect(0,Y(8.92),W,5);
+  x.textAlign='center';x.textBaseline='alphabetic';x.fillStyle='#fff';x.font='bold 50px sans-serif';
+  x.fillText('📇 '+(RM.guest?'Twoje pokoje znajomych':'Pokoje znajomych')+'  ('+L.length+')',X(0),Y(8.43));
+  x.fillStyle='#9aa4b2';x.font='30px sans-serif';x.fillText('popatrz na tabliczkę i naciśnij E — odwiedzisz ten pokój',X(0),Y(8.21)+8);
+  var n=FW.cols*FW.rows,pw=FW.pw*S,ph=FW.ph*S;
+  var O=rmFrOrder(),inv={};O.forEach(function(sl,k){inv[sl]=k;});
+  for(var i=0;i<n;i++){var s=rmFrSlot(i),px=X(s.z),py=Y(s.y),f=L[inv[i]];
+    if(!f){x.strokeStyle='rgba(255,255,255,0.06)';x.lineWidth=2;x.strokeRect(px+1,py+1,pw-2,ph-2);continue;}
+    var hv=inv[i]===FW.hov;x.fillStyle=hv?'#3a4a5e':'#2b3644';x.fillRect(px,py,pw,ph);x.fillStyle=hv?'#f2c200':'#f0a35e';x.fillRect(px,py,pw,7);
+    if(hv){x.strokeStyle='#f2c200';x.lineWidth=5;x.strokeRect(px+2,py+2,pw-4,ph-4);}
+    x.textAlign='left';x.fillStyle='#fff';x.font='bold 27px sans-serif';var nm='🏠 '+(f.n||'Pokój');while(x.measureText(nm).width>pw-18&&nm.length>4)nm=nm.slice(0,-2);x.fillText(nm,px+9,py+36);
+    x.fillStyle='#9fd0ff';x.font='bold 24px monospace';x.fillText(f.c,px+9,py+63);x.textAlign='center';}
+  x.fillStyle='#8b949e';x.font='30px sans-serif';x.fillText('⬇ pulpit: zapisz gościa • wpisz kod • pobierz notatnik',X(0),Y(1.72));
+  FW.tx.needsUpdate=true;}
+function rmFrAim(){FW.aim=-1;if(!FW.cv||RM.open||!cam||!FW.L.length)return;if(Math.abs(charZ)>16.5||charX<-9)return;
+  var d=new THREE.Vector3();cam.getWorldDirection(d);var o=cam.position;if(d.x<=0.05)return;var t=(8.988-o.x)/d.x;if(t<0||t>16)return;
+  var z=o.z+d.z*t,y=o.y+d.y*t,c=Math.floor((z-FW.z0)/FW.pz),r=Math.floor((FW.y1-y)/FW.py);if(c<0||c>=FW.cols||r<0||r>=FW.rows)return;
+  if(z-(FW.z0+c*FW.pz)>FW.pw||(FW.y1-r*FW.py)-y>FW.ph)return;var i=rmFrOrder().indexOf(r*FW.cols+c);if(i>=0&&i<FW.L.length)FW.aim=i;}
+function rmFrTick(dt){FW.t-=dt;if(FW.t>0)return;FW.t=0.1;rmFrAim();if(FW.aim!==FW.hov){FW.hov=FW.aim;rmFrWall();}}
+function rmFrGo(code){if(code===RM.code){rmToast('Jesteś już w tym pokoju');return;}
+  try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.3,'sine',500,900,0.05,ac.destination);}catch(e){}location.href=rmFrLinkFor(code);}
+function rmFrAdd(code,name){code=String(code||'').trim().toUpperCase();if(!/^[A-Z0-9]{4}$/.test(code))return 'Kod pokoju ma 4 znaki (litery i cyfry).';
+  if(code===rmLoad().code)return 'To kod Twojego własnego pokoju.';var L=rmFriends(),f=L.filter(function(x){return x.c===code;})[0];
+  if(f){if(name)f.n=name;}else L.unshift({c:code,n:name||'',seen:[],at:Date.now()});rmFriendsSave(L);return '';}
+function rmFrHere(){var o=[];if(RM.guest)o.push({c:RM.code,n:RM.owner||'Gospodarz',host:1});
+  Object.keys(RM.rem).forEach(function(k){var R=RM.rem[k];if(R.home&&/^[A-Z0-9]{4}$/.test(R.home)&&R.home!==rmLoad().code&&!o.some(function(q){return q.c===R.home;}))o.push({c:R.home,n:R.nm||'Gość'});});return o;}
+function rmFrTxt(){var L=rmFriends(),d=new Date(),t='Tabby — pokoje znajomych\n(zapisane '+d.toLocaleDateString('pl-PL')+')\n\n';
+  L.forEach(function(f){t+=(f.n||'Pokój')+' — '+f.c+'\n'+rmFrLinkFor(f.c)+'\n\n';});if(!L.length)t+='(lista jest pusta)\n';return t;}
+function rmBookOpen(){rmOpen('fr');var b=rmPanel();b.style.display='block';var L=rmFriends(),H=rmFrHere(),saved=function(c){return L.some(function(f){return f.c===c;});};
+  var hs=H.length?H.map(function(q,i){var on=saved(q.c);return '<div class="rm-row" style="align-items:center;gap:8px"><span><b style="color:#e6edf3">'+rmEsc(q.n)+'</b>'+(q.host?' <span style="color:#9aa4b2;font-size:12px">(gospodarz)</span>':'')+' <span style="font-family:monospace;letter-spacing:1px;color:#9fd0ff">'+rmEsc(q.c)+'</span></span>'+
+      (on?'<span style="color:#3fb950;font-size:13px;white-space:nowrap">✓ zapisany</span>':'<button class="rm-b rm-g" data-sv="'+i+'" style="padding:4px 12px;margin:0">Zapisz</button>')+'</div>';}).join(''):
+    '<div style="color:#8b949e;font-size:13px;margin:4px 0">Nikogo tu teraz nie ma.</div>';
+  var ls=L.length?L.map(function(f,i){return '<div class="rm-row" style="align-items:center;gap:8px"><span><b style="color:#e6edf3">'+rmEsc(f.n||'Pokój')+'</b> <span style="font-family:monospace;letter-spacing:1px;color:#9fd0ff">'+rmEsc(f.c)+'</span></span><span style="white-space:nowrap"><button class="rm-b rm-y" data-go="'+i+'" style="padding:4px 10px;margin:0 4px 0 0">Wejdź</button><button class="rm-b rm-n" data-rm="'+i+'" style="padding:4px 8px;margin:0" title="Usuń z listy">✕</button></span></div>';}).join(''):
+    '<div style="color:#8b949e;font-size:13px;margin:4px 0">Jeszcze pusto.</div>';
+  var hd='font-size:14px;font-weight:bold;margin:12px 0 5px';
+  b.innerHTML='<div style="font-size:18px;font-weight:bold;margin-bottom:4px">📇 Pokoje znajomych</div>'+
+    '<div style="'+hd+'">👥 Teraz w pokoju</div>'+hs+
+    '<div style="'+hd+'">⌨ Wpisz kod ręcznie</div>'+
+    '<div style="display:flex;gap:6px;align-items:center"><input id="rm-fc" maxlength="4" placeholder="KOD" style="background:#0d1117;border:1px solid #3a4250;color:#fff;border-radius:7px;padding:6px 8px;font-size:14px;width:80px;text-transform:uppercase;font-family:monospace;letter-spacing:2px"><input id="rm-fnm" maxlength="14" placeholder="imię (nie musi)" style="background:#0d1117;border:1px solid #3a4250;color:#fff;border-radius:7px;padding:6px 8px;font-size:14px;flex:1;min-width:0"><button class="rm-b rm-g" id="rm-fadd" style="padding:6px 12px;margin:0">Zapisz</button></div>'+
+    '<div id="rm-fmsg" style="font-size:12.5px;min-height:16px;margin-top:4px"></div>'+
+    '<div style="'+hd+'">📋 Zapisane ('+L.length+')</div><div style="max-height:200px;overflow:auto">'+ls+'</div>'+
+    '<div style="margin-top:14px;display:flex;justify-content:space-between;gap:8px"><button class="rm-b rm-u" id="rm-fdl" style="margin:0">📥 Pobierz notatnik</button><button class="rm-b rm-n" id="rm-frx" style="margin:0">Zamknij</button></div>';
+  b.querySelector('#rm-frx').onclick=rmClose;
+  b.querySelectorAll('[data-sv]').forEach(function(e){e.onclick=function(){var q=H[+e.dataset.sv];rmFrAdd(q.c,q.n);rmToast('📇 Zapisano pokój: '+rmEsc(q.n)+' ('+q.c+')',2400);rmBookOpen();};});
+  b.querySelectorAll('[data-go]').forEach(function(e){e.onclick=function(){rmFrGo(L[+e.dataset.go].c);};});
+  b.querySelectorAll('[data-rm]').forEach(function(e){e.onclick=function(){L.splice(+e.dataset.rm,1);rmFriendsSave(L);rmBookOpen();};});
+  b.querySelector('#rm-fadd').onclick=function(){var m=b.querySelector('#rm-fmsg'),c=b.querySelector('#rm-fc').value,n=b.querySelector('#rm-fnm').value.trim(),er=rmFrAdd(c,n);
+    if(er){m.style.color='#ff7b72';m.textContent=er;return;}rmToast('📇 Zapisano pokój '+rmEsc(c.trim().toUpperCase()),2400);rmBookOpen();};
+  b.querySelector('#rm-fc').oninput=function(){b.querySelector('#rm-fmsg').textContent='';};
+  b.querySelector('#rm-fdl').onclick=function(){var bl=new Blob([rmFrTxt()],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='pokoje-znajomych.txt';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);};}
+function rmFrBuild(cDark){
+  var c=rmCanvas(4096,1152);FW.cv=c;FW.tx=new THREE.CanvasTexture(c);var m=new THREE.Mesh(new THREE.PlaneGeometry(32,9),new THREE.MeshBasicMaterial({map:FW.tx}));
+  m.rotation.y=-Math.PI/2;m.position.set(8.988,4.5,0);scene.add(m);
+  var desk=rmMat(0x2a2f37,{roughness:0.5,metalness:0.3});rmBox(0.9,0.95,2.8,desk,7.85,0.475,0,1);
+  var scr=rmCanvas(512,256),xs=scr.getContext('2d');xs.fillStyle='#2a1d0c';xs.fillRect(0,0,512,256);xs.strokeStyle='#f0a35e';xs.lineWidth=8;xs.strokeRect(8,8,496,240);
+  xs.fillStyle='#ffd8a8';xs.font='bold 46px sans-serif';xs.textAlign='center';xs.fillText('📇 ZNAJOMI',256,100);xs.font='30px sans-serif';xs.fillStyle='#c9d1d9';xs.fillText('zapisz gościa • wpisz kod',256,155);xs.fillText('podejdź i naciśnij E',256,205);
+  var pnl=new THREE.Mesh(new THREE.PlaneGeometry(2.3,1.15),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(scr)}));pnl.rotation.order='YXZ';pnl.rotation.set(-0.65,-Math.PI/2,0);pnl.position.set(7.7,1.18,0);scene.add(pnl);
+  rmFrWall();}
 function rmHalls(){
   var cWall=rmMat(0x59606b),cFloor=rmMat(0x2f343c,{roughness:0.95}),cFloor2=rmMat(0x34383f,{roughness:0.95}),cDark=rmMat(0x23272e),cOr=rmMat(0xf0a35e),cMet=rmMat(0x3b4048,{roughness:0.5,metalness:0.4});
   var lamp=new THREE.MeshBasicMaterial({color:0xfff4dd}),H=9;
@@ -5953,7 +6105,8 @@ function rmHalls(){
   rmBox(18.8,0.2,32.8,cFloor,0,-0.1,0);rmBox(24.8,0.2,32.2,cFloor2,0,-0.1,-32.5);rmBox(6.4,0.2,8,cFloor,0,-0.1,-52.6);
   var c1=rmBox(18.8,0.2,32.8,cDark,0,H+0.1,0),c2=rmBox(24.8,0.2,32.4,cDark,0,H+0.1,-32.4),c3=rmBox(6.4,0.2,8,cDark,0,4.75,-52.6);c1.castShadow=c2.castShadow=c3.castShadow=true; // dach zasłania słońce
   rmBox(18.8,H,0.4,cWall,0,H/2,16.2,1); // ściana z monitorem
-  rmBox(0.4,H,32.8,cWall,-9.2,H/2,0,1);rmBox(0.4,H,32.8,cWall,9.2,H/2,0,1);
+  rmBox(0.4,H,14.8,cWall,-9.2,H/2,9.0,1);rmBox(0.4,H,14.8,cWall,-9.2,H/2,-9.0,1);rmBox(0.4,H-4.2,3.2,cWall,-9.2,4.2+(H-4.2)/2,0,1); // lewa ściana z przejściem do Tabby
+  rmBox(0.4,H,32.8,cWall,9.2,H/2,0,1);
   rmBox(9.65,H,0.4,cWall,-7.575,H/2,-16.2,1);rmBox(9.65,H,0.4,cWall,7.575,H/2,-16.2,1); // ściana z drzwiami (przejście 5,5 m)
   rmBox(5.5,H-4.6,0.4,cWall,0,4.6+(H-4.6)/2,-16.2,1);
   rmBox(0.4,H,32.4,cWall,-12.2,H/2,-32.4,1);rmBox(0.4,H,32.4,cWall,12.2,H/2,-32.4,1);
@@ -5962,7 +6115,7 @@ function rmHalls(){
   for(var zc=-50;zc>=-55;zc-=2.5)rmBox(1.6,0.05,0.5,lamp,0,4.62,zc);
   var CL=new THREE.PointLight(0x9fd0ff,0.8,12,1.5);CL.position.set(0,4,-53);scene.add(CL);
   // pomarańczowy pas na ścianach
-  rmBox(18,0.14,0.04,cOr,0,1.2,15.98);rmBox(0.04,0.14,32,cOr,-8.98,1.2,0);rmBox(0.04,0.14,32,cOr,8.98,1.2,0);
+  rmBox(18,0.14,0.04,cOr,0,1.2,15.98);
   rmBox(0.04,0.14,32,cOr,-11.98,1.2,-32.4);rmBox(0.04,0.14,32,cOr,11.98,1.2,-32.4);
   [-1,1].forEach(function(s){rmBox(6.2,0.14,0.04,cOr,s*5.9,1.2,-15.98);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-16.42);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-48.38);});
   // lampy w suficie + światła
@@ -5986,6 +6139,8 @@ function rmHalls(){
   pnl.rotation.order='YXZ';pnl.rotation.set(-0.65,Math.PI,0);pnl.position.set(0,1.18,13.15);scene.add(pnl);
   // monitor na głównej ścianie
   var mc=rmCanvas(1024,576);RM.mon={cv:mc,tx:new THREE.CanvasTexture(mc),mode:'idle',d:null,t:0};
+  rmTabbyWall(); // 🐱 ściana Tabby
+  rmFrBuild(cDark); // 📇 ściana znajomych
   rmBox(9.4,5.5,0.12,cDark,0,3.75,16.0);
   var mon=new THREE.Mesh(new THREE.PlaneGeometry(9,5.06),new THREE.MeshBasicMaterial({map:RM.mon.tx}));mon.rotation.y=Math.PI;mon.position.set(0,3.75,15.93);scene.add(mon);
 }
@@ -6013,7 +6168,7 @@ function rmMkPed(x,z,hall,cMet,cTop){
 }
 function rmSlots(){
   var cMet=rmMat(0x3b4048,{roughness:0.5,metalness:0.4}),cTop=rmMat(0x23272e,{roughness:0.6});
-  [10,5,0,-5,-10].forEach(function(z){[-1,1].forEach(function(s){rmMkPed(s*6.6,z,'A',cMet,cTop);});}); // sala główna
+  [10,5,0,-5,-10].forEach(function(z){[-1,1].forEach(function(s){if(z===0)return;rmMkPed(s*6.6,z,'A',cMet,cTop);});}); // sala główna (środek lewej ściany = przejście do Tabby, prawej = pulpit znajomych)
   [-22,-27,-32,-37,-42].forEach(function(z){[-1,1].forEach(function(s){rmMkPed(s*8,z,'B',cMet,cTop);});}); // sala kategorii
   var cT=rmMat(0x2b3038,{roughness:0.5,metalness:0.4}),line=new THREE.MeshBasicMaterial({color:0xf2c200});
   [-23,-32,-41].forEach(function(z){[-1,1].forEach(function(s){ // sala kategorii „Pojazd”: obrotnice
@@ -6126,24 +6281,25 @@ function rmEnsureUI(){
   rmHud();
 }
 function rmToast(t,ms){if(!RM.ui)return;var el=RM.ui.toast;el.innerHTML=t;el.style.display='block';clearTimeout(RM.toastT);RM.toastT=setTimeout(function(){el.style.display='none';},ms||2600);}
-function rmLink(){var u=location.href.split('#')[0].split('?')[0];return u+'?pokoj='+RM.code;}
+function rmLink(){var u=location.protocol==='file:'?'https://miniklik.github.io/tabby/tabby-pokoj.html':location.href.split('#')[0].split('?')[0];return u+'?pokoj='+RM.code;} // z dysku: link do pokoju na GitHubie (działa u każdego)
 function rmHud(){
   var h=RM.ui.hud;
   if(RM.guest)h.innerHTML='👀 <b>Gość</b> w pokoju <b style="font-family:monospace;letter-spacing:1px">'+rmEsc(RM.code)+'</b>'+(RM.owner?' • gospodarz: <b>'+rmEsc(RM.owner)+'</b>':'')+
     '<br><span style="color:#9aa4b2;font-size:12px">Twoje imię:</span> <input id="rm-nm" maxlength="14" style="width:110px"> <button class="rm-b rm-n" id="rm-home" style="padding:4px 9px;font-size:12px">🏠 Mój pokój</button>'+
-    ' <button class="rm-b rm-u" id="rm-fr" style="padding:4px 9px;font-size:12px">⭐ Znajomi</button>'+
+    ''+
     '<div id="rm-gst" style="font-size:12px;color:#d29922"></div><div id="rm-cl" style="font-size:11.5px;margin-top:3px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e;margin-top:3px"></div>';
-  else h.innerHTML='🏠 <b>Mój pokój</b> • kod <b style="font-family:monospace;font-size:15px;letter-spacing:2px">'+rmEsc(RM.code)+'</b>'+
-    '<br><span style="color:#9aa4b2;font-size:12px">Twoje imię:</span> <input id="rm-nm" maxlength="14" style="width:110px"> <button class="rm-b rm-u" id="rm-lnk" style="padding:4px 9px;font-size:12px">🔗 Link dla gościa</button>'+
-    '<br><span style="color:#9aa4b2;font-size:12px">Odwiedź pokój:</span> <input id="rm-vc" maxlength="4" placeholder="KOD" style="width:62px;text-transform:uppercase;font-family:monospace;letter-spacing:2px"> <button class="rm-b rm-n" id="rm-go" style="padding:4px 9px;font-size:12px">Wejdź</button>'+
-    '<br><button class="rm-b rm-u" id="rm-fr" style="padding:4px 9px;font-size:12px;margin-top:4px">⭐ Pokoje znajomych</button> <button class="rm-b rm-n" id="rm-key" style="padding:4px 9px;font-size:12px;margin-top:4px">🔑 Klucz pokoju</button>'+
-    '<div id="rm-cl" style="font-size:11.5px;margin-top:3px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e;margin-top:3px"></div>';
+  else h.innerHTML='<div style="width:330px"></div><div style="font-size:15px;margin-bottom:6px">🏠 <b>Mój pokój</b> • kod <b style="font-family:monospace;font-size:15px;letter-spacing:2px">'+rmEsc(RM.code)+'</b></div>'+
+    '<div style="margin-bottom:5px"><span style=\"color:#9aa4b2;font-size:12px;display:inline-block;width:96px\">Twoje imię</span><input id="rm-nm" maxlength="14" style="width:150px"></div>'+
+    '<div style="margin-bottom:4px"><span style=\"color:#9aa4b2;font-size:12px;display:inline-block;width:96px\">Odwiedź pokój</span><input id="rm-vc" maxlength="4" placeholder="KOD" style="width:70px;text-transform:uppercase;font-family:monospace;letter-spacing:2px"> <button class="rm-b rm-n" id="rm-go" style="padding:4px 10px;font-size:12px;margin:0 0 0 4px">Wejdź</button></div>'+
+    '<div style="display:flex;gap:6px;margin:8px 0 6px"><button class="rm-b rm-u" id="rm-inv" style="flex:1;padding:6px 8px;font-size:12.5px;margin:0;white-space:nowrap">🔗 Zaproś do pokoju</button><button class="rm-b rm-n" id="rm-key" style="flex:1;padding:6px 8px;font-size:12.5px;margin:0;white-space:nowrap">🔑 Klucz pokoju</button></div>'+
+    '<div id="rm-box"></div>'+
+    '<div style="border-top:1px solid rgba(255,255,255,.12);margin-top:6px;padding-top:5px"><div id="rm-cl" style="font-size:11.5px"></div><div id="rm-net" style="font-size:11.5px;color:#8b949e"></div></div>';
   var nm=h.querySelector('#rm-nm');nm.value=RM.name;nm.oninput=function(){RM.name=nm.value.trim()||'Gracz';if(typeof rmCloudOwner==='function')rmCloudOwner();try{var o=JSON.parse(localStorage.getItem('tabby-mp')||'{}');o.name=RM.name;localStorage.setItem('tabby-mp',JSON.stringify(o));}catch(e){}if(!RM.guest)rmMon('idle');rmSendState();};
   var lk=h.querySelector('#rm-lnk');if(lk)lk.onclick=function(){rmClip(rmLink(),function(ok){rmToast(ok?'🔗 Link skopiowany — wklej go gościowi<br><span style="font-weight:normal;font-size:13px">'+(location.protocol==='file:'?'⚠ Plik jest otwarty z dysku — taki link zadziała tylko na tym komputerze. Otwórz pokój z GitHuba, wtedy link działa u każdego.':'Gość może być na innym komputerze — łączycie się przez Twoją centralę')+'</span>':'Skopiuj ręcznie: '+rmEsc(rmLink()),4000);});};
   var go=h.querySelector('#rm-go');if(go)go.onclick=function(){var c=h.querySelector('#rm-vc').value.trim().toUpperCase();if(c.length!==4){rmToast('Wpisz 4-znakowy kod pokoju');return;}location.href=location.href.split('#')[0].split('?')[0]+'?pokoj='+c;};
   var hm=h.querySelector('#rm-home');if(hm)hm.onclick=function(){location.href=location.href.split('#')[0].split('?')[0];};
   if(typeof RMW!=='undefined')rmNetSt(RMW.st);
-  var fb=h.querySelector('#rm-fr');if(fb)fb.onclick=rmFrOpen;var kb=h.querySelector('#rm-key');if(kb)kb.onclick=rmKeyOpen;
+  var kb=h.querySelector('#rm-key');if(kb)kb.onclick=function(){rmBoxShow(h,'key');};var ib=h.querySelector('#rm-inv');if(ib)ib.onclick=function(){rmBoxShow(h,'inv');};
   if(RM.cl&&RM.cl.st)rmCloudSt(RM.cl.st);
 }
 function rmClip(t,cb){
@@ -6722,7 +6878,7 @@ function rmCloudSync(){
     RM.cl.ok=true;rmSave();if(changed){rmLayout();rmSendState();}rmCloudSt('ok');rmDlTake(j.objs,j.tot||0);});
 }
 function rmCloudSt(s){RM.cl.st=s;var e=RM.ui&&RM.ui.hud&&RM.ui.hud.querySelector('#rm-cl');if(!e)return;
-  e.innerHTML=s==='ok'?(RM.guest?'<span style="color:#3fb950">☁ Obiekty wczytane z chmury</span>':'<span style="color:#3fb950">☁ Pokój zapisany w chmurze — goście wejdą także, gdy Cię nie ma</span>'):
+  e.innerHTML=s==='ok'?(RM.guest?'<span style="color:#3fb950">☁ Obiekty wczytane z chmury</span>':'<span style="color:#3fb950">☁ Zapisany w chmurze — goście wejdą też, gdy Cię nie ma</span>'):
     s==='none'?'<span style="color:#ff7b72">Nie ma pokoju o kodzie '+rmEsc(RM.code)+'</span>':
     s==='bad'?'<span style="color:#ff7b72">☁ Ten kod należy do innego klucza — wczytaj właściwy „🔑 Klucz pokoju”</span>':
     s==='off'?'<span style="color:#d29922">☁ Chmura niedostępna — spróbuję ponownie</span>':'<span style="color:#8b949e">☁ Łączę z chmurą…</span>';}
@@ -6759,10 +6915,10 @@ setInterval(function(){if(!rmCloudOn()||document.hidden)return;rmCloudGet(RM.cod
 
 // ---------- ⭐ pokoje znajomych ----------
 function rmFriends(){try{return JSON.parse(localStorage.getItem(RM_FR)||'[]');}catch(e){return [];}}
-function rmFriendsSave(L){try{localStorage.setItem(RM_FR,JSON.stringify(L));}catch(e){}}
+function rmFriendsSave(L){try{localStorage.setItem(RM_FR,JSON.stringify(L));}catch(e){}if(typeof rmFrWall==='function')rmFrWall();}
 function rmFriendSeen(code,name,ids){if(rmLoad().code===code)return;var L=rmFriends(),f=L.filter(function(x){return x.c===code;})[0];
   if(!f){f={c:code,n:name||'',seen:[],at:0};L.unshift(f);}if(name)f.n=name;f.seen=ids.slice(0,400);f.at=Date.now();rmFriendsSave(L);}
-function rmPanel(){rmEnsureUI();if(RM.ui.box)return RM.ui.box;var b=document.createElement('div');b.style.cssText=RM.ui.view.style.cssText;
+function rmPanel(){rmEnsureUI();if(RM.ui.box)return RM.ui.box;var b=document.createElement('div');b.className='rm-p';b.style.cssText=RM.ui.view.style.cssText;
   b.style.left='50%';b.style.top='50%';b.style.transform='translate(-50%,-50%)';b.style.width='460px';b.style.maxWidth='94vw';b.style.maxHeight='88vh';b.style.overflow='auto';b.style.padding='16px';b.style.display='none';
   document.body.appendChild(b);RM.ui.box=b;return b;}
 function rmFrOpen(){rmOpen('fr');var b=rmPanel(),L=rmFriends();b.style.display='block';
@@ -6779,6 +6935,38 @@ function rmFrOpen(){rmOpen('fr');var b=rmPanel(),L=rmFriends();b.style.display='
 }
 // ---------- 🔑 klucz pokoju ----------
 function rmKeyText(){return 'TABBY-POKOJ:'+RM.code+':'+RM.cl.key;}
+// 🔗 / 🔑 w panelu: pod przyciskami rozwija się pudełko — zaproszenie (link) albo klucz pokoju (kopiuj + wczytaj na innym komputerze)
+function rmBoxShow(h,kind){var B=h.querySelector('#rm-box');if(!B)return;if(B.dataset.k===kind){B.dataset.k='';B.innerHTML='';return;}B.dataset.k=kind;
+  var inp='flex:1;min-width:0;font-family:monospace;font-size:11.5px;padding:4px 6px',bt='padding:4px 10px;font-size:12px;margin:0';
+  if(kind==='inv'){var lk=rmLink();
+    B.innerHTML='<div style="background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.45);border-radius:9px;padding:8px 9px;margin-bottom:4px">'+
+      '<div style="color:#79c0ff;font-weight:bold;font-size:12.5px;margin-bottom:5px">🔗 Wyślij ten link — gość od razu pojawi się w Twoim pokoju</div>'+
+      '<div style="display:flex;gap:5px"><input id="rm-lt" readonly style="'+inp+'" value="'+rmEsc(lk)+'"><button class="rm-b rm-u" id="rm-lc" title="Kopiuj link" style="'+bt+'">📋</button></div>'+
+      '<div style="text-align:right;margin-top:5px"><button class="rm-b rm-n" id="rm-bx" style="padding:3px 9px;font-size:11.5px;margin:0">✕ Schowaj</button></div></div>';
+    var t=B.querySelector('#rm-lt');t.onfocus=function(){t.select();};
+    B.querySelector('#rm-lc').onclick=function(){rmClip(lk,function(ok){rmToast(ok?'🔗 Link skopiowany — wklej go gościowi':'Zaznacz link i skopiuj ręcznie',2600);});};}
+  else{B.innerHTML='<div style="background:rgba(242,194,0,.12);border:1px solid rgba(242,194,0,.5);border-radius:9px;padding:8px 9px;margin-bottom:4px">'+
+      '<div style="color:#f2c200;font-weight:bold;font-size:12.5px;margin-bottom:5px">🔑 Twój klucz — tylko dla Ciebie</div>'+
+      '<div style="display:flex;gap:5px;margin-bottom:8px"><input id="rm-kt" readonly style="'+inp+'" value="'+rmEsc(rmKeyText())+'"><button class="rm-b rm-u" id="rm-kc" title="Kopiuj klucz" style="'+bt+'">📋</button></div>'+
+      '<div style="color:#e3b341;font-size:12px;margin-bottom:4px">Inny komputer? Wklej swój klucz:</div>'+
+      '<div style="display:flex;gap:5px"><input id="rm-ki" placeholder="TABBY-POKOJ:…" style="'+inp+'"><button class="rm-b rm-y" id="rm-kl" style="'+bt+'">Wczytaj</button></div>'+
+      '<div id="rm-km" style="font-size:12px;margin-top:5px;min-height:0"></div>'+
+      '<div style="text-align:right;margin-top:5px"><button class="rm-b rm-n" id="rm-bx" style="padding:3px 9px;font-size:11.5px;margin:0">✕ Schowaj</button></div></div>';
+    var t2=B.querySelector('#rm-kt');t2.onfocus=function(){t2.select();};
+    B.querySelector('#rm-kc').onclick=function(){rmClip(rmKeyText(),function(ok){rmToast(ok?'📋 Klucz skopiowany — zachowaj go dla siebie':'Zaznacz klucz i skopiuj ręcznie',2600);});};
+    B.querySelector('#rm-kl').onclick=function(){rmKeyLoad(B.querySelector('#rm-ki').value,B.querySelector('#rm-km'),B);};}
+  B.querySelector('#rm-bx').onclick=function(){B.dataset.k='';B.innerHTML='';};
+  B.querySelectorAll('input').forEach(function(x){['keydown','keyup','keypress'].forEach(function(ev){x.addEventListener(ev,function(e){e.stopPropagation();});});});}
+// wczytanie klucza z innego komputera (to samo co w dawnym okienku klucza)
+function rmKeyLoad(v,m,b){v=String(v||'').trim();var q=v.match(/^TABBY-POKOJ:([A-Z0-9]{4}):([a-z0-9]{16,80})$/);
+  if(!q){m.style.color='#ff7b72';m.textContent='To nie wygląda na klucz pokoju.';return;}
+  if(q[1]===RM.code&&q[2]===RM.cl.key){m.style.color='#8b949e';m.textContent='To klucz tego pokoju — nic nie trzeba robić.';return;}
+  if(!b.dataset.sure){b.dataset.sure=1;m.style.color='#d29922';m.textContent='Obecny pokój '+RM.code+' zostanie zastąpiony pokojem '+q[1]+'. Jeśli chcesz kiedyś wrócić do obecnego, najpierw skopiuj jego klucz. Kliknij „Wczytaj” jeszcze raz.';return;}
+  m.style.color='#8b949e';m.textContent='Sprawdzam klucz…';var old=RM.cl.key;RM.cl.key=q[2];
+  rmCloudPost({op:'auth'},function(j){
+    if(!j||!j.ok){RM.cl.key=old;m.style.color='#ff7b72';m.textContent=j?'Ten klucz nie pasuje do pokoju '+q[1]+'.':'Brak połączenia z chmurą — spróbuj za chwilę.';return;}
+    try{localStorage.setItem(RM_KEY,JSON.stringify({code:q[1],objs:[],cl:{key:q[2],claimed:true,synced:[],del:[]}}));}catch(e){}
+    m.style.color='#3fb950';m.textContent='✅ Pokój '+q[1]+' wczytany — otwieram…';setTimeout(function(){location.href=location.href.split('#')[0].split('?')[0];},700);},q[1]);}
 function rmKeyOpen(){rmOpen('key');var b=rmPanel();b.style.display='block';
   b.innerHTML='<div style="font-size:18px;font-weight:bold;margin-bottom:6px">🔑 Klucz pokoju</div>'+
     '<div style="font-size:12.5px;color:#9aa4b2;margin-bottom:8px">To Twój dowód właściciela pokoju <b style="color:#e6edf3;font-family:monospace">'+rmEsc(RM.code)+'</b>. Zapisz go w bezpiecznym miejscu. Na innym komputerze lub w innej przeglądarce wklej go niżej — wróci ten sam pokój, ten sam kod i wszystkie obiekty. <b style="color:#ff7b72">Nie wysyłaj klucza gościom</b> — im wystarczy kod lub link.</div>'+
@@ -6803,7 +6991,7 @@ function rmKeyOpen(){rmOpen('key');var b=rmPanel();b.style.display='block';
 // ---------- 🛰 odwiedziny przez internet: ta sama centrala Cloudflare co gry Tabby (TABBY_RELAY), pokój „pokoj-KOD” ----------
 var RMW={ws:null,ok:false,tries:0,buf:{},cid:0,st:'off'};
 function rmNetSt(st){RMW.st=st;var e=RM.ui&&RM.ui.hud&&RM.ui.hud.querySelector('#rm-net');if(!e)return;
-  e.innerHTML=st==='ok'?'<span style="color:#3fb950">🛰 Połączono przez centralę — odwiedziny działają przez internet</span>':
+  e.innerHTML=st==='ok'?'<span style="color:#3fb950">🛰 Połączono — goście mogą wejść przez internet</span>':
     st==='wait'?'<span style="color:#d29922">🛰 Łączę z centralą…</span>':
     st==='none'?'<span style="color:#8b949e">Brak centrali — goście tylko w drugiej karcie tej przeglądarki</span>':
     '<span style="color:#ff7b72">🛰 Brak połączenia z centralą — ponawiam…</span>';}
@@ -6837,11 +7025,11 @@ function rmMsg(d){
     rmMon('idle');if(RM.ui)rmHud();}
   else if(d.t==='pos'){var R=RM.rem[d.id];if(!R){R=RM.rem[d.id]={g:rmFig(d.col||'#e5484d'),tag:null,nm:''};R.sh=R.g.userData._sh;}
     if(R.nm!==d.name){R.nm=d.name;if(R.tag){R.g.remove(R.tag);R.tag.material.map.dispose();R.tag.material.dispose();}R.tag=rmPlate(d.name||'Gość');R.tag.scale.set(1.6,0.4,1);R.tag.position.y=2.45;R.g.add(R.tag);}
-    R.tx=d.x;R.ty=d.y;R.tz=d.z;R.ta=d.a;R.mv=d.mv;R.last=performance.now();if(R.fresh===undefined){R.fresh=1;R.g.position.set(d.x,d.y,d.z);}}
+    R.home=d.home||R.home||'';R.tx=d.x;R.ty=d.y;R.tz=d.z;R.ta=d.a;R.mv=d.mv;R.last=performance.now();if(R.fresh===undefined){R.fresh=1;R.g.position.set(d.x,d.y,d.z);}}
   else if(d.t==='bye'){var R2=RM.rem[d.id];if(R2){rmDropFig(R2);delete RM.rem[d.id];}}
 }
 function rmNet(dt){
-  RM.sendT-=dt;if(RM.sendT<=0){RM.sendT=0.1;rmSend({t:'pos',id:RM.id,name:RM.name,col:RM.col,x:charX,y:charY,z:charZ,a:charAng,mv:isMov?1:0});}
+  RM.sendT-=dt;if(RM.sendT<=0){RM.sendT=0.1;rmSend({t:'pos',id:RM.id,name:RM.name,col:RM.col,home:rmLoad().code||'',x:charX,y:charY,z:charZ,a:charAng,mv:isMov?1:0});}
   var now=performance.now();
   Object.keys(RM.rem).forEach(function(k){var R=RM.rem[k];if(now-R.last>4000){rmDropFig(R);delete RM.rem[k];return;}
     var g=R.g,k2=Math.min(1,dt*10);g.position.x+=(R.tx-g.position.x)*k2;g.position.y+=(R.ty-g.position.y)*k2;g.position.z+=(R.tz-g.position.z)*k2;
@@ -6855,7 +7043,11 @@ function rmNearest(){
   var best=null,bd=1e9;
   var dc=Math.hypot(charX,charZ-12.2);if(dc<2.0&&charZ<13.5){best={kind:'add'};bd=dc;}
   RM.slots.forEach(function(S){if(!S.data)return;var d=Math.hypot(charX-S.x,charZ-S.z),lim=S.kind==='ped'?2.3:4.6;if(d<lim&&d<bd){bd=d;best={kind:'view',S:S};}});
+  var dbk=Math.hypot(charX-6.95,charZ);if(dbk<2.0&&dbk<bd&&charY<2){best={kind:'book'};bd=dbk;} // 📇 pulpit znajomych
+  if(!best&&charX>7.4&&Math.abs(charZ)<16&&charY<2&&FW.L.length&&FW.aim<0){best={kind:'book'};bd=9.2-charX;} // przy ścianie z tabliczkami: E = lista (tabliczki wysoko — z oczu (Tab) można celować w nie wprost)
+  var dtb=Math.hypot(charX+8.0,charZ);if(dtb<2.4&&dtb<bd&&charY<2){best={kind:'tabby'};bd=dtb;} // 🐱 przejście do Tabby
   [RM.d1,RM.d2].forEach(function(D){var d=rmDoorNear(D);if(d>=0&&d<bd&&!best){bd=d;best={kind:'door',D:D};}});
+  if(!best&&FW.aim>=0&&FW.L[FW.aim]){best={kind:'plate',f:FW.L[FW.aim]};bd=50;} // 🏠 tabliczka, na którą patrzysz
   if(best)best.d=bd;return best;
 }
 var _rmCI=checkInteract;
@@ -6864,7 +7056,7 @@ checkInteract=function(){
   var ip=document.getElementById('interact-prompt');
   if(nearIdx>=0){var pa=placedActions[nearIdx],dn=Math.hypot(charX-pa.gr.position.x,charZ-pa.gr.position.z);if(dn<RM.near.d){RM.near=null;return;}}
   nearIdx=-1;if(textPopupOpen)return;
-  var D=RM.near.D;ip.textContent=RM.near.kind==='door'?(D.mode==='pick'?'🖱 kółko myszy (albo ↑ ↓) — zmień kategorię • E — otwórz':(D.armed?'Otwarte: '+RM_CATS[D.sel][1]+' • E — zmień':'E — wybierz kategorię za drzwiami')):RM.near.kind==='add'?(RM.guest?'Konsola gospodarza — tylko on dodaje obiekty':'E — dodaj obiekt (wklej kod)'):'E — obejrzyj „'+RM.near.S.data.name+'”';
+  var D=RM.near.D;ip.textContent=RM.near.kind==='book'?'📇 E — pokoje znajomych: zapisz gościa • wpisz kod • notatnik':RM.near.kind==='plate'?'🏠 E — odwiedź pokój: '+(RM.near.f.n||'Pokój')+' ('+RM.near.f.c+')':RM.near.kind==='tabby'?'🐱 E — Wejście do Tabby (otworzy się w nowej karcie)':RM.near.kind==='door'?(D.mode==='pick'?'🖱 kółko myszy (albo ↑ ↓) — zmień kategorię • E — otwórz':(D.armed?'Otwarte: '+RM_CATS[D.sel][1]+' • E — zmień':'E — wybierz kategorię za drzwiami')):RM.near.kind==='add'?(RM.guest?'Konsola gospodarza — tylko on dodaje obiekty':'E — dodaj obiekt (wklej kod)'):'E — obejrzyj „'+RM.near.S.data.name+'”';
   ip.style.display='block';
 };
 window.addEventListener('keydown',function(e){
@@ -6873,6 +7065,9 @@ window.addEventListener('keydown',function(e){
     if(!inTxt){e.stopImmediatePropagation();}return;}
   var PD=rmPickDoor();if(PD&&(e.code==='ArrowUp'||e.code==='ArrowDown')){e.preventDefault();e.stopImmediatePropagation();rmDoorStep(PD,e.code==='ArrowDown'?1:-1);return;}
   if(e.code==='KeyE'&&RM.near&&RM.near.kind==='door'&&pLock&&!textPopupOpen&&!driveTarget){e.preventDefault();e.stopImmediatePropagation();rmDoorE(RM.near.D);return;}
+  if(e.code==='KeyE'&&RM.near&&RM.near.kind==='book'&&!textPopupOpen&&!driveTarget){e.preventDefault();e.stopImmediatePropagation();rmBookOpen();return;}
+  if(e.code==='KeyE'&&RM.near&&RM.near.kind==='plate'&&!textPopupOpen&&!driveTarget){e.preventDefault();e.stopImmediatePropagation();rmFrGo(RM.near.f.c);return;}
+  if(e.code==='KeyE'&&RM.near&&RM.near.kind==='tabby'&&!textPopupOpen&&!driveTarget){e.preventDefault();e.stopImmediatePropagation();rmGoTabby();return;}
   if(e.code==='KeyE'&&RM.near&&pLock&&!textPopupOpen&&!driveTarget){
     if(RM.near.kind==='add'&&RM.guest){e.stopImmediatePropagation();rmToast('Tylko gospodarz pokoju dodaje obiekty');return;}
     e.preventDefault();e.stopImmediatePropagation();rmOpen(RM.near.kind,RM.near.S);}
@@ -6934,7 +7129,7 @@ function rmTick(dt){
   var t=performance.now()*0.001;
   RM.slots.forEach(function(S,i){if(!S.disp)return;S.disp.rotation.y+=dt*(S.kind==='ped'?0.5:0.18);if(S.kind==='ped')S.disp.position.y=1.25+Math.sin(t*1.6+i)*0.06;
     if(S.beam)S.beam.material.opacity=0.06+Math.sin(t*1.3+i)*0.025;});
-  rmDoorsTick(dt);
+  rmDoorsTick(dt);rmTabbyRain(dt);rmCatTick(dt);rmFrTick(dt);
   if(RM.open&&RM.open.kind==='add'&&RM.open.d&&RM.pv){RM.mon.t-=dt;if(RM.mon.t<=0){RM.mon.t=0.12;rmMon('preview',RM.open.I,RM.pv.r.domElement);}}
   if(RM.open){var si=document.getElementById('start-info');if(si)si.style.display='none';}
   rmPvTick(dt);rmNet(dt);rmTestTick(dt);

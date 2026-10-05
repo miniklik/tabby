@@ -4715,10 +4715,11 @@ function mpMsg(d,from){
   R.seen=performance.now();
   if(d.t==='hi'&&d.h&&!MP.host&&MP.phase==='menu'){mpStatus('');mpEnterLobby();} // gospodarz nas przyjął
   if(d.t==='hi'){R.host=!!d.h;if(d.name!==R.name||d.col!==R.col){mpRemoveAv(R);var N=mpAvatar(d);N.tx=R.tx;N.host=R.host;N.ph=R.ph;N.rd=R.rd;MP.rem[d.id]=N;}mpUIState();}
-  else if(d.t==='s'){R.tx={x:d.x,y:d.y,z:d.z,a:d.a,m:d.m,r:d.r,w:d.w,v:d.v,dd:d.dd};R.ph=d.ph||0;R.rd=d.rd||0;if(d.op)mpPoseRecv(d.op,d.id);}
+  else if(d.t==='s'){R.tx={x:d.x,y:d.y,z:d.z,a:d.a,m:d.m,r:d.r,w:d.w,v:d.v,dd:d.dd,rt:d.rt||null};R.ph=d.ph||0;R.rd=d.rd||0;if(d.op)mpPoseRecv(d.op,d.id);}
   else if(d.t==='ev'){mpApply(d);}
   else if(d.t==='en'){mpEnmRecv(d);}
   else if(d.t==='f'){mpTracer(d);}
+  else if(/^(tr|tc|ts|kl|kb)$/.test(d.t)){if(typeof railNetRecv==='function'&&MP.phase==='game')railNetRecv(d);} // 🚂 kolej i 🚡 kolejka linowa
 }
 function mpHello(){mpSend({t:'hi',name:MP.me.name,col:MP.me.col,h:MP.host?1:0});}
 function mpStop(silent){MP._stop=true;try{mpStop0(silent);}finally{MP._stop=false;}}
@@ -4882,7 +4883,7 @@ function mpNet(){
   if(!mpActive()||!MP.on)return;var now=performance.now();
   if(now-(MP.lastSend||0)>=66){MP.lastSend=now; // ok. 15 razy na sekundę: gdzie jestem i co robię
     var dr=(typeof DRV!=='undefined'&&DRV.t);
-    mpSend({t:'s',x:+charX.toFixed(2),y:+charY.toFixed(2),z:+charZ.toFixed(2),a:+(charGroup?charGroup.rotation.y:0).toFixed(2),m:typeof isMov!=='undefined'&&isMov?1:0,r:typeof isRun!=='undefined'&&isRun?1:0,w:WPN.po?1:0,v:dr?0:1,ph:MP.phase==='game'?1:0,rd:MP.ready?1:0,dd:(typeof ENM!=='undefined'&&ENM.ply.dead)?1:0,op:MP.phase==='game'?mpPoses():null});}
+    mpSend({t:'s',x:+charX.toFixed(2),y:+charY.toFixed(2),z:+charZ.toFixed(2),a:+(charGroup?charGroup.rotation.y:0).toFixed(2),m:typeof isMov!=='undefined'&&isMov?1:0,r:typeof isRun!=='undefined'&&isRun?1:0,w:WPN.po?1:0,v:dr?0:1,ph:MP.phase==='game'?1:0,rd:MP.ready?1:0,dd:(typeof ENM!=='undefined'&&ENM.ply.dead)?1:0,op:MP.phase==='game'?mpPoses():null,rt:typeof railRideTag==='function'?railRideTag():null});} // rt: jadę pociągiem / kabiną — gdzie w nim stoję
   if(MP.phase==='game')mpEnmSend(); // gospodarz: stan wrogów dla gości
   if(MP.phase!=='lobby')return;
   if(MP.host){ // gospodarz prowadzi odliczanie
@@ -5001,6 +5002,7 @@ function mpTick(dt){
     if(!g.visible||g.position.distanceTo(new THREE.Vector3(T.x,T.y,T.z))>40){g.visible=true;g.position.set(T.x,T.y,T.z);} // przeskok (np. start gry) bez przelatywania przez mapę
     var f=Math.min(1,dt*10);g.position.x+=(T.x-g.position.x)*f;g.position.y+=(T.y-g.position.y)*f;g.position.z+=(T.z-g.position.z)*f; // płynnie między paczkami danych
     var da=T.a-g.rotation.y;while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;g.rotation.y+=da*f;
+    if(T.rt&&typeof railRidePlace==='function')railRidePlace(g,T.rt); // w pociągu / kabinie: stoi w swoim miejscu w wagonie (bez drgania przy jeździe)
     g.visible=T.v!==0;R.gun.visible=!!T.w;
     if(T.m){R.wt+=dt*(T.r?12:8);var sw=Math.sin(R.wt),am=T.r?0.7:0.45;R.bp.legL.rotation.x=sw*am;R.bp.legR.rotation.x=-sw*am;R.bp.armL.rotation.x=-sw*am*0.8;R.bp.armR.rotation.x=T.w?-1.3:sw*am*0.8;}
     else{R.bp.legL.rotation.x*=0.85;R.bp.legR.rotation.x*=0.85;R.bp.armL.rotation.x*=0.85;R.bp.armR.rotation.x=T.w?-1.3:R.bp.armR.rotation.x*0.85;}
@@ -6128,6 +6130,100 @@ var _trnBT0=trnBuildTrack;trnBuildTrack=function(){_trnBT0();if(!TRN.trackG)retu
 var _depModel0=depModel;depModel=function(f){var g=_depModel0(f);g.userData._dep=1;return g;};
 var _stopModel0=stopModel;stopModel=function(){var g=_stopModel0();g.userData._dep=1;g.userData._stop=1;return g;};
 setInterval(function(){try{kBind();}catch(e){}},300);
+
+// ---------- 🌐 KOLEJ I KOLEJKA LINOWA W MULTIPLAYERZE ----------
+// Jeden pociąg dla wszystkich. Liczy go „właściciel”: maszynista, a gdy nikt nie prowadzi — gospodarz.
+// Właściciel wysyła stan pociągu ('tr': 10 razy na sekundę w ruchu, 2 razy na postoju). Reszta graczy jedzie u siebie tak samo
+// i tylko łagodnie dociąga położenie. Zwrotnice: 'ts' — kto przestawi, wysyła wszystkim. E na wagonie / słupek: 'tc' do właściciela.
+// Kolejka linowa: kabinami rządzi gospodarz ('kl'); gość, który wsiada, wysyła 'kb'.
+// Gracz w pociągu / kabinie dokłada do swojej paczki 'rt' (miejsce w wagonie) — inni stawiają go tam u siebie, bez drgania.
+// W grze bez multiplayera (i w edytorze) nic z tego nie działa — wszystko idzie jak dotąd.
+function trnMp(){return typeof mpGame==='function'&&mpGame();}
+TRN.rdrv=null;TRN.net=null;TRN.swT={};TRN.sendT=0;TRN.corr=0;KOL.sendT=0;KOL.kbT={};
+function trnRemoteDrv(){return !!(TRN.rdrv&&performance.now()-TRN.rdrv.at<3000);} // ktoś inny siedzi w kabinie (3 s zapasu na wolne łącze; wysiadając maszynista od razu daje znać)
+function trnRemoteName(){var R=TRN.rdrv&&MP.rem[TRN.rdrv.id];return R?R.name:'ktoś inny';}
+function trnAuth(){if(!trnMp())return true;if(TRN.drive)return true;if(trnRemoteDrv())return false;return !!MP.host;} // czy to ja liczę pociąg
+function trnNetSend(force){if(!trnMp()||!TRN.cars.length||!eGet(TRN.fe))return;var now=performance.now(),busy=TRN.drive||TRN.auto||TRN.stopReq||Math.abs(TRN.v)>0.05;
+  if(!force&&now-TRN.sendT<(busy?100:500))return;TRN.sendT=now;
+  mpSend({t:'tr',fe:TRN.fe,fs:+TRN.fs.toFixed(3),fd:TRN.fd,v:+TRN.v.toFixed(3),h:TRN.hist.map(function(x){return [x.e,x.d];}),
+    a:TRN.auto?1:0,sr:TRN.stopReq?1:0,cs:TRN.callStop||0,dir:TRN.dir||1,wt:+(TRN.wait||0).toFixed(2),rv:TRN.rev?1:0,ld:TRN.lastDir||1,dr:TRN.drive?1:0,
+    w:(TRN.swSigns||[]).map(function(S){return [S.n.id,S.n.sw];})});}
+function trnFlash(t){TRN._fl={t:t,at:performance.now()};try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.18,'square',200,150,0.04,ac.destination);}catch(e){}} // krótki napis nad grą
+function trnQuiet(fn){var a=wpnTone,b=trnMsg;wpnTone=function(){};trnMsg=function(){};try{fn();}finally{wpnTone=a;trnMsg=b;}} // polecenie od innego gracza — bez dźwięku u mnie
+function trnYield(){ // dwóch maszynistów naraz: kabina zostaje dla jednego, drugi wysiada obok lokomotywy
+  TRN.drive=false;TRN.exitReq=false;if(TRN.keep){WSP=TRN.keep.w;RSP=TRN.keep.r;JF=TRN.keep.j;TRN.keep=null;}
+  var c=TRN.cars[0];if(c){var v=new THREE.Vector3(-2.4,0,TRN_LOCO/2-2.0);c.localToWorld(v);charX=v.x;charZ=v.z;charY=c.position.y;velY=0;if(charGroup)charGroup.position.set(charX,charY,charZ);}
+  trnUI();trnFlash('🚂 Pociąg prowadzi już '+trnRemoteName()+'.');}
+function trnLamps(){var run=TRN.auto||Math.abs(TRN.v)>0.3;kPosts().forEach(function(p){var L=p.post.userData.lamps;if(L._run===run)return;L._run=run;
+  L.g.forEach(function(m){m.material=run?L.gOn:L.G0;});L.r.forEach(function(m){m.material=run?L.R0:L.rOn;});});}
+// pociąg u gracza, który go nie liczy: jedzie z prędkością właściciela, a każda paczka łagodnie poprawia położenie (duża różnica = przeskok)
+function trnFollowTick(dt){dt=Math.min(dt,0.05);trnCam(dt);if(!KM.deps.length||!TRN.cars.length)return;
+  var prev=TRN.cars.map(function(c){return {x:c.position.x,z:c.position.z,yaw:c.rotation.y};}),P=TRN.net;TRN.net=null;
+  if(P){TRN.v=P.v;var pe=eGet(P.fe),le=eGet(TRN.fe),snap=!le||!pe;
+    if(!snap){var a=nPos(pe,P.fs,P.fd),b=nPos(le,TRN.fs,TRN.fd),dx=a.x-b.x,dz=a.z-b.z;if(Math.hypot(dx,dz)>4)snap=true;else TRN.corr=dx*Math.sin(b.yaw)+dz*Math.cos(b.yaw);}
+    if(snap&&pe){TRN.fe=P.fe;TRN.fs=P.fs;TRN.fd=P.fd;TRN.hist=P.h.map(function(q){return {e:q[0],d:q[1]};});TRN.corr=0;}}
+  if(!eGet(TRN.fe))return;
+  var c0=TRN.corr*Math.min(1,dt*4);TRN.corr-=c0;var ds=TRN.v*dt+c0;
+  if(Math.abs(ds)>1e-5&&!nAdvance(ds))TRN.v=0;nPruneHist(trnTrainLen());
+  trnPlace();TRN.cars.forEach(function(c){var w=TRN.v*dt/0.46;c.traverse(function(m){if(m.userData._wheel)m.rotation.x+=w;});});
+  TRN.delta=TRN.cars.map(function(c,i){return {px:prev[i].x,pz:prev[i].z,dy:c.rotation.y-prev[i].yaw};}); // gracz na wagonie jedzie razem z nim
+  if(Math.abs(TRN.v)>0.5&&(!TRN.snd||performance.now()-TRN.snd>Math.max(220,9000/Math.abs(TRN.v)))){TRN.snd=performance.now();try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.12,'triangle',90,60,0.035,ac.destination);wpnTone(ac,ac.currentTime+0.09,0.12,'triangle',95,60,0.03,ac.destination);}catch(e){}}
+  TRN.ahead=null;trnLamps();trnPromptTick();}
+var _trnTickM=trnTick;trnTick=function(dt){if(trnMp()&&!trnAuth()){trnFollowTick(dt);return;}TRN.net=null;TRN.corr=0;_trnTickM(dt);trnNetSend();};
+// wsiadanie do lokomotywy: tylko jeden maszynista
+var trnUse0=trnUse;trnUse=function(){
+  if(trnMp()&&!TRN.drive&&trnRemoteDrv()&&trnNearCab()){trnFlash('🚂 Pociąg prowadzi '+trnRemoteName()+' — wejdź na wagon i jedźcie razem.');return true;}
+  var was=TRN.drive,r=trnUse0.apply(this,arguments);if(trnMp()&&was!==TRN.drive){if(TRN.drive)TRN.rdrv=null;trnNetSend(true);}return r;};
+// E na wagonie i słupek na przystanku: u mnie od razu (dźwięk, napis), a decyzję wysyłam do tego, kto liczy pociąg
+var trnWagonToggle0=trnWagonToggle;trnWagonToggle=function(){
+  if(!trnMp()||trnAuth())return trnWagonToggle0.apply(this,arguments);
+  if(trnRemoteDrv()){trnFlash('🚂 Pociąg prowadzi '+trnRemoteName()+' — rusza i staje maszynista.');return true;}
+  var r=trnWagonToggle0.apply(this,arguments);mpSend({t:'tc',c:'w',on:TRN.auto?1:0});return r;};
+var kPostAct0=kPostAct;kPostAct=function(p){
+  if(!trnMp()||trnAuth())return kPostAct0.apply(this,arguments);
+  if(trnRemoteDrv()){trnFlash('🚂 Pociąg prowadzi '+trnRemoteName()+'.');return;}
+  var st=kStopOfPost(p);kPostAct0.apply(this,arguments);if(st)mpSend({t:'tc',c:'p',s:st.id,go:TRN.auto?1:0});};
+// zwrotnica przestawiona u mnie (A / D z kabiny albo E przy latarni) — wysyłam wszystkim
+var kSwRead0=kSwRead;kSwRead=function(n){var r=kSwRead0.apply(this,arguments);if(n&&!TRN._rx&&trnMp()){TRN.swT[n.id]=performance.now();mpSend({t:'ts',n:n.id,sw:n.sw});}return r;};
+// napis: kto prowadzi + krótkie komunikaty sieciowe
+var _trnPTM=trnPromptTick;trnPromptTick=function(){_trnPTM();if(!TRN.prompt||TRN.edit)return;var t=null;
+  if(TRN._fl&&performance.now()-TRN._fl.at<3000)t=TRN._fl.t;else if(trnMp()&&!TRN.drive&&trnRemoteDrv()&&trnNearCab())t='🚂 Pociąg prowadzi '+trnRemoteName();
+  if(t!==null&&TRN.prompt._t!==t){TRN.prompt._t=t;TRN.prompt.textContent=t;TRN.prompt.style.display='block';}};
+// 🚡 kolejka linowa: gospodarz wysyła stan kabin, gość, który wsiada, prosi gospodarza o odjazd
+function kolNetSend(force){if(!trnMp()||!MP.host||!KOL.lines.length)return;var now=performance.now(),busy=KOL.lines.some(function(L){return L.state!=='idle';});
+  if(!force&&now-KOL.sendT<(busy?100:1000))return;KOL.sendT=now;
+  mpSend({t:'kl',l:KOL.lines.map(function(L){return [+L.s.toFixed(3),+L.v.toFixed(3),L.dir,L.state==='board'?1:L.state==='run'?2:0,+(L.wait||0).toFixed(2)];})});}
+var _kolTickM=kolTick;kolTick=function(dt){_kolTickM(dt);kolNetSend();};
+var _kolUseM=kolUse;kolUse=function(){var had=!!KOL.ride,r=_kolUseM.apply(this,arguments);
+  if(trnMp()&&!MP.host&&!had&&KOL.ride){var L=KOL.lines[KOL.ride.li];if(L&&L.state==='board'){KOL.kbT[KOL.ride.li]=performance.now();mpSend({t:'kb',li:KOL.ride.li});}}return r;};
+// wiadomości od innych graczy (wywołuje je multiplayer)
+function railNetRecv(d){var now=performance.now();
+  if(d.t==='ts'){var n=nGet(d.n);TRN.swT[d.n]=now;if(n&&(d.sw==='L'||d.sw==='R')&&n.sw!==d.sw){n.sw=d.sw;TRN._rx=true;try{kSwRead(n);}finally{TRN._rx=false;}trnSwDraw();}return;}
+  if(d.t==='tr'){
+    if(d.dr){if(TRN.drive){if(String(d.id)<String(MP.me.id)){TRN.rdrv={id:d.id,at:now};trnYield();}else return;}TRN.rdrv={id:d.id,at:now};}
+    else if(TRN.rdrv&&TRN.rdrv.id===d.id)TRN.rdrv=null; // maszynista wysiadł
+    if(trnAuth())return; // to ja liczę pociąg
+    TRN.auto=!!d.a;TRN.stopReq=!!d.sr;TRN.callStop=d.cs||null;TRN.dir=d.dir||1;TRN.wait=d.wt||0;TRN.rev=!!d.rv;TRN.lastDir=d.ld||1;
+    var dirty=false;(d.w||[]).forEach(function(q){var n=nGet(q[0]);if(!n||n.sw===q[1]||now-(TRN.swT[q[0]]||0)<1500)return;n.sw=q[1];TRN._rx=true;try{kSwRead(n);}finally{TRN._rx=false;}dirty=true;});
+    if(dirty)trnSwDraw();
+    TRN.net={fe:d.fe,fs:d.fs,fd:d.fd,v:d.v,h:d.h||[]};return;}
+  if(d.t==='tc'){if(!trnAuth()||!TRN.cars.length)return;
+    trnQuiet(function(){
+      if(d.c==='w'){if(!TRN.drive&&TRN.auto!==!!d.on)trnWagonToggle0();}
+      else if(d.c==='p'){var st=KM.stops.filter(function(s){return s.id===d.s;})[0],g=st&&stopGeo(st);if(!g)return;var run=TRN.auto||(Math.abs(TRN.v)>0.3&&!TRN.drive);if(!!d.go!==run)kPostAct0({m:{position:{x:g.x,z:g.z}}});}});
+    trnNetSend(true);return;}
+  if(d.t==='kb'){if(!MP.host)return;var L=KOL.lines[d.li];if(L&&L.done&&L.state==='idle'){L.state='board';L.wait=1.6;}kolNetSend(true);return;}
+  if(d.t==='kl'){if(MP.host)return;(d.l||[]).forEach(function(q,i){var L=KOL.lines[i];if(!L||!L.done||now-(KOL.kbT[i]||0)<1200)return;var st=['idle','board','run'][q[3]]||'idle';
+      if(st===L.state&&L.dir===q[2]&&Math.abs(q[0]-L.s)<3)L.s+=(q[0]-L.s)*0.35;else{L.s=q[0];L.dir=q[2];L.state=st;}L.v=q[1];L.wait=q[4];});}}
+// gdzie stoję w pociągu / kabinie (wysyłane w paczce gracza) i jak to pokazać u innych
+function railRideTag(){if(KOL.ride)return ['c',KOL.ride.li,KOL.ride.c];
+  var i=TRN.drive?0:TRN.on,c=i>=0&&TRN.cars[i];if(!c)return null;var l=trnLocal(c,charX,charZ);
+  return ['t',i,+l.x.toFixed(2),+(charY-c.position.y).toFixed(2),+l.z.toFixed(2),+((charGroup?charGroup.rotation.y:charAng)-c.rotation.y).toFixed(2)];}
+function railRidePlace(g,rt){
+  if(rt[0]==='t'){var c=TRN.cars[rt[1]];if(!c)return false;var cy=Math.cos(c.rotation.y),sy=Math.sin(c.rotation.y);
+    g.position.set(c.position.x+rt[2]*cy+rt[4]*sy,c.position.y+rt[3],c.position.z-rt[2]*sy+rt[4]*cy);g.rotation.y=c.rotation.y+rt[5];return true;}
+  if(rt[0]==='c'){var L=KOL.lines[rt[1]],cb=L&&L.cabs[rt[2]];if(!cb)return false;var v=new THREE.Vector3(0,-4.43,0.3);cb.localToWorld(v);g.position.copy(v);return true;}
+  return false;}
 
 var _trnUpd=update;update=function(dt){trnCarry();trnPin();_trnUpd(dt);trnTick(dt);trnPin();trnFloor();};
 // ===================== 🚂 KONIEC KOLEI =====================

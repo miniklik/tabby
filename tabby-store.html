@@ -48,6 +48,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
 .pill[data-cat="wrogowie"].active{background:#e5484d;border-color:#e5484d}
 .pill[data-cat="zabawa"].active{background:#ff7ab6;border-color:#ff7ab6}
 .pill[data-cat="kolejka"].active{background:#c8323a;border-color:#c8323a}
+.pill[data-cat="kolej"].active{background:#e2702a;border-color:#e2702a}
 .stats{font-size:12px;color:var(--text-dim);padding:14px 24px 0;max-width:1320px;margin:0 auto}
 
 /* GRID */
@@ -74,6 +75,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
 .tag-strefy{background:rgba(229,72,77,.16);color:#ff8d8f}
 .tag-zabawa{background:rgba(255,122,182,.16);color:#ff9cc8}
 .tag-kolejka{background:rgba(200,50,58,.18);color:#ff8a8f}
+.tag-kolej{background:rgba(226,112,42,.18);color:#ffb37a}
 .card-desc{font-size:12px;color:var(--text-dim);line-height:1.5;margin-bottom:12px}
 .card-meta{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-dim);margin-bottom:12px}
 .meta-parts{display:flex;align-items:center;gap:3px}
@@ -141,6 +143,7 @@ body{background:radial-gradient(ellipse 120% 50% at 15% 105%,rgba(240,163,94,.18
     <button class="pill" data-cat="wrogowie">🧍 Postacie</button>
     <button class="pill" data-cat="zabawa">🎈 Plac zabaw</button>
     <button class="pill" data-cat="kolejka">🚡 Kolejka</button>
+    <button class="pill" data-cat="kolej">🚂 Kolej</button>
   </div>
 </div>
 <div class="stats" id="stats"></div>
@@ -2321,6 +2324,115 @@ var ASSETS = [
     ],
     preview:[{"shape": "box", "size": [11.2, 0.5, 9.6], "color": "#9aa1ab", "position": [0, 0.25, 0]}, {"shape": "box", "size": [10.8, 0.15, 0.45], "color": "#9aa1ab", "position": [0, 0.08, 5.0]}, {"shape": "box", "size": [1.9, 0.45, 7.6], "color": "#9aa1ab", "position": [-4.35, 0.72, 0.2]}, {"shape": "box", "size": [2.0, 0.45, 7.6], "color": "#9aa1ab", "position": [0, 0.72, 0.2]}, {"shape": "box", "size": [1.9, 0.45, 7.6], "color": "#9aa1ab", "position": [4.35, 0.72, 0.2]}, {"shape": "box", "size": [11.4, 7.0, 0.3], "color": "#f2f2f2", "position": [0, 4.0, -4.85]}, {"shape": "box", "size": [12.4, 0.35, 10.4], "color": "#c8323a", "position": [0, 7.85, 0]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [-5.45, 4.1, -4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [5.45, 4.1, -4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [-5.45, 4.1, 4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [5.45, 4.1, 4.65]}, {"shape": "box", "size": [0.35, 7.2, 0.35], "color": "#3b4048", "position": [0, 4.1, 4.65]}, {"shape": "cylinder", "size": [2.2, 2.2, 0.2, 24], "color": "#7d8590", "position": [0, 5.4, -3.1]}, {"shape": "box", "size": [2.6, 0.16, 3.4], "color": "#c8323a", "position": [-2.2, 3.45, 0]}, {"shape": "box", "size": [2.4, 0.12, 3.2], "color": "#3b4048", "position": [-2.2, 0.95, 0]}, {"shape": "box", "size": [0.06, 1.0, 3.1], "color": "#c8323a", "position": [-3.37, 1.45, 0]}, {"shape": "box", "size": [0.06, 1.0, 3.1], "color": "#c8323a", "position": [-1.03, 1.45, 0]}, {"shape": "box", "size": [2.3, 2.4, 0.04], "color": "#9fd8ff", "position": [-2.2, 2.15, 1.58]}, {"shape": "box", "size": [0.12, 1.9, 0.12], "color": "#3b4048", "position": [-2.2, 4.4, 0]}],
     action:{"type": "ctop"}
+  },
+  {
+    name:"Zajezdnia (kolej)",
+    category:["kolej", "interaktywny"],
+    desc:"🚂 Start kolei: hala z pociągiem (lokomotywa + do 7 wagonów). Postaw ją raz, potem klawisz 1 → klik w zajezdnię → Interakcja → „🚂 Edytuj tory”: kropki, rozjazdy (trójkąty), przystanki, tunele, nasypy i kolejne zajezdnie na końcach torów. W grze: E przy lokomotywie, W/S jazda, A/D zwrotnice.",
+    parts:[
+      {"shape": "box", "size": [8.4, 0.1, 8], "color": "#a7adb5", "position": [0, 0.05, 0]}
+    ],
+    preview:[{"shape": "box", "size": [8.4, 0.12, 22], "color": "#a7adb5", "position": [0, 0.06, 0]}, {"shape": "box", "size": [0.5, 6, 22], "color": "#a8553a", "position": [-4.2, 3, 0]}, {"shape": "box", "size": [0.5, 6, 22], "color": "#a8553a", "position": [4.2, 3, 0]}, {"shape": "box", "size": [8.9, 6, 0.5], "color": "#a8553a", "position": [0, 3, -11.0]}, {"shape": "box", "size": [5.3, 0.25, 23], "color": "#3d4a5c", "position": [-2.27, 6.85, 0], "rotation": [0, 0, 0.42]}, {"shape": "box", "size": [5.3, 0.25, 23], "color": "#3d4a5c", "position": [2.27, 6.85, 0], "rotation": [0, 0, -0.42]}, {"shape": "box", "size": [9, 1.4, 0.5], "color": "#a8553a", "position": [0, 5.6, 11.0]}, {"shape": "box", "size": [2.5, 0.14, 32], "color": "#6b4a2f", "position": [0, 0.15, 5]}, {"shape": "box", "size": [0.1, 0.1, 32], "color": "#8a919a", "position": [-0.72, 0.25, 5]}, {"shape": "box", "size": [0.1, 0.1, 32], "color": "#8a919a", "position": [0.72, 0.25, 5]}, {"shape": "box", "size": [2.9, 0.5, 13], "color": "#2f343b", "position": [0, 1.0, 6]}, {"shape": "box", "size": [2.3, 2.2, 8.4], "color": "#e2702a", "position": [0, 2.3, 4.4]}, {"shape": "box", "size": [2.9, 2.9, 3.4], "color": "#e2702a", "position": [0, 2.65, 11]}, {"shape": "box", "size": [0.8, 0.8, 0.2], "color": "#9fd8ff", "position": [0, 3.2, 12.75]}],
+    action:{"type": "rail"}
+  },
+  {
+    name:"Semafor kolejowy",
+    category:["kolej", "dekoracja"],
+    desc:"Słup z sygnalizatorem: czerwone i zielone światło. Stawiaj przy torach przed stacją i rozjazdami.",
+    parts:[
+      {"shape": "box", "size": [0.6, 0.3, 0.6], "color": "#a7adb5", "position": [0, 0.15, 0], "col": true},
+      {"shape": "cylinder", "size": [0.09, 0.11, 5, 8], "color": "#8a919a", "position": [0, 2.8, 0]},
+      {"shape": "box", "size": [0.55, 1.3, 0.35], "color": "#2f343b", "position": [0, 4.9, 0.05]},
+      {"shape": "sphere", "size": [0.15, 10, 8], "color": "#d93025", "position": [0, 5.25, 0.25]},
+      {"shape": "sphere", "size": [0.15, 10, 8], "color": "#2ea043", "position": [0, 4.75, 0.25]},
+      {"shape": "box", "size": [0.7, 0.08, 0.45], "color": "#2f343b", "position": [0, 5.6, 0.05]},
+      {"shape": "box", "size": [0.06, 1.2, 0.06], "color": "#f2c200", "position": [0.3, 0.6, 0]}
+    ]
+  },
+  {
+    name:"Budynek stacji",
+    category:["kolej", "budynek"],
+    desc:"Mały dworzec z ceglanymi ścianami, oknami, dachem i tablicą. Postaw obok przystanku.",
+    parts:[
+      {"shape": "box", "size": [10, 4, 6], "color": "#a8553a", "position": [0, 2, 0], "col": true},
+      {"shape": "box", "size": [11, 0.4, 7], "color": "#3d4a5c", "position": [0, 4.3, 0]},
+      {"shape": "cone", "size": [5.4, 1.6, 4], "color": "#3d4a5c", "position": [0, 5.3, 0], "rotation": [0, 0.785, 0]},
+      {"shape": "box", "size": [1.3, 2.3, 0.1], "color": "#6b4a2f", "position": [0, 1.15, 3.02]},
+      {"shape": "box", "size": [1.4, 1.2, 0.1], "color": "#9fd8ff", "position": [-3, 2.2, 3.02], "opacity": 0.5},
+      {"shape": "box", "size": [1.4, 1.2, 0.1], "color": "#9fd8ff", "position": [3, 2.2, 3.02], "opacity": 0.5},
+      {"shape": "box", "size": [4.4, 0.7, 0.1], "color": "#1d3557", "position": [0, 3.4, 3.05]},
+      {"shape": "box", "size": [3.8, 0.12, 0.12], "color": "#f2c200", "position": [0, 3.4, 3.11]}
+    ]
+  },
+  {
+    name:"Wiata peronowa",
+    category:["kolej", "dekoracja"],
+    desc:"Daszek na słupkach z ławką — do postawienia na peronie albo przy torach.",
+    parts:[
+      {"shape": "box", "size": [0.15, 2.6, 0.15], "color": "#2f343b", "position": [-1.2, 1.3, -3]},
+      {"shape": "box", "size": [0.15, 2.6, 0.15], "color": "#2f343b", "position": [-1.2, 1.3, 3]},
+      {"shape": "box", "size": [2.4, 0.12, 7.6], "color": "#3d4a5c", "position": [-0.4, 2.65, 0], "rotation": [0, 0, -0.1]},
+      {"shape": "box", "size": [0.06, 1.8, 6], "color": "#9fd8ff", "position": [-1.35, 1.1, 0], "opacity": 0.35},
+      {"shape": "box", "size": [0.5, 0.1, 2.2], "color": "#6b4a2f", "position": [-0.7, 0.45, 0]},
+      {"shape": "box", "size": [0.08, 0.45, 0.08], "color": "#2f343b", "position": [-0.7, 0.22, -1]},
+      {"shape": "box", "size": [0.08, 0.45, 0.08], "color": "#2f343b", "position": [-0.7, 0.22, 1]},
+      {"shape": "box", "size": [0.08, 0.5, 2.2], "color": "#6b4a2f", "position": [-0.95, 0.75, 0]}
+    ]
+  },
+  {
+    name:"Przejazd kolejowy",
+    category:["kolej", "dekoracja"],
+    desc:"Krzyż św. Andrzeja i szlaban w biało-czerwone pasy. Ustaw przy skrzyżowaniu drogi z torami.",
+    parts:[
+      {"shape": "cylinder", "size": [0.07, 0.07, 3, 8], "color": "#f0f0f0", "position": [0, 1.5, 0]},
+      {"shape": "box", "size": [1.6, 0.22, 0.05], "color": "#f0f0f0", "position": [0, 2.6, 0.08], "rotation": [0, 0, 0.6]},
+      {"shape": "box", "size": [1.6, 0.22, 0.05], "color": "#f0f0f0", "position": [0, 2.6, 0.08], "rotation": [0, 0, -0.6]},
+      {"shape": "box", "size": [0.4, 0.03, 0.06], "color": "#d93025", "position": [0.35, 2.83, 0.11], "rotation": [0, 0, 0.6]},
+      {"shape": "box", "size": [0.4, 0.03, 0.06], "color": "#d93025", "position": [-0.35, 2.83, 0.11], "rotation": [0, 0, -0.6]},
+      {"shape": "box", "size": [0.5, 1.1, 0.5], "color": "#2f343b", "position": [1.2, 0.55, 0], "col": true},
+      {"shape": "box", "size": [5, 0.14, 0.14], "color": "#f0f0f0", "position": [3.7, 1.05, 0]},
+      {"shape": "box", "size": [0.6, 0.15, 0.16], "color": "#d93025", "position": [2.2, 1.05, 0]},
+      {"shape": "box", "size": [0.6, 0.15, 0.16], "color": "#d93025", "position": [3.4, 1.05, 0]},
+      {"shape": "box", "size": [0.6, 0.15, 0.16], "color": "#d93025", "position": [4.6, 1.05, 0]},
+      {"shape": "sphere", "size": [0.12, 10, 8], "color": "#d93025", "position": [0, 2.05, 0.12]}
+    ]
+  },
+  {
+    name:"Wieża ciśnień",
+    category:["kolej", "budynek"],
+    desc:"Stara kolejowa wieża ciśnień na ceglanym trzonie — charakterystyczny punkt przy zajezdni.",
+    parts:[
+      {"shape": "cylinder", "size": [2, 2.3, 9, 12], "color": "#a8553a", "position": [0, 4.5, 0], "col": true},
+      {"shape": "cylinder", "size": [3.2, 3, 4, 14], "color": "#5b6b78", "position": [0, 10.8, 0]},
+      {"shape": "cone", "size": [3.4, 2, 14], "color": "#3d4a5c", "position": [0, 13.8, 0]},
+      {"shape": "box", "size": [0.9, 1.8, 0.1], "color": "#6b4a2f", "position": [0, 0.9, 2.25]},
+      {"shape": "box", "size": [0.12, 8, 0.12], "color": "#2f343b", "position": [2.5, 4, 0]}
+    ]
+  },
+  {
+    name:"Kozioł oporowy",
+    category:["kolej", "dekoracja"],
+    desc:"Czerwony kozioł na końcu toru — pociąg dalej nie pojedzie. Postaw na końcu bocznicy.",
+    parts:[
+      {"shape": "box", "size": [2.6, 1.0, 0.5], "color": "#d93025", "position": [0, 0.7, 0], "col": true},
+      {"shape": "box", "size": [0.3, 1.1, 0.3], "color": "#2f343b", "position": [-0.9, 0.55, 0.4]},
+      {"shape": "box", "size": [0.3, 1.1, 0.3], "color": "#2f343b", "position": [0.9, 0.55, 0.4]},
+      {"shape": "box", "size": [0.25, 0.25, 0.25], "color": "#f2c200", "position": [-0.9, 0.9, -0.3]},
+      {"shape": "box", "size": [0.25, 0.25, 0.25], "color": "#f2c200", "position": [0.9, 0.9, -0.3]},
+      {"shape": "box", "size": [2.5, 0.14, 0.3], "color": "#6b4a2f", "position": [0, 0.07, 0.2]}
+    ]
+  },
+  {
+    name:"Płot kolejowy",
+    category:["kolej", "dekoracja"],
+    desc:"Odcinek betonowego płotu (6 m) wzdłuż torów. Stawiaj jeden przy drugim.",
+    parts:[
+      {"shape": "box", "size": [6, 1.6, 0.12], "color": "#a7adb5", "position": [0, 0.8, 0], "col": true},
+      {"shape": "box", "size": [0.18, 1.8, 0.2], "color": "#8a919a", "position": [-2.9, 0.9, 0]},
+      {"shape": "box", "size": [0.18, 1.8, 0.2], "color": "#8a919a", "position": [0, 0.9, 0]},
+      {"shape": "box", "size": [0.18, 1.8, 0.2], "color": "#8a919a", "position": [2.9, 0.9, 0]},
+      {"shape": "box", "size": [6, 0.08, 0.14], "color": "#2f343b", "position": [0, 1.62, 0]}
+    ]
   }
 ];
 
@@ -2355,6 +2467,7 @@ function buildPreviewMesh(parts){
     if(p.position) m.position.set(p.position[0], p.position[1], p.position[2]);
     if(p.rotation) m.rotation.set(p.rotation[0], p.rotation[1], p.rotation[2]);
     if(p.hidden){ m.material.transparent=true; m.material.opacity=0.4; m.material.depthWrite=false; m.castShadow=false; }
+    else if(p.opacity!==undefined&&p.opacity<1){ m.material.transparent=true; m.material.opacity=p.opacity; m.material.depthWrite=false; } // szyby
     m.castShadow = !p.hidden;
     m.receiveShadow = true;
     group.add(m);
@@ -2575,7 +2688,7 @@ function renderCards(){
     asset.category.forEach(function(cat){
       var tag = document.createElement('span');
       tag.className = 'tag tag-' + cat;
-      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria',strefy:'Strefy',wyscigi:'Wyścigi',strzelnica:'Strzelnica',wrogowie:'Postacie',zabawa:'Plac zabaw',kolejka:'Kolejka'};
+      var labels = {natura:'Natura',budynek:'Budynek',dekoracja:'Dekoracja',interaktywny:'Interaktywny',pojazd:'Pojazd',ruiny:'Ruiny',militaria:'Militaria',strefy:'Strefy',wyscigi:'Wyścigi',strzelnica:'Strzelnica',wrogowie:'Postacie',zabawa:'Plac zabaw',kolejka:'Kolejka',kolej:'Kolej'};
       tag.textContent = labels[cat] || cat;
       tags.appendChild(tag);
     });

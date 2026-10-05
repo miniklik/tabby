@@ -5839,7 +5839,7 @@ function rmAutoCat(d){ // kategoria dobrana sama: z kodu obiektu, a jak jej nie 
   var t=d.action&&d.action.type;if(!t||t==='none')return 'dekoracja';
   return {drive:'pojazd',weapon:'militaria',ammo:'militaria',attach:'militaria',fuse:'militaria',drone:'militaria',range:'strzelnica',gate:'wyscigi',enemy:'wrogowie'}[t]||'interaktywny';
 }
-var RM_ACT={drive:'🚗 Pojazd',weapon:'🔫 Broń',ammo:'📦 Amunicja',attach:'🔧 Dodatek do broni',light:'💡 Światło',open:'🚪 Otwiera się',
+var RM_ACT={rail:'🚂 Kolej (zajezdnia)',cstation:'🚡 Kolejka — stacja dolna',ctop:'🚡 Kolejka — stacja górna',cpole:'🚡 Kolejka — słup',physics:'🎈 Fizyka',drive:'🚗 Pojazd',weapon:'🔫 Broń',ammo:'📦 Amunicja',attach:'🔧 Dodatek do broni',light:'💡 Światło',open:'🚪 Otwiera się',
   text:'💬 Pokazuje napis',sound:'🔊 Dźwięk',teleport:'🌀 Teleport',drone:'🛸 Dron',fuse:'💣 Ładunek',range:'🎯 Strzelnica',enemy:'🤖 Wróg',gate:'🏁 Bramka wyścigu',player:'🧍 Gracz'};
 function rmEsc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function rmMat(c,o){o=o||{};o.color=c;if(o.roughness===undefined)o.roughness=0.8;return new THREE.MeshStandardMaterial(o);}
@@ -5848,7 +5848,20 @@ function rmBox(w,h,d,mat,x,y,z,col){var m=new THREE.Mesh(new THREE.BoxGeometry(w
 function rmCanvas(w,h){var c=document.createElement('canvas');c.width=w;c.height=h;return c;}
 
 // ---------- budowa obiektu z JSON (jak w eksportowanej grze) ----------
+// 🚂 / 🚡 obiekty, które silnik sam dobudowuje (zajezdnia, stacje i słupy kolejki): w kodzie mają tylko płytę,
+// więc do oglądania bierzemy wygląd z silnika — halę z torem i lokomotywą, stację z kabiną, słup
+function rmEngineModel(d){var t=d&&d.action&&d.action.type,g=null;
+  try{
+    if(t==='rail'){g=new THREE.Group();var dm=depModel(true),zb=DEP_EXIT-57;dm.children.slice().forEach(function(c){if(c.position.z<zb)dm.remove(c);});g.add(dm); // kozioł z głębi toru pomijamy — miniaturka = sama hala
+      var M=trnMats(),pts=[];for(var z=zb+1;z<=DEP_EXIT+10;z+=2)pts.push({x:0,z:z,y:0});
+      g.add(kRib(pts,1.7,0.04,M.ballast));[-TRN_GAUGE/2,TRN_GAUGE/2].forEach(function(o){g.add(kRib(pts,0.05,0.24,M.steel,o));});
+      var lo=trnLoco();lo.position.set(0,0,DEP_EXIT-TRN_LOCO/2-4);g.add(lo);}
+    else if(t==='cstation'||t==='ctop'){g=kolStation(t==='ctop');var cb=kolCabin();cb.position.set(KOL_TR[0],KOL_ATT,0.2);g.add(cb);}
+    else if(t==='cpole')g=kolPoleM(Math.max(6,Math.min(40,+d.action.h||14)));
+  }catch(e){console.warn('Pokój: model z silnika',e);g=null;}
+  return g;}
 function rmBuild(data,noLights){
+  var em=rmEngineModel(data);if(em){if(noLights){var ls=[];em.traverse(function(c){if(c.isLight)ls.push(c);});ls.forEach(function(l){l.parent.remove(l);});}return em;}
   var g=new THREE.Group();
   (data.parts||[]).forEach(function(p){
     if(p.shape==='pointlight'){
@@ -5883,11 +5896,19 @@ function rmParse(txt){
   if(d.parts.length>RM.max)return {err:'Za dużo części: '+d.parts.length+' (najwyżej '+RM.max+'), pokój by lagował.'};
   if(!d.name)d.name='Obiekt';return {d:d};
 }
+var RM_BIG=new WeakMap();
+function rmBigKind(d){var t=d&&d.action&&d.action.type;return t==='rail'||t==='cstation'||t==='ctop'||t==='cpole';} // zawsze potrzebują torów / drugiej stacji
+function rmTooBig(d){if(!d)return false;if(RM_BIG.has(d))return RM_BIG.get(d);var big=rmBigKind(d);
+  if(!big){var g=rmBuild(d,true),bb=new THREE.Box3().setFromObject(g),sz=new THREE.Vector3();bb.getSize(sz);rmFree(g);
+    var a=Math.max(sz.x,sz.z),b=Math.min(sz.x,sz.z);big=a>RT.L-2||b>RT.W-2||sz.y>RT.H-1;} // duża sala: 37,6 × 65,6 m, 18 m wysokości
+  RM_BIG.set(d,big);return big;}
+function rmBigTxt(d){return d&&d.action&&d.action.type==='rail'?'📐 Nie mieści się w pokoju — tylko podgląd (prawdziwa zajezdnia ma jeszcze tory z mapy)':
+  rmBigKind(d)?'📐 Nie mieści się w pokoju — tylko podgląd (kolejka linowa działa dopiero ze stacją dolną i górną)':'📐 Nie mieści się w pokoju — tylko podgląd';}
 function rmInfo(d){
   var g=rmBuild(d,true),bb=new THREE.Box3().setFromObject(g),sz=new THREE.Vector3();bb.getSize(sz);rmFree(g);
   var t=d.action&&d.action.type,cat=rmCatName(rmAutoCat(d));
   return {name:d.name,parts:d.parts.length,w:sz.x,h:sz.y,d:sz.z,act:t?(RM_ACT[t]||('⚙ '+t)):'🧱 Dekoracja (bez działania)',cat:cat,veh:t==='drive',
-    lights:d.parts.filter(function(p){return p.shape==='pointlight';}).length,desc:d.desc?String(d.desc):''};
+    lights:d.parts.filter(function(p){return p.shape==='pointlight';}).length,desc:d.desc?String(d.desc):'',big:rmTooBig(d)};
 }
 function rmFmt(v){return (Math.round(v*10)/10).toString().replace('.',',');}
 
@@ -6014,7 +6035,7 @@ function rmShow(S){ // pokaż obiekt na postumencie / obrotnicy (albo pusty)
   if(ped&&big<0.6)k=Math.min(2.2,0.6/big); // malutkie rzeczy (np. pistolet) trochę powiększone, żeby było co oglądać
   g.scale.setScalar(k);g.position.set(-c.x*k,-bb.min.y*k,-c.z*k);
   var H=new THREE.Group();H.add(g);H.position.y=ped?1.25:0.14;H.userData.k=k;S.G.add(H);S.disp=H;
-  var dn=(S.o&&RM.dl&&RM.dl[S.o.id])||0;S.plateY=(ped?1.25:0.14)+sz.y*k+0.7;S.plateN=dn;S.plate=rmPlate(S.data.name+(dn?'  📥 '+dn:''));S.plate.position.set(0,S.plateY,0);S.G.add(S.plate);
+  var dn=(S.o&&RM.dl&&RM.dl[S.o.id])||0;S.plateY=(ped?1.25:0.14)+sz.y*k+0.7;S.plateN=dn;S.plate=rmPlate((rmTooBig(S.data)?'📐 ':'')+S.data.name+(dn?'  📥 '+dn:''));S.plate.position.set(0,S.plateY,0);S.G.add(S.plate);
   S.ring.material.color.setHex(ped?0x58a6ff:0xf2c200);if(S.beam){S.beam.visible=true;}
   if(!ped){var r=Math.min(3,Math.max(sz.x,sz.z)*k/2);S.col={x:S.x,z:S.z,hw:r*0.8,hd:r*0.8,y:0,h:Math.max(1,sz.y*k),_rm:1};wCols.push(S.col);}
 }
@@ -6044,7 +6065,7 @@ function rmMon(mode,d,img){
     x.fillStyle='#fff';x.font='bold 54px sans-serif';var nm=String(d.name);while(x.measureText(nm).width>480&&nm.length>3)nm=nm.slice(0,-2);x.fillText(nm,510,155);
     x.fillStyle='#1f6feb';var ch=d.act;x.font='bold 26px sans-serif';var cw=x.measureText(ch).width+30;x.fillRect(510,180,cw,44);x.fillStyle='#fff';x.fillText(ch,525,211);
     x.fillStyle='#c9d1d9';x.font='30px sans-serif';
-    var L=['🧩 Części: '+d.parts,'📐 Rozmiar: '+rmFmt(d.w)+' × '+rmFmt(d.h)+' × '+rmFmt(d.d)+' m',(d.veh?'🅿 Stanie w sali pojazdów':'🏛 Stanie na postumencie')];
+    var L=['🧩 Części: '+d.parts,'📐 Rozmiar: '+rmFmt(d.w)+' × '+rmFmt(d.h)+' × '+rmFmt(d.d)+' m',(d.big?'📐 Za duży — tylko miniaturka':d.veh?'🅿 Stanie w sali pojazdów':'🏛 Stanie na postumencie')];
     if(d.cat)L.splice(1,0,'🏷 Kategoria: '+d.cat);if(d.lights)L.push('💡 Światła: '+d.lights);
     L.forEach(function(t,i){x.fillText(t,510,280+i*46);});
     x.fillStyle='#3fb950';x.font='bold 30px sans-serif';x.fillText('✅ Kliknij „Dodaj do pokoju”',510,505);
@@ -6173,7 +6194,7 @@ function rmOpen(kind,S){
     var vw=RM.ui.view;vw.style.display='block';var d=S.data,I=rmInfo(d);
     vw.querySelector('#rm-vn').textContent=d.name;
     var rows=[['Działanie',I.act],['Części',I.parts],['Rozmiar',rmFmt(I.w)+' × '+rmFmt(I.h)+' × '+rmFmt(I.d)+' m']];if(I.cat)rows.splice(1,0,['Kategoria',I.cat]);if(I.lights)rows.push(['Światła',I.lights]);
-    rows.push(['📥 Pobrania','__DL__']);rows.push(['Miejsce',S.hall==='A'?'⭐ Sala główna (najnowsze)':'Sala: '+rmCatName(RM.cat)]);
+    if(rmTooBig(d))rows.push(['📐 Uwaga',rmBigTxt(d).replace('📐 ','')]);rows.push(['📥 Pobrania','__DL__']);rows.push(['Miejsce',S.hall==='A'?'⭐ Sala główna (najnowsze)':'Sala: '+rmCatName(RM.cat)]);
     vw.querySelector('#rm-vi').innerHTML=rows.map(function(r){return '<div class="rm-row"><span>'+rmEsc(r[0])+'</span>'+(r[1]==='__DL__'?'<b id="rm-vdl">'+((S.o&&RM.dl[S.o.id])||0)+'</b>':'<b>'+rmEsc(r[1])+'</b>')+'</div>';}).join('')+(I.desc?'<div style="font-size:12.5px;color:#9aa4b2;margin-top:8px">'+rmEsc(I.desc)+'</div>':'');
     vw.querySelector('#rm-vmsg').textContent='';var trb=vw.querySelector('#rm-try');trb.style.display=rmCanTry(d)?'inline-block':'none';var del=vw.querySelector('#rm-del');del.style.display=RM.guest?'none':'inline-block';del.textContent='🗑 Usuń z pokoju';
     setTimeout(function(){rmPvSet(vw.querySelector('#rm-pv2'),d);},0);
@@ -6627,7 +6648,7 @@ function rmTryClear(){
   if(typeof DRN!=='undefined'&&DRN.po===T.pa)DRN.po=null;
   rmFree(T.pa.gr);RM.try=null;nearIdx=-1;return true;
 }
-function rmCanTry(d){var t=d&&d.action&&d.action.type;return !!t&&t!=='none'&&t!=='player';} // dekoracje (ławka, płytka…) nie mają czego wypróbować
+function rmCanTry(d){var t=d&&d.action&&d.action.type;return !!t&&t!=='none'&&t!=='player'&&!rmTooBig(d);} // dekoracje (ławka, płytka…) nie mają czego wypróbować
 function rmTry(){
   var S=RM.open&&RM.open.S;if(!S||!rmCanTry(S.data))return;
   if(driveTarget||(typeof drnFlying==='function'&&drnFlying())){rmToast('Najpierw wysiądź / wyląduj');return;}
@@ -6724,7 +6745,7 @@ function rmUid(){var u='';try{u=localStorage.getItem('tabby-uid')||'';}catch(e){
 function rmDlTake(list,tot){var ch=false;(list||[]).forEach(function(o){var n=o.dl||0;if(RM.dl[o.id]!==n){RM.dl[o.id]=n;ch=true;}});
   if(tot!==undefined&&tot!==RM.dlTot){RM.dlTot=tot;ch=true;}if(ch)rmDlShow();}
 function rmDlShow(){rmDlBoard();RM.slots.forEach(function(S){if(S.disp&&S.o&&S.plate&&S.plateY!==undefined){var n=RM.dl[S.o.id]||0;if(S.plateN===n)return;
-  rmFree(S.plate);S.plate=rmPlate(S.data.name+(n?'  📥 '+n:''));S.plate.position.set(0,S.plateY,0);S.G.add(S.plate);S.plateN=n;}});}
+  rmFree(S.plate);S.plate=rmPlate((rmTooBig(S.data)?'📐 ':'')+S.data.name+(n?'  📥 '+n:''));S.plate.position.set(0,S.plateY,0);S.G.add(S.plate);S.plateN=n;}});}
 function rmDlBoard(){ // tablica nad telebimem w sali głównej
   if(!RM.dlB){var c=rmCanvas(1024,160);RM.dlB={cv:c,tx:new THREE.CanvasTexture(c)};var m=new THREE.Mesh(new THREE.PlaneGeometry(7.2,1.125),new THREE.MeshBasicMaterial({map:RM.dlB.tx}));
     m.rotation.y=Math.PI;m.position.set(0,7.3,15.93);scene.add(m);}

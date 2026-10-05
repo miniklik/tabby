@@ -5687,7 +5687,7 @@ function trnBuildTrack(){
   TRN.swSigns=[];NET.nodes.forEach(function(n){var sw=nSwitch(n);if(!sw)return;var g=new THREE.Group();g.position.set(n.x+Math.cos(sw.th)*3.2,0,n.z-Math.sin(sw.th)*3.2);
     tBox(g,0.15,1.8,0.15,M.dark,0,0.9,0);var c=document.createElement('canvas');c.width=128;c.height=128;var tx=new THREE.CanvasTexture(c);
     var pl=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tx}));pl.position.y=2.2;pl.rotation.y=sw.th+Math.PI;g.add(pl); // strzałka tylko od strony, z której wjeżdża się na zwrotnicę (od tyłu nie jest lustrzanym odbiciem)
-    var bk=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({color:0x10151d}));bk.position.y=2.2;bk.rotation.y=sw.th;g.add(bk);G.add(g);TRN.swSigns.push({n:n,c:c,tx:tx});});trnSwDraw();
+    var bk=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({color:0x10151d}));bk.position.y=2.2;bk.rotation.y=sw.th;g.add(bk);G.add(g);TRN.swSigns.push({n:n,c:c,tx:tx,g:g});});trnSwDraw();
   kDots();}
 function trnSwDraw(){(TRN.swSigns||[]).forEach(function(S){var n=S.n,t=kTri(n.tri),x=S.c.getContext('2d'),br=n.role==='A'?t&&t.swA:n.role==='B'?t&&t.swB:true;
   x.fillStyle='#10151d';x.fillRect(0,0,128,128);x.fillStyle=br?'#f2c200':'#3fb950';x.font='bold 96px sans-serif';x.textAlign='center';x.fillText(br?(n.sw==='L'?'↖':'↗'):'▲',64,98);S.tx.needsUpdate=true;});}
@@ -5891,6 +5891,56 @@ window.addEventListener('mouseup',function(e){if(KM.rot){KM.rot=null;}if(KM.pan)
 window.addEventListener('contextmenu',function(e){if(TRN.edit)e.preventDefault();});
 function camTPSnow(){} // (kamera i tak dogania postać w następnej klatce)
 
+// ---------- 🚃 jazda na wagonie: E = pociąg rusza sam (jak w trybie auto), drugie E = zatrzymuje ----------
+function trnWagonToggle(){if(!TRN.cars.length)return false;
+  if(TRN.auto){TRN.auto=false;TRN.stopReq=true;trnMsg&&trnMsg('🚃 Pociąg hamuje.');try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.5,'sine',660,440,0.05,ac.destination);}catch(e){}return true;}
+  TRN.auto=true;TRN.stopReq=false;TRN.wait=0;TRN.rev=false;TRN.dir=TRN.lastDir||1;try{var ac2=wpnAC();wpnTone(ac2,ac2.currentTime,0.35,'square',330,330,0.04,ac2.destination);wpnTone(ac2,ac2.currentTime+0.18,0.5,'square',262,262,0.04,ac2.destination);}catch(e){}return true;}
+window.addEventListener('keydown',function(e){if(e.code!=='KeyE'||e.repeat||TRN.drive||TRN.edit||!(TRN.on>0))return;if(/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;
+  if(trnWagonToggle()){e.stopImmediatePropagation();e.preventDefault();}},true);
+// hamowanie po drugim E (płynnie, ok. 3 m/s²)
+var _trnTickW=trnTick;trnTick=function(dt){if(TRN.stopReq&&!TRN.auto&&!TRN.drive){var d=Math.min(dt,0.05)*3;TRN.v=Math.abs(TRN.v)<=d?0:TRN.v-Math.sign(TRN.v)*d;if(TRN.v===0)TRN.stopReq=false;}_trnTickW(dt);};
+// napis na wagonie
+var _trnPTW=trnPromptTick;trnPromptTick=function(){_trnPTW();if(TRN.drive||TRN.edit||!(TRN.on>0)||!TRN.prompt)return;
+  var t=TRN.auto?'🚃 Jedziesz na wagonie • E — zatrzymaj pociąg • Spacja — zeskok':(Math.abs(TRN.v)>0.3?'🚃 Pociąg hamuje…':'🚃 Stoisz na wagonie • E — ruszaj');
+  if(TRN.prompt._t!==t){TRN.prompt._t=t;TRN.prompt.textContent=t;TRN.prompt.style.display='block';}};
+
+// ---------- 🚦 SŁUPEK NA PRZYSTANKU: zielona = start / przywołaj pociąg, czerwona = stop (E przy słupku) ----------
+var _stopModelC=stopModel;stopModel=function(){var g=_stopModelC(),M=trnMats();
+  var post=new THREE.Group();post.position.set(-0.9,TRN_FLOOR,-9);g.add(post);tBox(post,0.22,1.5,0.22,M.dark,0,0.75,0);tBox(post,0.5,0.95,0.3,M.dark,0,1.75,0);
+  var on=function(c){return new THREE.MeshBasicMaterial({color:c});},G0=new THREE.MeshStandardMaterial({color:0x0e3d1b,roughness:0.5}),R0=new THREE.MeshStandardMaterial({color:0x3d0e0e,roughness:0.5});
+  var lg=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),G0),lr=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),R0);lg.position.set(0.17,2.0,0);lr.position.set(0.17,1.55,0);post.add(lg);post.add(lr);
+  [-1,1].forEach(function(s){var lg2=lg.clone(),lr2=lr.clone();lg2.position.x=s*0.17;lr2.position.x=s*0.17;post.add(lg2);post.add(lr2);}); // lampki z obu stron słupka
+  post.userData.lamps={g:[lg].concat(post.children.filter(function(c,i){return i>3&&i%2===0;})),r:[lr].concat(post.children.filter(function(c,i){return i>3&&i%2===1;})),gOn:on(0x3fff6a),rOn:on(0xff3b30),G0:G0,R0:R0};
+  g.userData.post=post;return g;};
+function kPosts(){var o=[];if(!TRN.trackG)return o;TRN.trackG.children.forEach(function(m){if(m.userData&&m.userData.post){var v=new THREE.Vector3();m.userData.post.getWorldPosition(v);o.push({m:m,post:m.userData.post,x:v.x,y:v.y,z:v.z});}});return o;}
+function kNearPost(){var best=null;kPosts().forEach(function(p){var d=Math.hypot(charX-p.x,charZ-p.z);if(d<2.6&&Math.abs(charY-p.y)<1.6&&(!best||d<best.d)){best=p;best.d=d;}});return best;}
+function kStopOfPost(p){var b=null,bd=1e9;KM.stops.forEach(function(st){var g=stopGeo(st);if(!g)return;var d=Math.hypot(g.x-p.m.position.x,g.z-p.m.position.z);if(d<bd){bd=d;b=st;}});return b;}
+function kPostAct(p){if(!TRN.cars.length)return;
+  if(TRN.auto||Math.abs(TRN.v)>0.3&&!TRN.drive){TRN.auto=false;TRN.stopReq=true;TRN.callStop=null;trnMsg&&trnMsg('🔴 Pociąg zatrzymany z przystanku.');}
+  else{if(TRN.drive){trnMsg&&trnMsg('Pociąg prowadzi teraz ktoś z kabiny.');return;}var st=kStopOfPost(p),g0=st&&stopGeo(st),c0=TRN.cars[0],here=g0&&c0&&Math.hypot(c0.position.x-g0.tx,c0.position.z-g0.tz)<TRN_LOCO+6;
+    if(here){TRN.callStop=null;st._t=performance.now()/1000;}else{TRN.callStop=st?st.id:null;if(st)st._t=0;} // pociąg stoi tutaj = odjazd; gdzie indziej = przywołanie
+    TRN.auto=true;TRN.stopReq=false;TRN.wait=0;TRN.rev=false;TRN.dir=TRN.lastDir||1;trnMsg&&trnMsg(TRN.callStop?'🟢 Pociąg wezwany — przyjedzie na ten przystanek i tu poczeka.':'🟢 Odjazd!');}
+  try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.12,'square',TRN.auto?880:440,TRN.auto?880:330,0.05,ac.destination);}catch(e){}}
+window.addEventListener('keydown',function(e){if(e.code!=='KeyE'||e.repeat||TRN.drive||TRN.edit)return;if(/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;var p=kNearPost();if(!p)return;kPostAct(p);e.stopImmediatePropagation();e.preventDefault();},true);
+// przywołany pociąg zostaje na „swoim” przystanku; lampki pokazują, co się dzieje
+var _trnTickC=trnTick;trnTick=function(dt){_trnTickC(dt);
+  if(TRN.callStop&&TRN.auto&&TRN.wait>0){var st=KM.stops.filter(function(s){return s.id===TRN.callStop;})[0],g=st&&stopGeo(st),c=TRN.cars[0];
+    if(g&&c&&Math.hypot(c.position.x-g.tx,c.position.z-g.tz)<TRN_LOCO){TRN.auto=false;TRN.wait=0;TRN.callStop=null;trnMsg&&trnMsg('🚉 Pociąg czeka na przystanku. Zielona — jedzie dalej.');}}
+  var run=TRN.auto||Math.abs(TRN.v)>0.3;kPosts().forEach(function(p){var L=p.post.userData.lamps;if(L._run===run)return;L._run=run;L.g.forEach(function(m){m.material=run?L.gOn:L.G0;});L.r.forEach(function(m){m.material=run?L.R0:L.rOn;});});};
+var _trnPTC=trnPromptTick;trnPromptTick=function(){_trnPTC();if(TRN.drive||TRN.edit||!TRN.prompt)return;var p=kNearPost();if(!p)return;
+  var t=(TRN.auto||Math.abs(TRN.v)>0.3)?'🚦 Przystanek • E — 🔴 zatrzymaj pociąg':'🚦 Przystanek • E — 🟢 start / przywołaj pociąg';if(TRN.prompt._t!==t){TRN.prompt._t=t;TRN.prompt.textContent=t;TRN.prompt.style.display='block';}};
+
+// ---------- 🔀 ZWROTNICA PRZESTAWIANA RĘCZNIE: podejdź do latarni zwrotnicy i naciśnij E ----------
+function kNearSwitch(){var best=null;(TRN.swSigns||[]).forEach(function(S){if(!S.g)return;var p=S.g.position,d=Math.hypot(charX-p.x,charZ-p.z);if(d<3.2&&(!best||d<best.d))best={S:S,d:d};});return best&&best.S;}
+function kSwState(n){var t=kTri(n.tri),br=n.role==='A'?t&&t.swA:n.role==='B'?t&&t.swB:true;return br?(n.sw==='L'?'↖ W LEWO':'↗ W PRAWO'):'▲ PROSTO';}
+function kSwBusy(n){return TRN.cars.some(function(c){return Math.hypot(c.position.x-n.x,c.position.z-n.z)<TRN_WAG+3;});} // pociąg na zwrotnicy — nie wolno przestawiać
+window.addEventListener('keydown',function(e){if(e.code!=='KeyE'||e.repeat||TRN.drive||TRN.edit)return;if(/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;var S=kNearSwitch();if(!S)return;
+  e.stopImmediatePropagation();e.preventDefault();var n=S.n;
+  if(kSwBusy(n)){trnMsg&&trnMsg('⛔ Na zwrotnicy stoi pociąg — nie da się jej teraz przestawić.');try{var a0=wpnAC();wpnTone(a0,a0.currentTime,0.25,'square',160,120,0.05,a0.destination);}catch(er){}return;}
+  n.sw=n.sw==='L'?'R':'L';kSwRead(n);trnSwDraw();kSave();try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.06,'square',900,500,0.06,ac.destination);wpnTone(ac,ac.currentTime+0.08,0.1,'triangle',300,200,0.06,ac.destination);}catch(er){}},true);
+var _trnPTS=trnPromptTick;trnPromptTick=function(){_trnPTS();if(TRN.drive||TRN.edit||!TRN.prompt)return;var S=kNearSwitch();if(!S)return;
+  var t='🔀 Zwrotnica: '+kSwState(S.n)+' • E — przestaw';if(TRN.prompt._t!==t){TRN.prompt._t=t;TRN.prompt.textContent=t;TRN.prompt.style.display='block';}};
+
 function trnEdit(on){TRN.edit=on;if(on){if(document.exitPointerLock)document.exitPointerLock();camPitch=1.15;TRN.mode=TRN.st?'track':'station';}else TRN.mode='';trnBuildTrack();trnUI();}
 window.addEventListener('wheel',function(e){if(!TRN.edit)return;TRN.ez=Math.max(10,Math.min(320,TRN.ez*(e.deltaY>0?1.15:0.87)));},{passive:true});
 // w trybie edycji klik nie zabiera myszy (bez blokady kursora) — stawia elementy
@@ -5925,13 +5975,13 @@ window.addEventListener('click',function(e){var h=e.target&&e.target.closest&&e.
   window.addEventListener('touchend',function(e){if(!TRN.edit||onUI(e))return;var t=e.changedTouches[0];var wasDrag=!!KM.drag;M('mouseup',t);
     if(!wasDrag&&!(pan&&pan.moved)){var now=performance.now();M('click',t);if(now-last<350)M('dblclick',t);last=now;}pan=null;e.preventDefault();},{passive:false,capture:true});})();
 // przyciski pociągu na ekranie (telefon nie ma klawiatury)
-function trnTouchBar(){var show=(window.matchMedia&&matchMedia('(pointer:coarse)').matches||isMobile)&&!TRN.edit&&(TRN.drive||trnNearCab());
+function trnTouchBar(){var show=(window.matchMedia&&matchMedia('(pointer:coarse)').matches||isMobile)&&!TRN.edit&&(TRN.drive||trnNearCab()||TRN.on>0);
   if(!TRN.tb){var d=document.createElement('div');d.style.cssText='position:fixed;right:10px;bottom:150px;z-index:45;display:none;gap:8px;flex-wrap:wrap;width:170px;justify-content:flex-end';document.body.appendChild(d);TRN.tb=d;
     var B=function(lbl,down,up){var b=document.createElement('button');b.textContent=lbl;b.style.cssText='width:76px;height:58px;font:bold 22px sans-serif;border-radius:12px;border:1px solid #30363d;background:rgba(16,21,29,.85);color:#fff;touch-action:none';
       b.addEventListener('touchstart',function(e){e.preventDefault();e.stopPropagation();down();},{passive:false});b.addEventListener('touchend',function(e){e.preventDefault();e.stopPropagation();if(up)up();},{passive:false});
       b.addEventListener('mousedown',function(e){e.stopPropagation();down();});b.addEventListener('mouseup',function(e){e.stopPropagation();if(up)up();});d.appendChild(b);return b;};
-    TRN.tbE=B('🚪',function(){trnUse();});TRN.tbW=B('▲',function(){keys.w=1;},function(){keys.w=0;});B('◀',function(){trnSwitch('L');});B('▶',function(){trnSwitch('R');});TRN.tbS=B('▼',function(){keys.s=1;},function(){keys.s=0;});}
-  TRN.tb.style.display=show?'flex':'none';if(show){TRN.tbE.textContent=TRN.drive?'🚪':'🚂 E';Array.prototype.slice.call(TRN.tb.children).forEach(function(b,i){if(i>0)b.style.display=TRN.drive?'':'none';});}}
+    TRN.tbE=B('🚪',function(){if(!TRN.drive&&TRN.on>0&&typeof trnWagonToggle==='function')trnWagonToggle();else trnUse();});TRN.tbW=B('▲',function(){keys.w=1;},function(){keys.w=0;});B('◀',function(){trnSwitch('L');});B('▶',function(){trnSwitch('R');});TRN.tbS=B('▼',function(){keys.s=1;},function(){keys.s=0;});}
+  TRN.tb.style.display=show?'flex':'none';if(show){TRN.tbE.textContent=TRN.drive?'🚪':(TRN.on>0?(TRN.auto?'⏸ E':'▶ E'):'🚂 E');Array.prototype.slice.call(TRN.tb.children).forEach(function(b,i){if(i>0)b.style.display=TRN.drive?'':'none';});}}
 var _trnPT0=trnPromptTick;trnPromptTick=function(){_trnPT0();trnTouchBar();if(TRN.prompt&&innerWidth<820){TRN.prompt.style.whiteSpace='normal';TRN.prompt.style.maxWidth='92vw';TRN.prompt.style.fontSize='13px';TRN.prompt.style.bottom='230px';}};
 
 // ---------- 🗑 USUWANIE z mapy + 🧹 nowy świat ----------

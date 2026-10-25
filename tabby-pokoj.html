@@ -151,6 +151,19 @@ function drvHit(x,z,yaw,w){
   return true;
 }
 var DRV_STEP=0.6;
+var DRV_CAM_PULL=null; // 🎥 opcjonalnie: funkcja zwracająca 0 (kamera za pojazdem nie oddala się od prędkości) albo 1 — ustawia ją pokój
+// 🛞 szuka małego odsunięcia od ściany (2–25 cm), przy którym auto obrócone do yaw już nie zahacza — kierunek: od ściany, która blokuje
+function drvPushOff(x,z,yaw){
+  if(!drvBlocked(x,z,yaw))return {x:x,z:z};var w=DRV.lastBlock;if(!w)return null;
+  var c=Math.cos(yaw),s=Math.sin(yaw),bx=x+DRV.cx*c+DRV.cz*s,bz=z-DRV.cx*s+DRV.cz*c;
+  var dx=bx-w.x,dz=bz-w.z,ex=Math.abs(dx)-(w.hw||0),ez=Math.abs(dz)-(w.hd||0);
+  var dirs=ex>ez?[[dx>=0?1:-1,0],[0,dz>=0?1:-1]]:[[0,dz>=0?1:-1],[dx>=0?1:-1,0]];
+  dirs.push([dirs[0][0]+dirs[1][0],dirs[0][1]+dirs[1][1]]); // narożnik ściany: na ukos
+  var steps=[0.02,0.05,0.09,0.14,0.2,0.25];
+  for(var i=0;i<steps.length;i++)for(var j=0;j<dirs.length;j++){var d=dirs[j],l=Math.hypot(d[0],d[1])||1,px=x+d[0]/l*steps[i],pz=z+d[1]/l*steps[i];
+    if(!drvBlocked(px,pz,yaw))return {x:px,z:pz};}
+  return null;
+}
 function drvBlocked(x,z,yaw){
   var vTop=DRV.t.gr.position.y+DRV.top;
   for(var i=0;i<wCols.length;i++){
@@ -743,7 +756,13 @@ function drvStep(dt,camOff,camMode){
   else if(!drvBlocked(nx,z,ny)){x=nx;DRV.yaw=ny;DRV.vz*=0.3;DRV.speed*=Math.pow(0.9,k);}
   else if(!drvBlocked(x,nz,ny)){z=nz;DRV.yaw=ny;DRV.vx*=0.3;DRV.speed*=Math.pow(0.9,k);}
   else if(!drvBlocked(x,z,ny)){DRV.yaw=ny;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
-  else{appliedYaw=0;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
+  else{
+    // 🛞 odepchnięcie od ściany przy skręcie: róg zahacza — koła odpychają auto od ściany o tyle, ile trzeba, żeby skręt się zmieścił
+    var pw=dYaw!==0?drvPushOff(x,z,ny):null;
+    if(pw){x=pw.x;z=pw.z;DRV.yaw=ny;DRV.vx*=0.3;DRV.vz*=0.3;DRV.speed=Math.max(-maxSpeed*0.4,Math.min(maxSpeed*0.5,DRV.speed));}
+    else if(!drvBlocked(nx,nz,DRV.yaw)){x=nx;z=nz;appliedYaw=0;} // ciasny kąt: przynajmniej jedź prosto (bez skrętu), aż skręt się zmieści
+    else{appliedYaw=0;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
+  }
   DRV.hitCd=Math.max(0,DRV.hitCd-dt);
   if(DRV.lastBlock&&DRV.lastBlock.veh&&(x!==nx||z!==nz)&&DRV.hitCd<=0&&Math.abs(DRV.speed)>maxSpeed*0.15){
     var lv=DRV.lastBlock.veh;if(lv.shake)DRV.shake=Math.max(DRV.shake,0.3);if(lv.sound)drvThump(0.4+Math.abs(DRV.speed)*4);DRV.hitCd=0.6;
@@ -782,8 +801,9 @@ function drvStep(dt,camOff,camMode){
   // kamera
   var cx=x,cz=z,co=(camOff&&camOff[camMode])||{y:0,angle:0,dist:0};
   if(camMode==='chase'){
-    var camDist=DRV.camDist+Math.abs(DRV.speed)*40+(co.dist||0),camH=DRV.camH+Math.abs(DRV.speed)*15+(co.y||0);
-    var camAng=DRV.yaw+(co.angle||0),f1=1-Math.pow(0.93,k),f2=1-Math.pow(0.92,k);
+    var pull=typeof DRV_CAM_PULL==='function'?DRV_CAM_PULL():1; // 🎥 pokój: 0 = kamera nie oddala się od prędkości (ciasne sale), 1 = normalnie
+    var camDist=DRV.camDist+Math.abs(DRV.speed)*40*pull+(co.dist||0),camH=DRV.camH+Math.abs(DRV.speed)*15*pull+(co.y||0);
+    var camAng=DRV.yaw+(co.angle||0),f1=1-Math.pow(pull?0.93:0.8,k),f2=1-Math.pow(0.92,k); // przy blokadzie kamera trzyma się bliżej (mniejsze „zostawanie w tyle” przy prędkości)
     var tcx=cx+Math.sin(camAng)*camDist,tcz=cz+Math.cos(camAng)*camDist;
     cam.position.x+=(tcx-cam.position.x)*f1;cam.position.z+=(tcz-cam.position.z)*f1;cam.position.y+=(g.position.y+camH-cam.position.y)*f2;
     cam.lookAt(cx,g.position.y+DRV.lookY,cz);
@@ -5949,6 +5969,8 @@ function rmDoorSign(D){ // napis nad drzwiami: wybrana kategoria (w trybie wybor
 // ---------- 🐱 ŚCIANA TABBY w sali głównej: mural (logo, księżyc, miasteczko), dach z kotem, przejście z deszczem znaków → strona Tabby ----------
 var TW={mx:null,mt:null,mc:null,t:0},TC={g:null,z:-7,yaw:Math.PI/2,st:'lie',t:0,dur:6,tz:0,wt:0,low:1,sit:0,bl:3,P:null};
 var TW_X=-9.0,TW_OP=1.6,TW_OH=4.2,TW_RX=-8.25,TW_RY=6.33;
+// 🏠 Zakładka z edytora: jeśli przyszliśmy z tabby-editor (ta sama karta), drzwi prowadzą z powrotem do gry
+var RM_BACK=(function(){try{if(typeof window.name==='string'&&window.name.indexOf('TABBY_BACK:')===0){var d=JSON.parse(window.name.slice(11));if(d&&d.url)return d;}}catch(e){}return null;})();
 function rmTabbyUrl(){return /^https?:/.test(location.protocol)?new URL('./',location.href).href:'https://miniklik.github.io/tabby/';}
 function rmTabbyMural(){var W=4096,H=1152,S=128,c=rmCanvas(W,H),x=c.getContext('2d');
   function X(z){return (16-z)*S;}function Y(y){return (9-y)*S;}
@@ -5967,8 +5989,8 @@ function rmTabbyMural(){var W=4096,H=1152,S=128,c=rmCanvas(W,H),x=c.getContext('
     hx+=hw+8+rnd()*40;}
   var px0=X(4.4),px1=X(-4.4),py0=Y(5.4),py1=Y(4.3);x.fillStyle='rgba(10,9,24,0.88)';x.strokeStyle='#3fff6a';x.lineWidth=6;
   x.beginPath();if(x.roundRect)x.roundRect(px0,py0,px1-px0,py1-py0,26);else x.rect(px0,py0,px1-px0,py1-py0);x.fill();x.stroke();
-  x.textAlign='center';x.fillStyle='#fff1d6';x.font='bold 66px "Trebuchet MS",sans-serif';x.fillText('🐱 Wejście do Tabby',(px0+px1)/2,py0+70);
-  x.fillStyle='#7dff9a';x.font='44px "Trebuchet MS",sans-serif';x.fillText('tworzenie gier 3D',(px0+px1)/2,py0+124);x.textAlign='left';
+  x.textAlign='center';x.fillStyle='#fff1d6';x.font='bold 66px "Trebuchet MS",sans-serif';x.fillText(RM_BACK?'🐱 Powrót do gry':'🐱 Wejście do Tabby',(px0+px1)/2,py0+70);
+  x.fillStyle='#7dff9a';x.font='44px "Trebuchet MS",sans-serif';x.fillText(RM_BACK?'wracasz do swojego świata':'tworzenie gier 3D',(px0+px1)/2,py0+124);x.textAlign='left';
   x.clearRect(X(TW_OP),Y(TW_OH),X(-TW_OP)-X(TW_OP),H); // otwór w ścianie
   return c;}
 function rmTabbyRain(dt){var M=TW;M.t-=dt;if(M.t>0)return;M.t=0.045;var c=M.mc,x=c.getContext('2d'),W=c.width,H=c.height,fs=20,n=Math.floor(W/fs);
@@ -6028,6 +6050,7 @@ function rmTabbyWall(){
   sk.position.set(TW_RX+0.45,TW_RY-0.25,9.5);scene.add(sk);
   TC.g=rmCatBuild();TC.g.scale.setScalar(1.3);scene.add(TC.g);rmCatTick(0.016);}
 function rmGoTabby(){var u=rmTabbyUrl();if(document.pointerLockElement)document.exitPointerLock();
+  if(RM_BACK){try{var ac0=wpnAC(),t0=ac0.currentTime;wpnTone(ac0,t0,0.5,'sine',300,1200,0.05,ac0.destination);}catch(e){}rmToast('🐱 Wracam do gry…',1500);setTimeout(function(){location.href=RM_BACK.url;},250);return;} // zakładka zostaje w window.name — edytor ją odczyta
   try{var ac=wpnAC(),t=ac.currentTime;wpnTone(ac,t,0.5,'sine',300,1200,0.05,ac.destination);wpnTone(ac,t+0.12,0.4,'triangle',600,1800,0.03,ac.destination);}catch(e){}
   var w=window.open(u,'_blank');rmToast(w?'🐱 Otwieram Tabby w nowej karcie — pokój zostaje otwarty':'🐱 Przeglądarka zablokowała nową kartę — wejdź tu: <b>'+rmEsc(u)+'</b>',4000);}
 // ---------- 📇 ŚCIANA ZNAJOMYCH (prawa ściana sali głównej): małe tabliczki z pokojami znajomych + pulpit (zapisz gościa / wpisz kod / notatnik) ----------
@@ -6075,7 +6098,7 @@ function rmWelcome(){if(RM.open)return;rmOpen('fr');var b=rmPanel();b.style.disp
     '➕ <b>Konsola „Wklej kod”</b> (pod monitorem) — wstawiasz tu swoje assety: kod z edytora, ze sklepu albo od AI.<br>'+
     '🔗 <b>Zaproś do pokoju</b> (menu w lewym górnym rogu) — link dla znajomych; zobaczą Twoje assety i Ciebie.<br>'+
     '📇 <b>Pulpit „Znajomi”</b> (prawa ściana) — zapisujesz pokoje innych i odwiedzasz je jednym E.<br>'+
-    '🐱 <b>Wejście do Tabby</b> (lewa ściana) — program do tworzenia gier 3D.</div>'+
+    (RM_BACK?'🐱 <b>Powrót do gry</b> (lewa ściana) — wracasz do edytora, do swojego świata.</div>':'🐱 <b>Wejście do Tabby</b> (lewa ściana) — program do tworzenia gier 3D.</div>')+
     '<div style="margin-top:14px;text-align:right"><button class="rm-b rm-g" id="rm-wok" style="margin:0">Zaczynam!</button></div>';
   b.querySelector('#rm-wok').onclick=rmClose;}
 function rmBookOpen(){rmOpen('fr');var b=rmPanel();b.style.display='block';var L=rmFriends(),H=rmFrHere(),saved=function(c){return L.some(function(f){return f.c===c;});};
@@ -6111,9 +6134,10 @@ function rmFrBuild(cDark){
 function rmHalls(){
   var cWall=rmMat(0x59606b),cFloor=rmMat(0x2f343c,{roughness:0.95}),cFloor2=rmMat(0x34383f,{roughness:0.95}),cDark=rmMat(0x23272e),cOr=rmMat(0xf0a35e),cMet=rmMat(0x3b4048,{roughness:0.5,metalness:0.4});
   var lamp=new THREE.MeshBasicMaterial({color:0xfff4dd}),H=9;
-  // sala główna: x −9..9, z −16..16 • sala kategorii: x −12..12, z −48..−16 • korytarz za dalszymi drzwiami: z −48..−56
-  rmBox(18.8,0.2,32.8,cFloor,0,-0.1,0);rmBox(24.8,0.2,32.2,cFloor2,0,-0.1,-32.5);rmBox(6.4,0.2,8,cFloor,0,-0.1,-52.6);
-  var c1=rmBox(18.8,0.2,32.8,cDark,0,H+0.1,0),c2=rmBox(24.8,0.2,32.4,cDark,0,H+0.1,-32.4),c3=rmBox(6.4,0.2,8,cDark,0,4.75,-52.6);c1.castShadow=c2.castShadow=c3.castShadow=true; // dach zasłania słońce
+  // sala główna: x −9..9, z −16..16 • sala kategorii (B): x −12..12, z −48..−16 • za dalszymi drzwiami bliźniacza sala C (z −81..−48,6): widać przez drzwi wybraną kategorię;
+  // po wejściu do C i zamknięciu drzwi program po cichu przestawia gracza (z +32,4) z powrotem do B — sale są identyczne, więc nic nie widać (rmSwapC)
+  rmBox(18.8,0.2,32.8,cFloor,0,-0.1,0);rmBox(24.8,0.2,32.2,cFloor2,0,-0.1,-32.5);rmBox(24.8,0.2,32.6,cFloor2,0,-0.1,-64.9);
+  var c1=rmBox(18.8,0.2,32.8,cDark,0,H+0.1,0),c2=rmBox(24.8,0.2,32.4,cDark,0,H+0.1,-32.4),c3=rmBox(24.8,0.2,32.6,cDark,0,H+0.1,-64.9);c1.castShadow=c2.castShadow=c3.castShadow=true; // dach zasłania słońce
   rmBox(18.8,H,0.4,cWall,0,H/2,16.2,1); // ściana z monitorem
   rmBox(0.4,H,14.8,cWall,-9.2,H/2,9.0,1);rmBox(0.4,H,14.8,cWall,-9.2,H/2,-9.0,1);rmBox(0.4,H-4.2,3.2,cWall,-9.2,4.2+(H-4.2)/2,0,1); // lewa ściana z przejściem do Tabby
   rmBox(0.4,H,32.8,cWall,9.2,H/2,0,1);
@@ -6121,24 +6145,34 @@ function rmHalls(){
   rmBox(5.5,H-4.6,0.4,cWall,0,4.6+(H-4.6)/2,-16.2,1);
   rmBox(0.4,H,32.4,cWall,-12.2,H/2,-32.4,1);rmBox(0.4,H,32.4,cWall,12.2,H/2,-32.4,1);
   rmBox(9.65,H,0.4,cWall,-7.575,H/2,-48.6,1);rmBox(9.65,H,0.4,cWall,7.575,H/2,-48.6,1);rmBox(5.5,H-4.6,0.4,cWall,0,4.6+(H-4.6)/2,-48.6,1); // dalsze drzwi
-  rmBox(0.4,4.8,8,cWall,-3.0,2.4,-52.6,1);rmBox(0.4,4.8,8,cWall,3.0,2.4,-52.6,1);rmBox(6.4,4.8,0.4,cWall,0,2.4,-56.6,1); // korytarz
-  for(var zc=-50;zc>=-55;zc-=2.5)rmBox(1.6,0.05,0.5,lamp,0,4.62,zc);
-  var CL=new THREE.PointLight(0x9fd0ff,0.8,12,1.5);CL.position.set(0,4,-53);scene.add(CL);
+  // sala C (bliźniak sali B, przesunięta o −32,4): ściany boczne i ściana końcowa z (ozdobnymi) drzwiami
+  rmBox(0.4,H,32.6,cWall,-12.2,H/2,-64.9,1);rmBox(0.4,H,32.6,cWall,12.2,H/2,-64.9,1);
+  rmBox(9.65,H,0.4,cWall,-7.575,H/2,-81,1);rmBox(9.65,H,0.4,cWall,7.575,H/2,-81,1);rmBox(5.5,H-4.6,0.4,cWall,0,4.6+(H-4.6)/2,-81,1);
   // pomarańczowy pas na ścianach
   rmBox(18,0.14,0.04,cOr,0,1.2,15.98);
   rmBox(0.04,0.14,32,cOr,-11.98,1.2,-32.4);rmBox(0.04,0.14,32,cOr,11.98,1.2,-32.4);
-  [-1,1].forEach(function(s){rmBox(6.2,0.14,0.04,cOr,s*5.9,1.2,-15.98);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-16.42);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-48.38);});
+  [-1,1].forEach(function(s){rmBox(6.2,0.14,0.04,cOr,s*5.9,1.2,-15.98);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-16.42);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-48.38);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-48.82);rmBox(9.25,0.14,0.04,cOr,s*7.4,1.2,-80.78);});
+  rmBox(0.04,0.14,32,cOr,-11.98,1.2,-64.8);rmBox(0.04,0.14,32,cOr,11.98,1.2,-64.8); // pasy w sali C
   // lampy w suficie + światła
   for(var z=12;z>=-12;z-=6)rmBox(3.2,0.06,0.9,lamp,0,H-0.02,z);
-  for(var z2=-20;z2>=-44;z2-=6){rmBox(3,0.06,0.9,lamp,-5,H-0.02,z2);rmBox(3,0.06,0.9,lamp,5,H-0.02,z2);}
-  [[0,8,8,1.25],[0,8,-8,1.25],[0,8,-25,1.35],[0,8,-40,1.35]].forEach(function(q){var L=new THREE.PointLight(0xfff0dd,q[3],40,1.2);L.position.set(q[0],q[1],q[2]);scene.add(L);});
+  for(var z2=-20;z2>=-44;z2-=6){rmBox(3,0.06,0.9,lamp,-5,H-0.02,z2);rmBox(3,0.06,0.9,lamp,5,H-0.02,z2);rmBox(3,0.06,0.9,lamp,-5,H-0.02,z2-32.4);rmBox(3,0.06,0.9,lamp,5,H-0.02,z2-32.4);}
+  [[0,8,8,1.25],[0,8,-8,1.25],[0,8,-25,1.35],[0,8,-40,1.35],[0,8,-57.4,1.35],[0,8,-72.4,1.35]].forEach(function(q){var L=new THREE.PointLight(0xfff0dd,q[3],40,1.2);L.position.set(q[0],q[1],q[2]);scene.add(L);});
   // drzwi: z sali głównej do kategorii (wybór od strony sali głównej) i dalsze (wybór od środka sali kategorii)
   RM.d1=rmMkDoor(-16.2,1,true);RM.d1.sel=rmCatIdx('pojazd');
   RM.d2=rmMkDoor(-48.6,1,true);RM.d2.sel=(rmCatIdx(RM.cat)+1)%RM_CATS.length;
   rmSignStatic('🏠 Sala główna',0,6.1,-16.42,Math.PI);
+  rmSignStatic('🏠 Sala główna',0,6.1,-48.82,Math.PI); // ten sam napis w sali C (po cichym przestawieniu to są drzwi do sali głównej)
+  // ozdobne drzwi na końcu sali C — wyglądają jak dalsze drzwi sali B (zawsze zamknięte)
+  (function(){var dm=rmMat(0x3d5a73,{roughness:0.45,metalness:0.3}),strip=new THREE.MeshBasicMaterial({color:0x58a6ff});
+    [-1,1].forEach(function(s){var G=new THREE.Group(),p=new THREE.Mesh(new THREE.BoxGeometry(2.75,4.55,0.16),dm);p.castShadow=true;G.add(p);
+      var st=new THREE.Mesh(new THREE.BoxGeometry(0.06,3.6,0.18),strip);st.position.x=-s*1.3;G.add(st);G.position.set(s*1.375,2.28,-81);scene.add(G);});
+    wCols.push({x:0,z:-81,hw:2.75,hd:0.2,y:0,h:4.6,_rm:1});
+    var sg=rmSignTex(),m=new THREE.Mesh(new THREE.PlaneGeometry(4.4,1.1),new THREE.MeshBasicMaterial({map:sg.tx}));m.position.set(0,6.1,-80.78);scene.add(m);
+    RM.dC={sign:sg,sel:0,mode:'idle',armed:false,strip:strip};})();
   // tytuł sali kategorii
   RM.title=rmSignTex();var tt=new THREE.Mesh(new THREE.PlaneGeometry(7,1.75),new THREE.MeshBasicMaterial({map:RM.title.tx,transparent:true}));
-  tt.position.set(0,7.4,-19.5);scene.add(tt);RM.titleM=tt; // wisi pod sufitem — widać go zaraz po wejściu
+  tt.position.set(0,7.4,-19.5);scene.add(tt);RM.titleM=tt;
+  RM.titleC=rmSignTex();var tc=new THREE.Mesh(new THREE.PlaneGeometry(7,1.75),new THREE.MeshBasicMaterial({map:RM.titleC.tx,transparent:true}));tc.position.set(0,7.4,-51.9);scene.add(tc);RM.titleCM=tc; // tytuł sali C // wisi pod sufitem — widać go zaraz po wejściu
   // tabliczka nad wejściem do sali głównej (od środka sali głównej)
   // konsola do wklejania
   var desk=rmMat(0x2a2f37,{roughness:0.5,metalness:0.3});
@@ -6154,10 +6188,12 @@ function rmHalls(){
   rmBox(9.4,5.5,0.12,cDark,0,3.75,16.0);
   var mon=new THREE.Mesh(new THREE.PlaneGeometry(9,5.06),new THREE.MeshBasicMaterial({map:RM.mon.tx}));mon.rotation.y=Math.PI;mon.position.set(0,3.75,15.93);scene.add(mon);
 }
-function rmTitle(){ // napis nad wejściem w sali kategorii
-  var x=RM.title.cv.getContext('2d'),k=RM.cat,n=rmInCat(k).length;x.clearRect(0,0,1024,256);x.fillStyle='rgba(16,21,29,.92)';x.fillRect(0,0,1024,256);x.fillStyle='#3fb950';x.fillRect(0,0,1024,10);
+function rmTitle(){ // napis nad wejściem w sali kategorii (B) i w sali C, gdy coś w niej pokazujemy
+  rmTitleTo(RM.title,RM.cat);if(RM.titleC&&RM.ccat)rmTitleTo(RM.titleC,RM.ccat);}
+function rmTitleTo(T,k){
+  var x=T.cv.getContext('2d'),n=rmInCat(k).length;x.clearRect(0,0,1024,256);x.fillStyle='rgba(16,21,29,.92)';x.fillRect(0,0,1024,256);x.fillStyle='#3fb950';x.fillRect(0,0,1024,10);
   x.textAlign='center';x.fillStyle='#fff';x.font='bold 100px sans-serif';x.fillText(rmCatName(k),512,140);x.fillStyle='#9aa4b2';x.font='38px sans-serif';
-  x.fillText(n?('obiekty: '+Math.min(n,rmCap(k))+(n>rmCap(k)?' z '+n:'')):'pusto — dodaj obiekty tej kategorii przy konsoli',512,212);RM.title.tx.needsUpdate=true;
+  x.fillText(n?('obiekty: '+Math.min(n,rmCap(k))+(n>rmCap(k)?' z '+n:'')):'pusto — dodaj obiekty tej kategorii przy konsoli',512,212);T.tx.needsUpdate=true;
 }
 
 // ---------- miejsca na obiekty ----------
@@ -6174,19 +6210,22 @@ function rmMkPed(x,z,hall,cMet,cTop){
   var ring=new THREE.Mesh(new THREE.TorusGeometry(0.9,0.035,8,48),new THREE.MeshBasicMaterial({color:0x58a6ff}));ring.rotation.x=Math.PI/2;ring.position.y=1.06;G.add(ring);
   var beam=new THREE.Mesh(new THREE.CylinderGeometry(0.88,0.88,2.4,32,1,true),new THREE.MeshBasicMaterial({color:0x58a6ff,transparent:true,opacity:0.07,side:THREE.DoubleSide,depthWrite:false}));beam.position.y=2.26;G.add(beam);
   var pc={x:x,z:z,hw:0.95,hd:0.95,y:0,h:1.06,_rm:1};wCols.push(pc);
-  RM.slots.push({kind:'ped',hall:hall,x:x,z:z,G:G,ring:ring,beam:beam,data:null,o:null,disp:null,plate:null,pcol:pc,on:true});
+  RM.slots.push({kind:'ped',hall:hall,x:x,z:z,G:G,ring:ring,beam:beam,data:null,o:null,disp:null,plate:null,pcol:pc,on:true,ph:rmSlotPh(x,z)});
 }
+function rmSlotPh(x,z){return x*0.37+(((z%32.4)+32.4)%32.4)*0.21;} // faza kołysania — taka sama w sali B i jej bliźniaku C
 function rmSlots(){
   var cMet=rmMat(0x3b4048,{roughness:0.5,metalness:0.4}),cTop=rmMat(0x23272e,{roughness:0.6});
   [10,5,0,-5,-10].forEach(function(z){[-1,1].forEach(function(s){if(z===0)return;rmMkPed(s*6.6,z,'A',cMet,cTop);});}); // sala główna (środek lewej ściany = przejście do Tabby, prawej = pulpit znajomych)
   [-22,-27,-32,-37,-42].forEach(function(z){[-1,1].forEach(function(s){rmMkPed(s*8,z,'B',cMet,cTop);});}); // sala kategorii
+  [-22,-27,-32,-37,-42].forEach(function(z){[-1,1].forEach(function(s){rmMkPed(s*8,z-32.4,'C',cMet,cTop);});}); // sala C (bliźniak)
   var cT=rmMat(0x2b3038,{roughness:0.5,metalness:0.4}),line=new THREE.MeshBasicMaterial({color:0xf2c200});
-  [-23,-32,-41].forEach(function(z){[-1,1].forEach(function(s){ // sala kategorii „Pojazd”: obrotnice
+  [-23,-32,-41,-55.4,-64.4,-73.4].forEach(function(z){[-1,1].forEach(function(s){ // sala kategorii „Pojazd”: obrotnice (trzy ostatnie rzędy = sala C)
     var x=s*7.6,G=new THREE.Group();G.position.set(x,0,z);scene.add(G);
     [[0,3.6,7.6,0.12],[0,-3.6,7.6,0.12],[3.75,0,0.12,7.3],[-3.75,0,0.12,7.3]].forEach(function(q){var m=new THREE.Mesh(new THREE.BoxGeometry(q[2],0.02,q[3]),line);m.position.set(q[0],0.012,q[1]);G.add(m);});
     var tt=new THREE.Mesh(new THREE.CylinderGeometry(3.1,3.2,0.14,48),cT);tt.position.y=0.07;tt.receiveShadow=true;G.add(tt);
     var ring=new THREE.Mesh(new THREE.TorusGeometry(3.15,0.05,8,64),new THREE.MeshBasicMaterial({color:0x58a6ff}));ring.rotation.x=Math.PI/2;ring.position.y=0.15;G.add(ring);
-    RM.slots.push({kind:'bay',hall:'B',x:x,z:z,G:G,ring:ring,beam:null,data:null,o:null,disp:null,plate:null,col:null,pcol:null,on:true});});});
+    RM.slots.push({kind:'bay',hall:z<-48.6?'C':'B',x:x,z:z,G:G,ring:ring,beam:null,data:null,o:null,disp:null,plate:null,col:null,pcol:null,on:true,ph:rmSlotPh(x,z)});});});
+  RM.slots.forEach(function(S){if(S.hall==='C')rmSlotOn(S,false);}); // sala C pusta, dopóki nie wybierzesz kategorii w dalszych drzwiach
 }
 function rmShow(S){ // pokaż obiekt na postumencie / obrotnicy (albo pusty)
   if(S.disp){rmFree(S.disp);S.disp=null;}if(S.plate){rmFree(S.plate);S.plate=null;}
@@ -6211,11 +6250,36 @@ function rmSlotOn(S,on){
 }
 function rmLayout(){ // rozstaw obiekty: sala główna = 10 najnowszych, sala kategorii = obiekty wybranej kategorii
   var newest=RM.objs.slice().sort(function(a,b){return b.t-a.t;}),veh=RM.cat==='pojazd',inCat=rmInCat(RM.cat).sort(function(a,b){return a.t-b.t;});
-  var A=RM.slots.filter(function(S){return S.hall==='A';}),P=RM.slots.filter(function(S){return S.hall==='B'&&S.kind==='ped';}),B=RM.slots.filter(function(S){return S.kind==='bay';});
+  var A=RM.slots.filter(function(S){return S.hall==='A';}),P=RM.slots.filter(function(S){return S.hall==='B'&&S.kind==='ped';}),B=RM.slots.filter(function(S){return S.hall==='B'&&S.kind==='bay';});
   function put(list,src){list.forEach(function(S,i){var o=src[i]||null;rmSlotOn(S,true);if(S.o===o&&S.disp!==undefined&&(o?S.disp:S.plate))return;S.o=o;S.data=o?o.d:null;rmShow(S);});}
   put(A,newest);
   if(veh){P.forEach(function(S){rmSlotOn(S,false);});put(B,inCat);}else{B.forEach(function(S){rmSlotOn(S,false);});put(P,inCat);}
   if(RM.title)rmTitle();RM.doors.forEach(rmDoorSign);if(RM.dlB)rmDlBoard();
+  if(RM.ccat)rmLayoutC(RM.ccat);
+}
+// sala C: obiekty kategorii wybranej w dalszych drzwiach — widać je przez otwarte drzwi
+function rmLayoutC(cat){
+  RM.ccat=cat;var veh=cat==='pojazd',inCat=rmInCat(cat).sort(function(a,b){return a.t-b.t;});
+  var P=RM.slots.filter(function(S){return S.hall==='C'&&S.kind==='ped';}),B=RM.slots.filter(function(S){return S.hall==='C'&&S.kind==='bay';});
+  function put(list,src){list.forEach(function(S,i){var o=src[i]||null;rmSlotOn(S,true);if(S.o===o&&S.disp!==undefined&&(o?S.disp:S.plate))return;S.o=o;S.data=o?o.d:null;rmShow(S);});}
+  if(veh){P.forEach(function(S){rmSlotOn(S,false);});put(B,inCat);}else{B.forEach(function(S){rmSlotOn(S,false);});put(P,inCat);}
+  if(RM.titleC)rmTitleTo(RM.titleC,cat);
+  if(RM.dC){RM.dC.sel=(rmCatIdx(cat)+1)%RM_CATS.length;rmDoorSign(RM.dC);} // ozdobne drzwi = to, co pokażą dalsze drzwi po przestawieniu
+}
+function rmClearC(){if(!RM.ccat)return;RM.ccat=null;RM.slots.forEach(function(S){if(S.hall==='C')rmSlotOn(S,false);});}
+// gracz wszedł do sali C i drzwi za nim się zamknęły: przestaw go (i postumenty) o +32,4 z powrotem do sali B — sale są identyczne
+function rmSwapC(){
+  var k=RM.ccat;if(!k)return;var dz=32.4;
+  var oldB=RM.slots.filter(function(S){return S.hall==='B';}),newB=RM.slots.filter(function(S){return S.hall==='C';});
+  oldB.forEach(function(S){rmSlotOn(S,false);S.z-=dz;S.G.position.z-=dz;if(S.pcol)S.pcol.z-=dz;S.hall='C';});
+  newB.forEach(function(S){S.z+=dz;S.G.position.z+=dz;if(S.pcol)S.pcol.z+=dz;if(S.col)S.col.z+=dz;S.hall='B';});
+  charZ+=dz;if(charGroup)charGroup.position.z=charZ;cam.position.z+=dz;
+  var tT=RM.title;RM.title=RM.titleC;RM.titleC=tT;var tM=RM.titleM;RM.titleM=RM.titleCM;RM.titleCM=tM;RM.titleM.position.z=-19.5;RM.titleCM.position.z=-51.9;
+  RM.cat=k;RM.ccat=null;
+  var D1=RM.d1,D2=RM.d2,n=RM_CATS.length;
+  [D1,D2].forEach(function(D){D.t=0;D.armed=false;D.mode='idle';[D.L,D.R].forEach(function(G){G.position.x=G.userData.x0;});if(wCols.indexOf(D.col)<0)wCols.push(D.col);});
+  D1.sel=rmCatIdx(k);D2.sel=(rmCatIdx(k)+1)%n;
+  rmLayout();
 }
 function rmCount(){return {n:RM.objs.length};}
 
@@ -6368,7 +6432,7 @@ function rmOpen(kind,S){
     var vw=RM.ui.view;vw.style.display='block';var d=S.data,I=rmInfo(d);
     vw.querySelector('#rm-vn').textContent=d.name;
     var rows=[['Działanie',I.act],['Części',I.parts],['Rozmiar',rmFmt(I.w)+' × '+rmFmt(I.h)+' × '+rmFmt(I.d)+' m']];if(I.cat)rows.splice(1,0,['Kategoria',I.cat]);if(I.lights)rows.push(['Światła',I.lights]);
-    if(rmTooBig(d))rows.push(['📐 Uwaga',rmBigTxt(d).replace('📐 ','')]);rows.push(['📥 Pobrania','__DL__']);rows.push(['Miejsce',S.hall==='A'?'⭐ Sala główna (najnowsze)':'Sala: '+rmCatName(RM.cat)]);
+    if(rmTooBig(d))rows.push(['📐 Uwaga',rmBigTxt(d).replace('📐 ','')]);rows.push(['📥 Pobrania','__DL__']);rows.push(['Miejsce',S.hall==='A'?'⭐ Sala główna (najnowsze)':'Sala: '+rmCatName(S.hall==='C'&&RM.ccat?RM.ccat:RM.cat)]);
     vw.querySelector('#rm-vi').innerHTML=rows.map(function(r){return '<div class="rm-row"><span>'+rmEsc(r[0])+'</span>'+(r[1]==='__DL__'?'<b id="rm-vdl">'+((S.o&&RM.dl[S.o.id])||0)+'</b>':'<b>'+rmEsc(r[1])+'</b>')+'</div>';}).join('')+(I.desc?'<div style="font-size:12.5px;color:#9aa4b2;margin-top:8px">'+rmEsc(I.desc)+'</div>':'');
     vw.querySelector('#rm-vmsg').textContent='';var trb=vw.querySelector('#rm-try');trb.style.display=rmCanTry(d)?'inline-block':'none';var del=vw.querySelector('#rm-del');del.style.display=RM.guest?'none':'inline-block';del.textContent='🗑 Usuń z pokoju';
     setTimeout(function(){rmPvSet(vw.querySelector('#rm-pv2'),d);},0);
@@ -6768,6 +6832,8 @@ var _pzMpI=mpImpact;mpImpact=function(obj){var o=obj;while(o&&!(o.userData&&o.us
   return _pzMpI(obj);};
 
 // ---- przejścia ----
+// 🎥 kamera za pojazdem w pokoju nie oddala się przy prędkości — wszędzie poza torem wyścigowym (2), który jest na otwartej przestrzeni
+DRV_CAM_PULL=function(){return (typeof RT!=='undefined'&&RT.inside&&RT.cur===2)?1:0;};
 function rmTestFade(fn){var f=RM.ui.fade;f.style.opacity='1';setTimeout(function(){fn();setTimeout(function(){f.style.opacity='0';},120);},280);}
 function rmTestSun(on){ // słońce stoi nad pokojem — w zamkniętych salach testowych jego cień nie sięga, więc tam je gasimy
   if(!RT.sun)scene.traverse(function(o){if(o.isDirectionalLight&&!RT.sun){RT.sun=o;RT.sunI=o.intensity;}});
@@ -7074,7 +7140,7 @@ checkInteract=function(){
   var ip=document.getElementById('interact-prompt');
   if(nearIdx>=0){var pa=placedActions[nearIdx],dn=Math.hypot(charX-pa.gr.position.x,charZ-pa.gr.position.z);if(dn<RM.near.d){RM.near=null;return;}}
   nearIdx=-1;if(textPopupOpen)return;
-  var D=RM.near.D;ip.textContent=RM.near.kind==='book'?'📇 E — pokoje znajomych: zapisz gościa • wpisz kod • notatnik':RM.near.kind==='plate'?'🏠 E — odwiedź pokój: '+(RM.near.f.n||'Pokój')+' ('+RM.near.f.c+')':RM.near.kind==='tabby'?'🐱 E — Wejście do Tabby (otworzy się w nowej karcie)':RM.near.kind==='door'?(D.mode==='pick'?'🖱 kółko myszy (albo ↑ ↓) — zmień kategorię • E — otwórz':(D.armed?'Otwarte: '+RM_CATS[D.sel][1]+' • E — zmień':'E — wybierz kategorię za drzwiami')):RM.near.kind==='add'?(RM.guest?'Konsola gospodarza — tylko on dodaje obiekty':'E — dodaj obiekt (wklej kod)'):'E — obejrzyj „'+RM.near.S.data.name+'”';
+  var D=RM.near.D;ip.textContent=RM.near.kind==='book'?'📇 E — pokoje znajomych: zapisz gościa • wpisz kod • notatnik':RM.near.kind==='plate'?'🏠 E — odwiedź pokój: '+(RM.near.f.n||'Pokój')+' ('+RM.near.f.c+')':RM.near.kind==='tabby'?(RM_BACK?'🐱 E — Powrót do gry':'🐱 E — Wejście do Tabby (otworzy się w nowej karcie)'):RM.near.kind==='door'?(D.mode==='pick'?'🖱 kółko myszy (albo ↑ ↓) — zmień kategorię • E — otwórz':(D.armed?'Otwarte: '+RM_CATS[D.sel][1]+' • E — zmień':'E — wybierz kategorię za drzwiami')):RM.near.kind==='add'?(RM.guest?'Konsola gospodarza — tylko on dodaje obiekty':'E — dodaj obiekt (wklej kod)'):'E — obejrzyj „'+RM.near.S.data.name+'”';
   ip.style.display='block';
 };
 window.addEventListener('keydown',function(e){
@@ -7100,8 +7166,8 @@ function rmDoorNear(D){ // czy stoisz przed drzwiami po stronie wyboru (i jak da
 function rmDoorE(D){
   if(D.mode==='pick'){D.mode='idle';D.armed=true;rmClick(900);setTimeout(function(){rmClick(1300);},70);
     if(D===RM.d1){RM.cat=RM_CATS[D.sel][0];rmLayout();RM.d2.sel=(D.sel+1)%RM_CATS.length;rmToast('🚪 '+rmCatName(RM.cat)+' — drzwi się otwierają');}
-    else rmToast('🚪 Dalej: '+RM_CATS[D.sel][1]);
-  }else{D.mode='pick';D.armed=false;rmClick(1100);}
+    else{rmLayoutC(RM_CATS[D.sel][0]);rmToast('🚪 '+rmCatName(RM.ccat)+' — drzwi się otwierają');}
+  }else{D.mode='pick';D.armed=false;rmClick(1100);if(D===RM.d2)rmClearC();}
   rmDoorSign(D);
 }
 function rmDoorStep(D,dir){var n=RM_CATS.length;D.sel=(D.sel+dir+n)%n;rmClick(dir>0?1500:1250);rmDoorSign(D);}
@@ -7113,7 +7179,8 @@ function rmJump(k){ // przejście przez dalsze drzwi: nowa kategoria, a za pleca
   if(RM.jumping)return;RM.jumping=true;var f=RM.ui.fade;f.style.opacity='1';
   setTimeout(function(){
     RM.cat=RM_CATS[k][0];
-    charX=0;charZ=-19.6;charY=0;velY=0;camYaw=0;charAng=0;tgtAng=0;if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=0;}
+    charX=0;charZ=-23;charY=0;velY=0;camYaw=0;charAng=0;tgtAng=0; // dalej od drzwi do sali głównej (otwierają się same od 4,2 m) — nie otworzą się za plecami
+    if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=0;}
     [RM.d1,RM.d2].forEach(function(D){D.t=0;D.armed=false;D.mode='idle';[D.L,D.R].forEach(function(G){G.position.x=G.userData.x0;});if(wCols.indexOf(D.col)<0)wCols.push(D.col);});
     RM.d1.sel=k;RM.d2.sel=(k+1)%RM_CATS.length;rmLayout();
     setTimeout(function(){f.style.opacity='0';RM.jumping=false;rmToast(rmCatName(RM.cat)+' • obiekty: '+rmInCat(RM.cat).length);},120);
@@ -7131,9 +7198,9 @@ function rmDoorsTick(dt){
       Object.keys(RM.rem).forEach(function(k){var g=RM.rem[k].g;if(Math.abs(g.position.x)<4.5&&Math.abs(g.position.z+16.2)<4.2)open=true;});
       if(sideA&&pz>-16.2+9){if(D.armed||D.mode==='pick'){D.armed=false;D.mode='idle';rmDoorSign(D);}}
     }else{
-      if(D.armed&&ax&&pz<-42)open=true;
-      if(pz>-38&&(D.armed||D.mode==='pick')){D.armed=false;D.mode='idle';rmDoorSign(D);}
-      if(!drv&&D.armed&&charZ<-51.2&&Math.abs(charX)<2.8)rmJump(D.sel);
+      if(!drv&&D.armed&&ax&&pz<-42&&pz>-50.4)open=true; // tylko pieszo; za drzwiami widać salę C z wybraną kategorią
+      if(pz>-38&&(D.armed||D.mode==='pick')){D.armed=false;D.mode='idle';rmDoorSign(D);rmClearC();}
+      if(!drv&&D.armed&&pz<-52.8&&D.t<0.02)rmSwapC(); // (−52,8: po przestawieniu stoisz dalej niż 4,2 m od drzwi do sali głównej — nie otworzą się same) // wszedłeś do sali C, drzwi zamknięte → ciche przestawienie do sali B
     }
     if(D.mode==='pick'&&rmDoorNear(D)<0&&!drv){D.mode='idle';rmDoorSign(D);}
     var was=D.t;D.t=Math.max(0,Math.min(1,D.t+(open?dt*1.6:-dt*1.2)));
@@ -7145,7 +7212,7 @@ function rmDoorsTick(dt){
 // ---------- co klatkę ----------
 function rmTick(dt){
   var t=performance.now()*0.001;
-  RM.slots.forEach(function(S,i){if(!S.disp)return;S.disp.rotation.y+=dt*(S.kind==='ped'?0.5:0.18);if(S.kind==='ped')S.disp.position.y=1.25+Math.sin(t*1.6+i)*0.06;
+  RM.slots.forEach(function(S,i){if(!S.disp)return;S.disp.rotation.y+=dt*(S.kind==='ped'?0.5:0.18);if(S.kind==='ped')S.disp.position.y=1.25+Math.sin(t*1.6+(S.ph!==undefined?S.ph:i))*0.06;
     if(S.beam)S.beam.material.opacity=0.06+Math.sin(t*1.3+i)*0.025;});
   rmDoorsTick(dt);rmTabbyRain(dt);rmCatTick(dt);rmFrTick(dt);
   if(RM.open&&RM.open.kind==='add'&&RM.open.d&&RM.pv){RM.mon.t-=dt;if(RM.mon.t<=0){RM.mon.t=0.12;rmMon('preview',RM.open.I,RM.pv.r.domElement);}}

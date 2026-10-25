@@ -182,7 +182,35 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 #ter-pop .bt button{flex:1;padding:7px;border:none;border-radius:7px;background:rgba(122,170,84,0.2);color:#bfe39c;font-size:12px;font-weight:bold;cursor:pointer}
 #ter-pop .bt button:hover{background:rgba(122,170,84,0.35)}
 #ter-pop .nt{font-size:11.5px;color:#9aa4b2;line-height:1.45;margin-top:9px}
-#ter-pop.off .rw,#ter-pop.off .bt{opacity:.4;pointer-events:none}
+#pnt-btn{position:fixed;top:12px;right:514px;z-index:30;background:rgba(196,150,96,0.92);color:#231503;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif}
+#pnt-btn:hover,#pnt-btn.on{background:#d9ab73}
+#pnt-pop{position:fixed;top:56px;left:12px;z-index:40;width:290px;display:none;background:rgba(14,17,23,0.97);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:12px 14px 14px;font-family:sans-serif;color:#e6edf3;box-shadow:0 12px 36px rgba(0,0,0,.45)}
+#pnt-pop.show{display:block}
+#pnt-pop .hd{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:bold;margin-bottom:8px}
+#pnt-pop .x{background:none;border:none;color:#aaa;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
+#pnt-pop .tr{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;padding:7px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#c9d1d9;cursor:pointer;margin-bottom:6px;user-select:none}
+#pnt-pop .tr:hover{border-color:rgba(217,171,115,0.55)}
+#pnt-pop .tr.sel{background:rgba(217,171,115,0.28);border-color:#d9ab73;color:#fff}
+#pnt-pop .tr input{width:17px;height:17px;accent-color:#d9ab73;margin:0;cursor:pointer}
+#pnt-pop .tr i{width:16px;height:16px;border-radius:4px;display:inline-block;border:1px solid rgba(255,255,255,0.25)}
+#pnt-pop .tr small{margin-left:auto;font-weight:400;color:#9aa4b2;font-size:11px}
+#pnt-pop .rw{margin:9px 0 4px}#pnt-pop .rw label{display:flex;justify-content:space-between;font-size:12px;color:#c9d1d9}#pnt-pop .rw b{color:#d9ab73}
+#pnt-pop input[type=range]{width:100%;accent-color:#d9ab73;margin:3px 0 0}
+#pnt-pop .pt{font-size:11.5px;color:#e8c99c;line-height:1.5;margin-top:8px;padding:7px 9px;border-radius:7px;background:rgba(217,171,115,0.1)}
+#pnt-pop .nt{font-size:11.5px;color:#9aa4b2;line-height:1.45;margin-top:9px}
+#ter-pop.off #ter-sec-n .rw,#ter-pop.off #ter-sec-n .bt{opacity:.4;pointer-events:none}
+#ter-pop .tr{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:bold;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#c9d1d9;cursor:pointer;margin-bottom:6px;user-select:none}
+#ter-pop .tr:hover{border-color:rgba(122,170,84,0.5)}
+#ter-pop .tr.sel{background:rgba(122,170,84,0.3);border-color:#8fc463;color:#fff}
+#ter-pop .tr input{width:17px;height:17px;accent-color:#8fc463;margin:0;cursor:pointer}
+#ter-pop .tr small{margin-left:auto;font-weight:400;color:#9aa4b2;font-size:11px}
+#ter-pop .pt{font-size:11.5px;color:#bfe39c;line-height:1.5;margin-top:8px;padding:7px 9px;border-radius:7px;background:rgba(122,170,84,0.1)}
+#ter-pop .tw{display:none;align-items:center;gap:8px;font-size:12.5px;font-weight:bold;color:#9fd8e0;padding:6px 9px;border-radius:7px;background:rgba(42,157,154,0.14);border:1px solid rgba(42,157,154,0.45);cursor:pointer;margin-top:8px}
+#ter-pop .tw input{width:16px;height:16px;accent-color:#2a9d9a;margin:0}
+#ter-pop.vsel .tw{display:flex}
+#ter-pop .tws{display:flex;gap:6px}#ter-pop .tws .tw{flex:1}#ter-pop.vsel #ter-irow.dis{opacity:.4;pointer-events:none}
+#ter-pop.fsel #ter-row-ph,#ter-pop.ssel #ter-row-ph{display:none}#ter-row-ps{display:none}#ter-pop.ssel #ter-row-ps{display:block}
+#ter-sec-p{display:none}#ter-pop.paint #ter-sec-p{display:block}#ter-pop.paint #ter-sec-n{display:none}
 #cam-btn{position:fixed;top:12px;right:984px;z-index:30;width:40px;height:34px;padding:0;border:none;border-radius:8px;font-size:17px;line-height:34px;cursor:pointer;background:rgba(88,166,255,0.9)}
 #cam-btn.on{outline:3px solid #ffcc44;outline-offset:1px}
 #cam-btn:focus-visible{outline:3px solid #f0a35e;outline-offset:2px}
@@ -202,13 +230,26 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 <button id="ter-btn" title="Teren — góry i doliny" aria-expanded="false">⛰ Teren</button>
 <div id="ter-pop" class="off" role="dialog" aria-label="Teren">
   <div class="hd"><span>⛰ Teren</span><button class="x" id="ter-pop-x" aria-label="Zamknij">&times;</button></div>
-  <label class="tg"><input type="checkbox" id="ter-on"> Góry i doliny</label>
+  <div class="tr" data-s="n" title="Kliknij — suwaki działają na losowe góry • ptaszek — widać je na świecie"><input type="checkbox" id="ter-on" title="Pokaż / ukryj"> <span>Góry i doliny</span></div>
+  <div class="tr" data-s="m" title="Kliknij — malujesz góry • ptaszek — widać je na świecie"><input type="checkbox" id="ter-sm" title="Pokaż / ukryj"> <span>🏔 Góry</span><small id="ter-cm"></small></div>
+  <div class="tr" data-s="v" title="Kliknij — malujesz doliny • ptaszek — widać je na świecie"><input type="checkbox" id="ter-sv" title="Pokaż / ukryj"> <span>🕳 Doliny</span><small id="ter-cv"></small></div>
+  <div class="tr" data-s="f" title="Kliknij — wyrównujesz ziemię do poziomu 0 • ptaszek — widać to na świecie"><input type="checkbox" id="ter-sf" title="Pokaż / ukryj"> <span>▭ Płasko <span style="font-weight:400;color:#9aa4b2">(poziom 0)</span></span><small id="ter-cf"></small></div>
+  <div class="tr" data-s="s" title="Kliknij — wygładzasz namalowane góry i doliny (robią się szersze i łagodniejsze)"><span style="width:17px;text-align:center">〰</span> <span>Wygładź</span></div>
+  <div id="ter-sec-p">
+  <div class="rw" id="ter-row-ph"><label><span id="ter-l-ph">Wysokość</span> <b id="ter-v-ph"></b></label><input type="range" id="ter-ph" min="1" max="40" step="1"></div>
+  <div class="rw"><label>Szerokość <b id="ter-v-pr"></b></label><input type="range" id="ter-pr" min="3" max="50" step="1"></div>
+  <div class="rw" id="ter-row-ps"><label>Miękkość <b id="ter-v-ps"></b></label><input type="range" id="ter-ps" min="1" max="10" step="1"></div>
+  <div class="tws"><label class="tw" id="ter-wrow"><input type="checkbox" id="ter-w"> 💧 Woda w dolinach</label><label class="tw" id="ter-irow" title="Woda zamarza — chodzisz i jeździsz po tafli, ze ślizgiem"><input type="checkbox" id="ter-ice"> 🧊 Lód</label></div>
+  <div class="pt">🖱 <b>Klik</b> w ziemię — <span id="ter-t1">jedna góra</span> • <b>przytrzymaj i prowadź</b> — <span id="ter-t2">grzbiet</span><br><b>Z</b> — cofnij ostatnie • <b>PPM + ruch myszy</b> — obrót kamery</div>
+  </div>
+  <div id="ter-sec-n">
   <div class="rw"><label>Wysokość gór <b id="ter-v-h"></b></label><input type="range" id="ter-h" min="2" max="40" step="1"></div>
   <div class="rw"><label>Szerokość gór <b id="ter-v-size"></b></label><input type="range" id="ter-size" min="20" max="150" step="5"></div>
   <div class="rw"><label>Szczegóły <b id="ter-v-oct"></b></label><input type="range" id="ter-oct" min="1" max="6" step="1"></div>
   <div class="rw"><label>Płaski środek <b id="ter-v-flat"></b></label><input type="range" id="ter-flat" min="0" max="90" step="1"></div>
   <div class="rw"><label>Ziarno świata <b id="ter-v-seed"></b></label><input type="range" id="ter-seed" min="1" max="999" step="1"></div>
   <div class="bt"><button id="ter-rand">🎲 Losuj świat</button><button id="ter-def">↺ Domyślne</button></div>
+  </div>
   <div class="nt">Obiekty same stają na ziemi. Środek zostaje płaski — tu najlepiej budować miasteczko czy bazę. Teren zapisuje się z projektem i w grze.</div>
 </div>
 <button id="cam-btn" title="Kamera (Q)" aria-label="Ustawienia kamery (Q)" aria-expanded="false">📷</button>
@@ -220,6 +261,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
   <div class="row"><span>Odległość</span><button data-c="d-">Bliżej</button><button data-c="d+">Dalej</button></div>
   <div class="row"><span>Kąt widzenia</span><button data-c="f-">Węższy</button><button data-c="f+">Szerszy</button></div>
   <div class="tip" id="cam-info" style="color:#f0a35e"></div>
+  <button class="reset" id="cam-top" style="margin-bottom:6px;background:rgba(88,166,255,0.18);color:#9fd0ff;border:1px solid rgba(88,166,255,0.45)">🛰 Widok z góry</button>
   <button class="reset" id="cam-reset">↺ Przywróć domyślne</button>
   <div class="tip">Strzałki też działają: ↑↓ wysokość, ←→ obrót, Shift+↑↓ odległość. Każdy tryb (pieszo, pościg, kabina) pamięta swoje ustawienie.</div>
 </div>
@@ -229,6 +271,8 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 #dn-btn:focus-visible{outline:3px solid #f0a35e;outline-offset:2px}
 #dn-pop{position:fixed;top:56px;right:678px;z-index:40;width:300px;display:none;background:rgba(14,17,23,0.97);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:12px 14px 14px;font-family:sans-serif;color:#e6edf3;box-shadow:0 12px 36px rgba(0,0,0,.45)}
 #dn-pop.show{display:block}
+/* wszystkie panele z górnego paska otwierają się w tym samym miejscu po lewej (jak Malowanie) — naraz tylko jeden */
+#cam-pop,#dn-pop,#ter-pop,#pnt-pop,#tb-perf-p{left:12px!important;right:auto!important;top:56px!important;max-height:calc(100vh - 70px);overflow-y:auto}
 #dn-pop .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:13px;font-weight:bold;letter-spacing:.3px;color:#ccc}
 #dn-pop .x{background:none;border:none;color:#aaa;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}
 #dn-pop .x:hover{color:#fff}
@@ -255,6 +299,16 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <span style="font-size:11px;color:#888">🌫 Mgła:</span>
         <input type="range" id="dn-fog-slider" min="0" max="100" step="1" value="0" style="flex:1;accent-color:#9fb4c8;cursor:pointer">
         <span id="dn-fog-label" style="font-family:monospace;font-size:11px;color:#aaa;min-width:32px;text-align:right">0%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:11px;color:#888">☁ Chmury:</span>
+        <input type="range" id="dn-cld-slider" min="0" max="100" step="1" value="0" style="flex:1;accent-color:#c9d6e3;cursor:pointer">
+        <span id="dn-cld-label" style="font-family:monospace;font-size:11px;color:#aaa;min-width:32px;text-align:right">0%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <span style="font-size:11px;color:#888">↔ Rozciągnięcie:</span>
+        <input type="range" id="dn-cls-slider" min="1" max="6" step="0.5" value="1" style="flex:1;accent-color:#c9d6e3;cursor:pointer">
+        <span id="dn-cls-label" style="font-family:monospace;font-size:11px;color:#aaa;min-width:32px;text-align:right">1×</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
         <span style="font-size:11px;color:#888;flex:1">Pora roku:</span>
@@ -319,7 +373,19 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 </div>
 <button id="scenes-btn" title="Wróć do strony scen" style="position:fixed;top:12px;right:792px;z-index:30;background:rgba(107,91,214,0.92);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">Tabby Sceny</button>
 <button id="store-btn" title="Otwiera Tabby Store w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:654px;z-index:30;background:rgba(240,163,94,0.92);color:#1a1230;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">Tabby Store</button>
-<button id="bud-btn" title="Otwiera Tabby budynki w osobnej karcie — praca w edytorze zostaje" style="position:fixed;top:12px;right:514px;z-index:30;background:rgba(210,153,34,0.85);color:#000;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;font-family:sans-serif">Tabby budynki</button>
+<button id="pnt-btn" title="Malowanie — ścieżki, piasek, żwir, trawa" aria-expanded="false">🖌 Malowanie</button>
+<div id="pnt-pop" role="dialog" aria-label="Malowanie">
+  <div class="hd"><span>🖌 Malowanie</span><button class="x" id="pnt-pop-x" aria-label="Zamknij">&times;</button></div>
+  <div class="tr" data-p="1"><input type="checkbox" data-v="1" title="Pokaż / ukryj"> <i style="background:#735938"></i><span>Ścieżka</span><small></small></div>
+  <div class="tr" data-p="2"><input type="checkbox" data-v="2" title="Pokaż / ukryj"> <i style="background:#ccb880"></i><span>Piasek</span><small></small></div>
+  <div class="tr" data-p="3"><input type="checkbox" data-v="3" title="Pokaż / ukryj"> <i style="background:#85827d"></i><span>Żwir</span><small></small></div>
+  <div class="tr" data-p="4"><input type="checkbox" data-v="4" title="Pokaż / ukryj"> <i style="background:#304f24"></i><span>Ciemna trawa</span><small></small></div>
+  <div class="tr" data-p="e"><span style="width:17px;text-align:center">🧽</span> <span>Gumka</span><small style="font-weight:400">zmazuje farbę</small></div>
+  <div class="rw"><label>Szerokość <b id="pnt-v-r"></b></label><input type="range" id="pnt-r" min="0.5" max="30" step="0.5"></div>
+  <div class="rw"><label>Krycie <b id="pnt-v-a"></b></label><input type="range" id="pnt-a" min="10" max="100" step="5"></div>
+  <div class="pt">🖱 <b>Klik</b> w ziemię — plama • <b>przytrzymaj i prowadź</b> — ścieżka<br><b>Z</b> — cofnij ostatnie • <b>PPM + ruch myszy</b> — obrót kamery</div>
+  <div class="nt">Ptaszek — widać na świecie. Zielony wiersz — tym malujesz. Farba zapisuje się z projektem i w grze.</div>
+</div>
 <div id="dn-time" style="position:fixed;top:50px;right:12px;z-index:25;background:rgba(0,0,0,0.7);color:#ffcc44;padding:6px 14px;border-radius:8px;font-size:18px;font-weight:bold;font-family:monospace;display:none">12:00</div>
 <div id="snap-bar">
   <span class="snap-lbl">Siatka:</span>
@@ -634,10 +700,15 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <div id="proj-msg" style="font-size:11px;font-weight:bold;text-align:center;margin-top:8px;display:none"></div>
         <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Projekt to Twoja praca w edytorze (plik <b>.tabby</b>). Chrome i Edge zapisują go prosto do folderu <b>„Tabby – moje projekty”</b>. Inne przeglądarki pobierają plik do „Pobranych”. Edytor robi też autozapis co 30 s.</div>
       </div>
+      <div class="ep-lbl">Tabby budynki</div>
+      <div style="border:2px solid rgba(210,153,34,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(210,153,34,0.04)">
+        <button class="ep-exp" id="bud-btn" style="background:rgba(210,153,34,0.85);color:#000;margin-bottom:0">🏢 Tabby budynki</button>
+        <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Osobny edytor budynków. Otwiera się w osobnej karcie — praca w edytorze zostaje.</div>
+      </div>
       <div class="ep-lbl">Tabby-pokój</div>
       <div style="border:2px solid rgba(63,185,80,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(63,185,80,0.04)">
         <button class="ep-exp" id="room-open" style="background:#238636;margin-bottom:0">🏠 Tabby-pokój</button>
-        <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Twój osobisty pokój z kodem. Pokaż w nim swoje obiekty, zaproś kogoś kodem lub linkiem i testujcie razem. Goście kopiują kod obiektu do siebie. Otwiera się w osobnej karcie — praca w edytorze zostaje.</div>
+        <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Twój osobisty pokój z kodem. Pokaż w nim swoje obiekty, zaproś kogoś kodem lub linkiem i testujcie razem. Goście kopiują kod obiektu do siebie. Otwiera się w tej samej karcie — drzwi <b>„Powrót do gry”</b> w pokoju przywracają Twój świat i miejsce, w którym stałeś.</div>
       </div>
       <div class="ep-lbl">Wczytaj scenę</div>
       <div style="border:2px solid rgba(210,153,34,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(210,153,34,0.04)">
@@ -902,7 +973,62 @@ function getDriveCore(){
 }
 //@@DRIVE_CORE_START
 // ===== TEREN (góry i doliny) — wspólny dla edytora i eksportowanej gry =====
-var TBTER={on:false,h:12,size:60,oct:4,flat:30,seed:42},TBTER_N=null,TBTER_K=null;
+var TBTER={on:false,h:12,size:60,oct:4,flat:30,seed:42,st:[],sm:1,sv:1,sf:1,w:0,ice:0,pp:[],pv:[1,1,1,1],_sv:0,_pv:0},TBTER_N=null,TBTER_K=null,TBTER_W=null; // w = 💧 woda w dolinach
+// 🏔🕳▭ malowane góry, doliny i płaskie miejsca: st = lista stempli [x, z, h, r, nrPociągnięcia] (h>0 góra, h<0 dolina, h=0 płasko — poziom 0); sm / sv / sf = czy je widać
+// płasko działa po kolei: wyrównuje wszystko, co było namalowane wcześniej (i losowe góry); to, co namalujesz później, stoi już na płaskim
+// góry łączą się „max”, doliny „min” — grzbiet z wielu stempli ma równą wysokość, a dolina wcina się też w górę
+function tbTerrAny(){return !!(TBTER.on||(TBTER.st&&TBTER.st.length&&(TBTER.sm||TBTER.sv||TBTER.sf))||(TBTER.pp&&TBTER.pp.length));}
+function tbTerrRelief(){return !!(TBTER.on||(TBTER.st&&TBTER.st.length));} // czy są jakiekolwiek góry/doliny (same ścieżki to nie relief)
+// 🖌 malowane ścieżki: pp = [x, z, szerokość(promień), rodzaj 1–4, nrPociągnięcia]; pv = widoczność rodzajów; kolory ziemi:
+var TBPP_COL=[null,[0.45,0.35,0.22],[0.80,0.72,0.50],[0.52,0.51,0.49],[0.19,0.31,0.14]]; // 1 ścieżka, 2 piasek, 3 żwir, 4 ciemna trawa
+var TBPP_B={v:-1,c:null};
+// 🖌 MAPA FARBY: obrazek 1024×1024 rozpięty na całej planszy 200×200 m (piksel ≈ 20 cm), położony na ziemi jak tapeta (ta sama siatka, lekko nad nią)
+// siatka ziemi = kształt (góry, doliny), mapa farby = kolor ścieżek; w projekcie dalej tylko lista pociągnięć
+var TBPM={cv:null,tx:null,mesh:null,v:-1,n:0,add:false,base:null,cur:null,curSid:null,curA:1}; // base = gotowe pociągnięcia, cur = to, które właśnie malujesz
+function tbPPChanged(add){TBTER._pv++;if(add)TBPM.add=true;else TBPM.add=false;if(!TBPM.mesh||(TBTER.pp.length?!TBPM.mesh.visible:TBPM.mesh.visible))TBTER._dirty=true;} // farba zmieniona — ziemi nie przebudowujemy
+function tbPaintDraw(x,q){ // jedno pociągnięcie na kartce
+  var S=1024/200,px=(q[0]+100)*S,py=(q[1]+100)*S,r=q[2]*S,C=TBPP_COL[q[3]];if(!C)return;
+  var c='rgba('+Math.round(C[0]*255)+','+Math.round(C[1]*255)+','+Math.round(C[2]*255)+',',g=x.createRadialGradient(px,py,0,px,py,r);
+  g.addColorStop(0,c+'1)');g.addColorStop(0.62,c+'1)');g.addColorStop(1,c+'0)');x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,Math.PI*2);x.fill();}
+function tbPaintMap(gm){
+  gm=gm||tbTerrGround();if(!gm||typeof scene==='undefined')return;var has=TBTER.pp&&TBTER.pp.length;
+  if(!TBPM.mesh){if(!has)return;TBPM.cv=document.createElement('canvas');TBPM.cv.width=TBPM.cv.height=1024;TBPM.tx=new THREE.CanvasTexture(TBPM.cv);TBPM.tx.anisotropy=4;
+    TBPM.mesh=new THREE.Mesh(gm.geometry,new THREE.MeshStandardMaterial({map:TBPM.tx,transparent:true,depthWrite:false,roughness:0.95,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-4}));
+    TBPM.mesh.rotation.copy(gm.rotation);TBPM.mesh.position.copy(gm.position);TBPM.mesh.receiveShadow=true;TBPM.mesh.renderOrder=1;TBPM.mesh.raycast=function(){};TBPM.mesh.userData._paint=1;scene.add(TBPM.mesh);}
+  TBPM.mesh.geometry=gm.geometry;TBPM.mesh.visible=!!has;if(!has)return;
+  if(TBPM.v!==TBTER._pv){
+    // 🖌 krycie działa na całe pociągnięcie: najpierw maluję je w pełni na osobnej kartce, potem nakładam z przezroczystością (stemple się nie sumują)
+    if(!TBPM.base){TBPM.base=document.createElement('canvas');TBPM.base.width=TBPM.base.height=1024;TBPM.cur=document.createElement('canvas');TBPM.cur.width=TBPM.cur.height=1024;}
+    var x=TBPM.cv.getContext('2d'),bx=TBPM.base.getContext('2d'),cx=TBPM.cur.getContext('2d'),P=TBTER.pp,n=P.length;
+    function commit(){if(TBPM.curSid===null)return;bx.globalAlpha=TBPM.curA;bx.drawImage(TBPM.cur,0,0);bx.globalAlpha=1;cx.clearRect(0,0,1024,1024);TBPM.curSid=null;}
+    if(TBPM.add&&n>TBPM.n&&TBPM.n>=0&&TBPM.v>=0){ // dokładamy tylko nowe stemple bieżącego pociągnięcia
+      for(var i=TBPM.n;i<n;i++){var q=P[i];if(q[4]!==TBPM.curSid){commit();TBPM.curSid=q[4];TBPM.curA=q[5]===undefined?1:q[5];}if(TBTER.pv[q[3]-1])tbPaintDraw(cx,q);}}
+    else{bx.clearRect(0,0,1024,1024);cx.clearRect(0,0,1024,1024);TBPM.curSid=null;
+      for(var k=0;k<n;k++){var q2=P[k];if(q2[4]!==TBPM.curSid){commit();TBPM.curSid=q2[4];TBPM.curA=q2[5]===undefined?1:q2[5];}if(TBTER.pv[q2[3]-1])tbPaintDraw(cx,q2);}}
+    x.clearRect(0,0,1024,1024);x.drawImage(TBPM.base,0,0);if(TBPM.curSid!==null){x.globalAlpha=TBPM.curA;x.drawImage(TBPM.cur,0,0);x.globalAlpha=1;}
+    TBPM.v=TBTER._pv;TBPM.n=n;TBPM.add=false;TBPM.tx.needsUpdate=true;}
+  tbPaintTint();}
+function tbPaintTint(){ // farba świeci tak samo jak ziemia o każdej porze dnia
+  if(!TBPM.mesh||!TBPM.mesh.visible)return;var gm=tbTerrGround();if(!gm||!gm.material||!gm.material.color)return;var c=gm.material.color;
+  TBPM.mesh.material.color.setRGB(c.r/TBTER_DAY[0],c.g/TBTER_DAY[1],c.b/TBTER_DAY[2]);}
+function tbPathAt(x,z){ // zwraca [rodzaj, siła 0..1] najmocniejszej farby w tym miejscu
+  if(TBPP_B.v!==TBTER._pv){TBPP_B.v=TBTER._pv;TBPP_B.c={};TBTER.pp.forEach(function(q){var r=q[2];
+    for(var i=Math.floor((q[0]-r)/10);i<=Math.floor((q[0]+r)/10);i++)for(var j=Math.floor((q[1]-r)/10);j<=Math.floor((q[1]+r)/10);j++){var k=i+','+j;(TBPP_B.c[k]=TBPP_B.c[k]||[]).push(q);}});}
+  var L=TBPP_B.c[Math.floor(x/10)+','+Math.floor(z/10)];if(!L)return null;var best=null,bw=0;
+  for(var n=0;n<L.length;n++){var q=L[n];if(!TBTER.pv[q[3]-1])continue;var dx=x-q[0],dz=z-q[1],r=q[2],d2=dx*dx+dz*dz;if(d2>=r*r)continue;
+    var d=Math.sqrt(d2),w=1;if(d>r*0.55){var t=(d-r*0.55)/(r*0.45);w=1-t*t*(3-2*t);}if(w>=bw){bw=w;best=q[3];}}
+  return best?[best,bw]:null;
+}
+var TBTER_B={v:-1,c:null}; // stemple w kratkach 10 m (szybkie liczenie)
+function tbTerrPaint(x,z,n){ // n = wysokość losowych gór w tym miejscu
+  if(TBTER_B.v!==TBTER._sv){TBTER_B.v=TBTER._sv;TBTER_B.c={};TBTER.st.forEach(function(q){var r=q[3];
+    for(var i=Math.floor((q[0]-r)/10);i<=Math.floor((q[0]+r)/10);i++)for(var j=Math.floor((q[1]-r)/10);j<=Math.floor((q[1]+r)/10);j++){var k=i+','+j;(TBTER_B.c[k]=TBTER_B.c[k]||[]).push(q);}});}
+  var L=TBTER_B.c[Math.floor(x/10)+','+Math.floor(z/10)];if(!L)return n;var mx=0,mn=0,nf=1;
+  for(var i=0;i<L.length;i++){var q=L[i];if(q[2]>0?!TBTER.sm:q[2]<0?!TBTER.sv:!TBTER.sf)continue;var dx=x-q[0],dz=z-q[1],r2=q[3]*q[3],d2=dx*dx+dz*dz;if(d2>=r2)continue;
+    if(q[2]===0){var d=Math.sqrt(d2),r=q[3],w=1;if(d>r*0.6){var t=(d-r*0.6)/(r*0.4);w=1-t*t*(3-2*t);}nf*=1-w;mx*=1-w;mn*=1-w;continue;} // ▭ płasko: środek równo na 0, łagodny brzeg
+    var k1=1-d2/r2,v=q[2]*k1*k1;if(v>mx)mx=v;else if(v<mn)mn=v;}
+  return n*nf+mx+mn;
+}
 var TBTER_DAY=[0x55/255,0x66/255,0x44/255]; // kolor ziemi w dzień (żeby pora dnia dalej działała)
 function tbTerrNoise(seed){ // szum simplex 2D z ziarnem
   var a=seed|0;function rnd(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
@@ -914,7 +1040,47 @@ function tbTerrNoise(seed){ // szum simplex 2D z ziarnem
     return 70*(c(P[ii+P[jj]],x0,y0)+c(P[ii+i1+P[jj+j1]],x0-i1+G2,y0-j1+G2)+c(P[ii+1+P[jj+1]],x0-1+2*G2,y0-1+2*G2));};
 }
 function tbTerrH(x,z){ // wysokość ziemi w punkcie (x,z) — z tego korzysta postać, pojazdy, dron, wrogowie i obiekty
-  if(!TBTER.on||Math.abs(x)>100||Math.abs(z)>100)return 0;
+  if(Math.abs(x)>100||Math.abs(z)>100)return 0;
+  var n=TBTER.on?tbTerrNoiseH(x,z):0;
+  var h=TBTER.st&&TBTER.st.length?tbTerrPaint(x,z,n):n; // 🏔🕳▭ malowane — działają też bez losowych gór
+  if(TBTER.ice&&TBTER.w&&!TBTER._mesh&&h<TBTER_WL)h=TBTER_WL; // 🧊 lód: chodzi się i jeździ po tafli (siatka terenu pod lodem bez zmian)
+  return h;
+}
+var TBTER_WL=-0.3; // poziom wody / lodu
+function tbTerrIceAt(x,z){ // czy w tym miejscu jest lód (dno doliny pod taflą)
+  if(!(TBTER.ice&&TBTER.w)||!tbTerrAny())return false;TBTER._mesh=true;var h;try{h=tbTerrH(x,z);}finally{TBTER._mesh=false;}return h<TBTER_WL+0.001;}
+// 🧊 chodzenie po lodzie: postać nabiera prędkości powoli i ślizga się dalej po puszczeniu klawisza (poza lodem — jak dotąd, od razu)
+var ICEV={x:0,z:0};
+// 🧊 rysy na lodzie po lądowaniu z podskoku (bez pękania) — jeden wspólny obrazek, max 30 rys, każda znika po ~20 s
+var ICEFX={cr:[],tex:null,geo:null,ac:null,stepT:0};
+function tbIceTex(){if(ICEFX.tex)return ICEFX.tex;var c=document.createElement('canvas');c.width=c.height=256;var x=c.getContext('2d');x.translate(128,128);x.lineCap='round';
+  function br(a,len,w,dep){var px=0,py=0,n=5;x.beginPath();x.moveTo(0,0);for(var i=1;i<=n;i++){a+=(Math.random()-0.5)*0.5;var l=len/n;px+=Math.cos(a)*l;py+=Math.sin(a)*l;x.lineTo(px,py);
+      if(dep<2&&Math.random()<0.45){x.stroke();x.save();x.translate(px,py);br(a+(Math.random()<0.5?-1:1)*(0.5+Math.random()*0.6),len*0.45,w*0.6,dep+1);x.restore();x.beginPath();x.moveTo(px,py);}}x.stroke();}
+  for(var k=0;k<9;k++){var a=k/9*Math.PI*2+Math.random()*0.5,len=60+Math.random()*60;x.strokeStyle='rgba(255,255,255,0.9)';x.lineWidth=2.4;br(a,len,2.4,0);}
+  x.strokeStyle='rgba(235,248,255,0.75)';x.lineWidth=1.4;x.beginPath();for(var j=0;j<14;j++){var aa=j/14*Math.PI*2,rr=26+Math.random()*12;x[j?'lineTo':'moveTo'](Math.cos(aa)*rr,Math.sin(aa)*rr);}x.closePath();x.stroke();
+  ICEFX.tex=new THREE.CanvasTexture(c);return ICEFX.tex;}
+function tbIceAC(){if(!ICEFX.ac){try{ICEFX.ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(ICEFX.ac&&ICEFX.ac.state==='suspended')try{ICEFX.ac.resume();}catch(e){}return ICEFX.ac;}
+function tbIceNoise(dur,freq,q,vol){var ac=tbIceAC();if(!ac)return;var n=Math.floor(ac.sampleRate*dur),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);
+  for(var i=0;i<n;i++){var t=i/n;d[i]=(Math.random()*2-1)*Math.pow(1-t,3);}var s=ac.createBufferSource();s.buffer=b;var f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=q;
+  var g=ac.createGain();g.gain.value=vol;s.connect(f);f.connect(g);g.connect(ac.destination);s.start();}
+function tbIceLand(x,z){ // wołane przy lądowaniu po skoku
+  if(!tbTerrIceAt(x,z)||typeof scene==='undefined')return;
+  if(!ICEFX.geo)ICEFX.geo=new THREE.PlaneGeometry(1,1);
+  var m=new THREE.Mesh(ICEFX.geo,new THREE.MeshBasicMaterial({map:tbIceTex(),transparent:true,depthWrite:false,opacity:0.85,polygonOffset:true,polygonOffsetFactor:-2}));
+  m.rotation.x=-Math.PI/2;m.rotation.z=Math.random()*Math.PI*2;var sc=1.5+Math.random()*0.9;m.scale.set(sc,sc,1);m.position.set(x,TBTER_WL+0.015,z);m.renderOrder=2;m.raycast=function(){};scene.add(m);
+  ICEFX.cr.push({m:m,t:performance.now()});
+  if(ICEFX.cr.length>30){var o=ICEFX.cr.shift();scene.remove(o.m);o.m.material.dispose();}
+  tbIceNoise(0.16,3200,1.2,0.14);setTimeout(function(){tbIceNoise(0.07,5200,2,0.08);},40); // cichy trzask
+}
+function tbIceFade(){var now=performance.now();for(var i=ICEFX.cr.length-1;i>=0;i--){var c=ICEFX.cr[i],a=(now-c.t)/1000;
+  if(a>20){scene.remove(c.m);c.m.material.dispose();ICEFX.cr.splice(i,1);}else if(a>14)c.m.material.opacity=0.85*(20-a)/6;}}
+function tbIceWalk(dt,run){ // cichy dźwięk kroków na lodzie
+  if(!tbTerrIceAt(charX,charZ)){ICEFX.stepT=0;return;}ICEFX.stepT-=dt;if(ICEFX.stepT>0)return;ICEFX.stepT=run?0.3:0.46;tbIceNoise(0.09,1900+Math.random()*500,1.5,0.04);}
+function tbIceStep(dvx,dvz,dt){
+  if(ICEFX.cr.length)tbIceFade();
+  if(tbTerrIceAt(charX,charZ)){var k=Math.min(1,dt*1.3);ICEV.x+=(dvx-ICEV.x)*k;ICEV.z+=(dvz-ICEV.z)*k;}else{ICEV.x=dvx;ICEV.z=dvz;}
+  return ICEV;}
+function tbTerrNoiseH(x,z){ // losowe góry i doliny (suwaki)
   if(!TBTER_N||TBTER_K!==TBTER.seed){TBTER_N=tbTerrNoise(TBTER.seed);TBTER_K=TBTER.seed;}
   var amp=1,f=1/Math.max(5,TBTER.size),sum=0,nm=0;
   for(var o=0;o<TBTER.oct;o++){sum+=TBTER_N(x*f,z*f)*amp;nm+=amp;amp*=0.5;f*=2;}
@@ -923,14 +1089,29 @@ function tbTerrH(x,z){ // wysokość ziemi w punkcie (x,z) — z tego korzysta p
   if(d<b){var t=(d-a)/(b-a);return h*t*t*(3-2*t);} // łagodne przejście w góry
   return h;
 }
-function tbTerrJson(){return {on:!!TBTER.on,h:+TBTER.h,size:+TBTER.size,oct:+TBTER.oct,flat:+TBTER.flat,seed:+TBTER.seed};}
+function tbTerrJson(){var j={on:!!TBTER.on,h:+TBTER.h,size:+TBTER.size,oct:+TBTER.oct,flat:+TBTER.flat,seed:+TBTER.seed};
+  if(TBTER.w)j.w=1;if(TBTER.w&&TBTER.ice)j.ice=1;
+  if(TBTER.pp&&TBTER.pp.length){j.pp=TBTER.pp.map(function(q){var o=[+(+q[0]).toFixed(2),+(+q[1]).toFixed(2),+(+q[2]).toFixed(2),q[3]|0,q[4]|0];if(q[5]!==undefined&&q[5]<1)o.push(+(+q[5]).toFixed(2));return o;});j.pv=TBTER.pv.slice();}
+  if(TBTER.st&&TBTER.st.length){j.st=TBTER.st.map(function(q){return [+(+q[0]).toFixed(2),+(+q[1]).toFixed(2),+(+q[2]).toFixed(2),+(+q[3]).toFixed(2),q[4]|0];});j.sm=TBTER.sm?1:0;j.sv=TBTER.sv?1:0;j.sf=TBTER.sf?1:0;}
+  return j;}
 function tbTerrGround(){
   if(typeof groundMesh!=='undefined'&&groundMesh)return groundMesh;
   var gm=null;scene.children.forEach(function(c){if(!gm&&c.isMesh&&c.geometry&&c.geometry.type==='PlaneGeometry'&&c.rotation.x<-1&&c.geometry.parameters&&c.geometry.parameters.width===200)gm=c;});return gm;
 }
+function tbTerrWater(){ // 💧 przezroczysta, zielonkawo-niebieska tafla tuż pod poziomem ziemi — widać ją tylko w dolinach
+  var on=!!TBTER.w&&tbTerrAny();
+  if(!TBTER_W){if(!on)return;TBTER_W=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0x2a9d9a,transparent:true,opacity:0.55,roughness:0.12,metalness:0.15,depthWrite:false}));
+    TBTER_W.rotation.x=-Math.PI/2;TBTER_W.position.y=-0.3;TBTER_W.renderOrder=1;TBTER_W.raycast=function(){};TBTER_W.userData._water=1;scene.add(TBTER_W);}
+  TBTER_W.visible=on;if(!on)return;
+  var ic=!!TBTER.ice,M=TBTER_W.material;if(M._ice!==ic){M._ice=ic; // 🧊 lód: biało-błękitny, mocniej błyszczy, mniej przezroczysty
+    M.color.setHex(ic?0xd8f1ff:0x2a9d9a);M.opacity=ic?0.78:0.55;M.roughness=ic?0.05:0.12;M.metalness=ic?0.35:0.15;M.needsUpdate=true;}
+}
 function tbTerrApply(){ // przebudowa siatki ziemi
+  tbTerrWater();TBTER._mesh=true;try{tbTerrApply0();}finally{TBTER._mesh=false;}
+  if(TBPM.mesh&&!(TBTER.pp&&TBTER.pp.length))TBPM.mesh.visible=false;}
+function tbTerrApply0(){
   var gm=tbTerrGround();if(!gm)return;var old=gm.geometry,SEG=160;
-  if(!TBTER.on){if(old.parameters.widthSegments>1){gm.geometry=new THREE.PlaneGeometry(200,200);old.dispose();}gm.material.vertexColors=false;gm.material.needsUpdate=true;return;}
+  if(!tbTerrAny()){if(old.parameters.widthSegments>1){gm.geometry=new THREE.PlaneGeometry(200,200);old.dispose();}gm.material.vertexColors=false;gm.material.needsUpdate=true;return;}
   var geo=old.parameters.widthSegments===SEG?old:new THREE.PlaneGeometry(200,200,SEG,SEG);
   var pos=geo.attributes.position,n=pos.count,i;
   for(i=0;i<n;i++)pos.setZ(i,tbTerrH(pos.getX(i),-pos.getY(i))); // płaszczyzna leży obrócona: lokalne Z = wysokość
@@ -941,19 +1122,26 @@ function tbTerrApply(){ // przebudowa siatki ziemi
     var t=pos.getZ(i)/H,sl=Math.min(1,Math.acos(Math.min(1,Math.abs(nr.getZ(i))))/(Math.PI/4));
     var C=t<-0.3?[0.27,0.36,0.21]:t<0.3?[0.333,0.4,0.267]:t<0.55?[0.42,0.35,0.23]:t<0.78?[0.47,0.44,0.40]:[0.86,0.88,0.91];
     if(sl>0.35){var k=Math.min(1,(sl-0.35)/0.4);C=[C[0]+(0.5-C[0])*k,C[1]+(0.48-C[1])*k,C[2]+(0.45-C[2])*k];} // skała na stromiznach
+    // 🖌 ścieżki nie idą już do wierzchołków — maluje je osobna „mapa farby” (tbPaintMap)
     col.setXYZ(i,C[0]/TBTER_DAY[0],C[1]/TBTER_DAY[1],C[2]/TBTER_DAY[2]);
   }
   col.needsUpdate=true;if(geo!==old){gm.geometry=geo;old.dispose();}
+  if(typeof tbPaintMap==='function')tbPaintMap(gm);
   gm.material.vertexColors=true;gm.material.needsUpdate=true;
 }
 function tbTerrSet(o){
-  if(o){for(var k in o)if(k in TBTER)TBTER[k]=o[k];}else TBTER.on=false;
+  TBTER.st=[];TBTER.sm=1;TBTER.sv=1;TBTER.sf=1;TBTER.w=0;TBTER.ice=0;TBTER.pp=[];TBTER.pv=[1,1,1,1];
+  if(o){for(var k in o)if(k in TBTER&&k!=='st'&&k!=='pp'&&k!=='pv')TBTER[k]=o[k];if(Array.isArray(o.st))TBTER.st=o.st.map(function(q){return q.slice();});
+    if(Array.isArray(o.pp))TBTER.pp=o.pp.map(function(q){return q.slice();});if(Array.isArray(o.pv))TBTER.pv=o.pv.slice();}else TBTER.on=false;
+  TBTER._pv=(TBTER._pv||0)+1;
+  TBTER._sv=(TBTER._sv||0)+1;if(typeof TBPAINT!=='undefined')TBPAINT.hist=[]; // nowy teren — stare cofanie nie dotyczy
   tbTerrApply();if(typeof tbTerrReseat==='function')tbTerrReseat();
 }
 function tbTerrTick(){
+  if(TBPM.mesh&&TBPM.mesh.visible){if(TBPM.v!==TBTER._pv)tbPaintMap();tbPaintTint();} // 🖌 nowa farba bez przebudowy ziemi
   if(TBTER._dirty){TBTER._dirty=false;tbTerrApply();if(typeof tbTerrReseat==='function')tbTerrReseat();}
-  if(!TBTER.on)return;
-  if(typeof TBWIN!=='undefined'&&TBWIN.layer)TBWIN.layer.visible=false; // płaska warstwa śniegu nie pasuje do gór
+  if(!tbTerrAny())return;
+  if(tbTerrRelief()&&typeof TBWIN!=='undefined'&&TBWIN.layer)TBWIN.layer.visible=false; // płaska warstwa śniegu nie pasuje do gór
   if(typeof cam!=='undefined'&&cam){var gy=tbTerrH(cam.position.x,cam.position.z)+0.4;if(cam.position.y<gy)cam.position.y=gy;} // kamera nie wchodzi w górę
 }
 // ===== DRIVE CORE — wspólny kod jazdy (edytor + eksportowana gra) =====
@@ -975,6 +1163,18 @@ function drvHit(x,z,yaw,w){
   return true;
 }
 var DRV_STEP=0.6;
+// 🛞 szuka małego odsunięcia od ściany (2–25 cm), przy którym auto obrócone do yaw już nie zahacza — kierunek: od ściany, która blokuje
+function drvPushOff(x,z,yaw){
+  if(!drvBlocked(x,z,yaw))return {x:x,z:z};var w=DRV.lastBlock;if(!w)return null;
+  var c=Math.cos(yaw),s=Math.sin(yaw),bx=x+DRV.cx*c+DRV.cz*s,bz=z-DRV.cx*s+DRV.cz*c;
+  var dx=bx-w.x,dz=bz-w.z,ex=Math.abs(dx)-(w.hw||0),ez=Math.abs(dz)-(w.hd||0);
+  var dirs=ex>ez?[[dx>=0?1:-1,0],[0,dz>=0?1:-1]]:[[0,dz>=0?1:-1],[dx>=0?1:-1,0]];
+  dirs.push([dirs[0][0]+dirs[1][0],dirs[0][1]+dirs[1][1]]); // narożnik ściany: na ukos
+  var steps=[0.02,0.05,0.09,0.14,0.2,0.25];
+  for(var i=0;i<steps.length;i++)for(var j=0;j<dirs.length;j++){var d=dirs[j],l=Math.hypot(d[0],d[1])||1,px=x+d[0]/l*steps[i],pz=z+d[1]/l*steps[i];
+    if(!drvBlocked(px,pz,yaw))return {x:px,z:pz};}
+  return null;
+}
 function drvBlocked(x,z,yaw){
   var vTop=DRV.t.gr.position.y+DRV.top;
   for(var i=0;i<wCols.length;i++){
@@ -1545,7 +1745,9 @@ function drvStep(dt,camOff,camMode){
   DRV.time=(DRV.time||0)+dt;
   var k=Math.min(dt*60,3); // mnożnik klatki: 1.0 przy 60 FPS — fizyka niezależna od odświeżania
   var maxSpeed=drvNum(a.speed,10)/60,accel=maxSpeed*0.02,brake=maxSpeed*0.013,friction=maxSpeed*0.004;
-  var grip=Math.min(1,Math.max(0.001,drvNum(a.grip,0.07))),turnRate=drvNum(a.turnSpeed,2),steerSmooth=drvNum(a.steerSpeed,6);
+  var onIce=typeof tbTerrIceAt==='function'&&tbTerrIceAt(g.position.x,g.position.z); // 🧊 lód: mała przyczepność
+  if(onIce){brake*=0.3;friction*=0.15;}
+  var grip=onIce?Math.min(0.012,Math.max(0.001,drvNum(a.grip,0.07))):Math.min(1,Math.max(0.001,drvNum(a.grip,0.07))),turnRate=drvNum(a.turnSpeed,2),steerSmooth=drvNum(a.steerSpeed,6);
   var lean=drvNum(a.lean,a.pivot?0:0.5);
   // skręt
   var st=0;if(keys.a)st=0.6;if(keys.d)st=-0.6;
@@ -1567,7 +1769,13 @@ function drvStep(dt,camOff,camMode){
   else if(!drvBlocked(nx,z,ny)){x=nx;DRV.yaw=ny;DRV.vz*=0.3;DRV.speed*=Math.pow(0.9,k);}
   else if(!drvBlocked(x,nz,ny)){z=nz;DRV.yaw=ny;DRV.vx*=0.3;DRV.speed*=Math.pow(0.9,k);}
   else if(!drvBlocked(x,z,ny)){DRV.yaw=ny;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
-  else{appliedYaw=0;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
+  else{
+    // 🛞 odepchnięcie od ściany przy skręcie: róg zahacza — koła odpychają auto od ściany o tyle, ile trzeba, żeby skręt się zmieścił
+    var pw=dYaw!==0?drvPushOff(x,z,ny):null;
+    if(pw){x=pw.x;z=pw.z;DRV.yaw=ny;DRV.vx*=0.3;DRV.vz*=0.3;DRV.speed=Math.max(-maxSpeed*0.4,Math.min(maxSpeed*0.5,DRV.speed));}
+    else if(!drvBlocked(nx,nz,DRV.yaw)){x=nx;z=nz;appliedYaw=0;} // ciasny kąt: przynajmniej jedź prosto (bez skrętu), aż skręt się zmieści
+    else{appliedYaw=0;DRV.speed*=0.5;DRV.vx*=0.3;DRV.vz*=0.3;}
+  }
   DRV.hitCd=Math.max(0,DRV.hitCd-dt);
   if(DRV.lastBlock&&DRV.lastBlock.veh&&(x!==nx||z!==nz)&&DRV.hitCd<=0&&Math.abs(DRV.speed)>maxSpeed*0.15){
     var lv=DRV.lastBlock.veh;if(lv.shake)DRV.shake=Math.max(DRV.shake,0.3);if(lv.sound)drvThump(0.4+Math.abs(DRV.speed)*4);DRV.hitCd=0.6;
@@ -2798,6 +3006,41 @@ var TBFOG={v:0,H:6,base:null,last:null,fbase:null,flast:null,puffs:[],halos:[],h
     '\t\tfloat fogFactor = 1.0 - exp( - fogDepth * ( fogNear + fogFar * fhf ) );\n\t#endif\n\tgl_FragColor.rgb = mix( gl_FragColor.rgb, fogColor, fogFactor );\n#endif';
 })();
 function fogSet(v){TBFOG.v=Math.max(0,Math.min(1,+v||0));}
+// ☁ CHMURY: jedna przezroczysta warstwa 70 m nad światem (sięga do horyzontu), wzór rysowany w kodzie; d = zagęszczenie 0–1, s = rozciągnięcie 1–6
+// kolor zależy od pory dnia: dzień biały, wschód/zachód różowo-pomarańczowy, noc ciemna
+var TBCLD={d:0,s:1,mesh:null,cv:null,tx:null,noise:null,dd:-1,t:0};
+function cldSet(d,s){TBCLD.d=Math.max(0,Math.min(1,+d||0));if(s!==undefined)TBCLD.s=Math.max(1,Math.min(6,+s||1));}
+function cldNoise(){ // szum fBm, który się powtarza bez szwów (kafel)
+  var N=256,A=new Float32Array(N*N),seed=1337;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647;}
+  [[4,0.5],[8,0.28],[16,0.14],[32,0.07]].forEach(function(o){var g=o[0],G=new Float32Array(g*g);for(var i=0;i<g*g;i++)G[i]=rnd();
+    for(var y=0;y<N;y++)for(var x=0;x<N;x++){var fx=x/N*g,fy=y/N*g,ix=Math.floor(fx),iy=Math.floor(fy),tx=fx-ix,ty=fy-iy;tx=tx*tx*(3-2*tx);ty=ty*ty*(3-2*ty);
+      var a=G[(iy%g)*g+ix%g],b=G[(iy%g)*g+(ix+1)%g],c=G[((iy+1)%g)*g+ix%g],d=G[((iy+1)%g)*g+(ix+1)%g];A[y*N+x]+=(a+(b-a)*tx+(c-a)*ty+(a-b-c+d)*tx*ty)*o[1];}});
+  return A;}
+function cldDraw(){ // zagęszczenie = jak nisko leży próg „chmura / niebo”
+  // 0–50%: rozmyte chmury (od czystego nieba do prawie zachmurzonego) • 50–100%: przechodzą w ładne, białe, wyraźne obłoki z cieniowaniem
+  var N=256;if(!TBCLD.noise)TBCLD.noise=cldNoise();var x=TBCLD.cv.getContext('2d'),im=x.createImageData(N,N),D=im.data,d=TBCLD.d,th,w,sh;
+  if(d<=0.5){th=0.74-0.4*(d*2);w=0.28;sh=0;}else{var k=(d-0.5)*2;th=0.34+0.12*k;w=0.28-0.17*k;sh=k;}
+  for(var i=0;i<N*N;i++){var n=TBCLD.noise[i],v=(n-th)/w,a=v<=0?0:v>=1?1:v*v*(3-2*v);
+    var g=1-sh*0.22*(1-Math.min(1,Math.max(0,(n-th)/0.22))); // brzegi obłoków lekko szare, środek biały
+    D[i*4]=Math.round(255*g);D[i*4+1]=Math.round(255*g);D[i*4+2]=Math.round(255*Math.min(1,g+0.03*sh));D[i*4+3]=Math.round(a*(235+15*sh));}
+  x.putImageData(im,0,0);TBCLD.tx.needsUpdate=true;TBCLD.dd=TBCLD.d;}
+function cldTint(h){ // kolor chmur o godzinie h
+  var day=[1,1,1],sun=[1,0.68,0.52],night=[0.17,0.2,0.27],c,k;
+  function mix(a,b,t){return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
+  if(h<4.5||h>20.5)c=night;else if(h<6){k=(h-4.5)/1.5;c=mix(night,sun,k);}else if(h<8){k=(h-6)/2;c=mix(sun,day,k);}
+  else if(h<17){c=day;}else if(h<19){k=(h-17)/2;c=mix(day,sun,k);}else{k=(h-19)/1.5;c=mix(sun,night,k);}
+  return c;}
+function cldTick(dt){
+  if(typeof scene==='undefined'||!scene)return;var C=TBCLD;
+  if(C.d<=0.001){if(C.mesh)C.mesh.visible=false;return;}
+  if(!C.mesh){C.cv=document.createElement('canvas');C.cv.width=C.cv.height=256;C.tx=new THREE.CanvasTexture(C.cv);C.tx.wrapS=C.tx.wrapT=THREE.RepeatWrapping;C.tx.anisotropy=4;
+    C.mesh=new THREE.Mesh(new THREE.PlaneGeometry(1600,1600),new THREE.MeshBasicMaterial({map:C.tx,transparent:true,depthWrite:false,fog:true}));
+    C.mesh.rotation.x=Math.PI/2;C.mesh.renderOrder=-1;C.mesh.raycast=function(){};C.mesh.userData._cloud=1;scene.add(C.mesh);}
+  if(C.dd!==C.d)cldDraw();
+  C.mesh.visible=true;C.t+=dt;var cx=cam?cam.position.x:0,cz=cam?cam.position.z:0;C.mesh.position.set(cx,70,cz); // warstwa idzie z kamerą, wzór stoi w świecie i płynie z wiatrem
+  var ck=C.d>0.5?(C.d-0.5)*2:0,tb=560-330*ck,tX=tb*C.s,tZ=tb, // obłoki (powyżej 50%) są mniejsze i liczniejsze
+    rx=1600/tX,rz=1600/tZ;C.tx.repeat.set(rx,rz);C.tx.offset.set((cx+C.t*1.6)/tX,(cz)/tZ);
+  var h=typeof dnTime==='number'?dnTime:12,c=cldTint(h);var br=1+0.25*ck;C.mesh.material.color.setRGB(c[0]*br,c[1]*br,c[2]*br);/* obłoki jaśniejsze, bielsze */C.mesh.material.opacity=(h<4.5||h>20.5)?0.55:0.92;}
 function fogTick(dt){
   if(!scene||!scene.fog||!scene.background)return;
   var F=TBFOG,v=F.v;F.t+=dt;
@@ -2814,10 +3057,12 @@ function fogTick(dt){
   // niebo: im głębiej w mgle kamera, tym bardziej mleczne
   var cy=cam?cam.position.y:2,k=Math.min(1,v*1.15*Math.exp(-Math.max(0,cy)/14)+wv*0.55); // zimą niebo bardziej szare
   var bg=F.base.clone().lerp(fc,k);scene.background.copy(bg);F.last.copy(bg);
-  fogPuffs(dt,fc);fogHalos(dt,lum);fogOuter();
+  fogPuffs(dt,fc);fogHalos(dt,lum);fogOuter();cldTick(dt);
 }
 // ziemia poza planszą (do horyzontu), żeby przy dalekim widoku nie było widać krawędzi świata
-function fogOuter(){var F=TBFOG;if(!F.outer){var m=new THREE.Mesh(new THREE.PlaneGeometry(1400,1400),new THREE.MeshStandardMaterial({color:0x556644,roughness:0.95}));
+function fogOuter(){var F=TBFOG;if(!F.outer){var sh=new THREE.Shape();sh.moveTo(-700,-700);sh.lineTo(700,-700);sh.lineTo(700,700);sh.lineTo(-700,700);sh.lineTo(-700,-700);
+    var ho=new THREE.Path();ho.moveTo(-99.8,-99.8);ho.lineTo(-99.8,99.8);ho.lineTo(99.8,99.8);ho.lineTo(99.8,-99.8);ho.lineTo(-99.8,-99.8);sh.holes.push(ho); // dziura pod planszą — doliny nie mają już nieprzezroczystej tafli
+    var m=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshStandardMaterial({color:0x556644,roughness:0.95}));
     m.rotation.x=-Math.PI/2;m.position.y=-0.15;m.raycast=function(){};m.userData._outer=1;scene.add(m);F.outer=m;}
   var g=typeof tbTerrGround==='function'?tbTerrGround():null;if(g&&g.material&&g.material.color&&!F.outer.material.color.equals(g.material.color))F.outer.material.color.copy(g.material.color);}
 // płynące kłęby mgły wokół kamery
@@ -2995,6 +3240,7 @@ function perfEnsure(){
   var t=document.createElement('div');t.id='tb-perf-t';document.body.appendChild(t);
   TBPERF.ui={b:b,p:p,t:t};
   b.addEventListener('click',function(e){e.stopPropagation();TBPERF.open=!TBPERF.open;perfDraw(true);});
+  p.addEventListener('mousedown',function(e){if(e.target&&e.target.id==='tb-perf-x'){e.stopPropagation();TBPERF.open=false;perfDraw(true);}}); // na mousedown — panel odświeża się co chwilę
   p.addEventListener('click',function(e){e.stopPropagation();if(e.target&&e.target.id==='tb-perf-eco'){perfEco(!TBPERF.eco,true);}});
   window.addEventListener('keydown',function(e){if(e.code!=='F3')return;e.preventDefault();
     if(perfIsEditor()){TBPERF.open=!TBPERF.open;}else{TBPERF.show=!TBPERF.show;TBPERF.open=TBPERF.show;}perfDraw(true);},true);
@@ -3030,7 +3276,7 @@ function perfDraw(force){
   u.b.style.borderColor=perfCol(TBPERF.load);
   if(!TBPERF.open||!TBPERF.show){u.p.style.display='none';return;}
   u.p.style.display='block';var rb=u.b.getBoundingClientRect();u.p.style.left=Math.max(8,Math.min(innerWidth-310,rb.left))+'px';u.p.style.top=(rb.bottom+8)+'px';
-  var h='<h4>⚡ Wydajność</h4><div class="r"><div class="l"><span>Płynność</span><span style="color:'+perfFpsCol(f)+'">'+f+' FPS (najgorsza klatka '+Math.round(1000/Math.max(1,TBPERF.low))+' ms)</span></div></div>';
+  var h='<h4 style="display:flex;justify-content:space-between;align-items:center">⚡ Wydajność<span id="tb-perf-x" title="Zamknij" style="cursor:pointer;color:#aaa;font-size:20px;line-height:1;padding:0 4px">&times;</span></h4><div class="r"><div class="l"><span>Płynność</span><span style="color:'+perfFpsCol(f)+'">'+f+' FPS (najgorsza klatka '+Math.round(1000/Math.max(1,TBPERF.low))+' ms)</span></div></div>';
   h+='<div class="r"><div class="l"><b>Obciążenie sceny</b><b style="color:'+perfCol(TBPERF.load)+'">'+L+'%</b></div><div class="b"><i style="width:'+Math.min(100,L)+'%;background:'+perfCol(TBPERF.load)+'"></i></div></div>';
   (TBPERF.parts||[]).forEach(function(q){var pc=Math.round(q.u*100);
     h+='<div class="r"><div class="l"><span>'+q.n+'</span><span>'+fmtN(q.v)+' / '+fmtN(q.b)+'</span></div><div class="b"><i style="width:'+Math.min(100,pc)+'%;background:'+perfCol(q.u)+'"></i></div></div>';});
@@ -5296,7 +5542,7 @@ function kolRebuild(M){
     if(p.t==='low'){cur={pcs:[p],cabs:[],s:0,v:0,dir:1,state:'idle',wait:0,sw:[0,0],swv:[0,0],yawS:[undefined,undefined],segs:[],len:0,wheel:[],vmax:Math.max(2,Math.min(15,+pa.action.speed||7))};KOL.lines.push(cur);}
     else if(cur&&!cur.done){cur.pcs.push(p);if(p.t==='top')cur.done=true;}});
   KOL.lines.forEach(function(L){L.pcs.forEach(function(p){if(p.t!=='pole')p.gy=_kolTH(p.x,p.z);});});
-  if(TBTER.on)TBTER._dirty=true; // ziemia wokół stacji wyrówna się przy najbliższej klatce
+  if(tbTerrAny())TBTER._dirty=true; // ziemia wokół stacji wyrówna się przy najbliższej klatce
   KOL.lines.forEach(function(L,li){kolBuildLine(L);var o=old[li];if(o&&o.done&&L.done&&Math.abs(o.len-L.len)<0.5){L.s=o.s;L.v=o.v;L.dir=o.dir;L.state=o.state;L.wait=o.wait;}});
   // gracz był w kabinie, a linia zmieniła się pod nim — wysiada
   if(KOL.ride&&!KOL.lines[KOL.ride.li])kolExit(true);
@@ -6106,11 +6352,11 @@ function kGrid(A,x,z,empty){var c=KCV.c,fx=(x-KCV.x0)/c,fz=(z-KCV.z0)/c;if(fx<0|
   var a=A[j*n+i],b=A[j*n+i+1],cc=A[(j+1)*n+i],d=A[(j+1)*n+i+1];if(Math.abs(a)>1e8||Math.abs(b)>1e8||Math.abs(cc)>1e8||Math.abs(d)>1e8){var m=empty>0?Math.min(a,b,cc,d):Math.max(a,b,cc,d);return Math.abs(m)>1e8?empty:m;}
   return a+(b-a)*tx+(cc-a)*tz+(a-b-cc+d)*tx*tz;}
 tbTerrH=function(x,z){var h=KM_TRAW(x,z);if(!KCV.on)return h;
-  if(typeof TBTER!=='undefined'&&TBTER.on){var c=kGrid(KCV.cut,x,z,1e9);if(c<h)h=c;}
+  if(typeof TBTER!=='undefined'&&tbTerrAny()){var c=kGrid(KCV.cut,x,z,1e9);if(c<h)h=c;}
   if(KM_MESH)return h; // siatka terenu: tylko wąwozy (tunel i nasyp mają własny wygląd)
   var t=kGrid(KCV.tun,x,z,1e9);if(t<h)h=t;var f=kGrid(KCV.fil,x,z,-1e9);if(f>h)h=f;return h;};
 var _tbTerrApplyK=tbTerrApply;tbTerrApply=function(){KM_MESH=true;try{_tbTerrApplyK();}finally{KM_MESH=false;}};
-function kCarveRefresh(){var on=typeof TBTER!=='undefined'&&TBTER.on,sig=kSnap()+'|'+(on?TBTER.seed+'/'+TBTER.h+'/'+TBTER.size+'/'+TBTER.oct+'/'+TBTER.flat:'off');if(sig===KCV.sig)return;KCV.sig=sig;kCarveBuild();if(on)TBTER._dirty=true;}
+function kCarveRefresh(){var on=typeof TBTER!=='undefined'&&tbTerrAny(),sig=kSnap()+'|'+(on?TBTER.on+'/'+TBTER.seed+'/'+TBTER.h+'/'+TBTER.size+'/'+TBTER.oct+'/'+TBTER.flat+'/'+TBTER._sv+'/'+TBTER.sm+TBTER.sv:'off');if(sig===KCV.sig)return;KCV.sig=sig;kCarveBuild();if(on)TBTER._dirty=true;}
 // nasyp: od toru w dół do terenu (tam, gdzie dolina albo kropka podniesiona); powyżej 7 m — wiadukt na filarach
 function kEmbank(G,P){var KM2=kMats(),runs=[],cur=null;P.forEach(function(q){q._f=q.y-KM_TRAW(q.x,q.z);if(q._f>0.15){if(!cur){cur=[];runs.push(cur);}cur.push(q);}else cur=null;});
   runs.forEach(function(R){if(R.length<2)return;var pos=[],idx=[];
@@ -6319,15 +6565,17 @@ function update(dt){
       if(keys.d){mx+=Math.cos(camYaw);mz-=Math.sin(camYaw);}
       var len=Math.sqrt(mx*mx+mz*mz);isMov=len>0.01;isRun=keys.sh&&isMov;
       var sp=(isRun?RSP:WSP)*(WPN.po?1-WPN.aimT*0.3:1)*winSlow();
-      if(isMov){mx/=len;mz/=len;tgtAng=Math.atan2(-mx,-mz);
-        var res=collide(charX+mx*sp*dt,charZ+mz*sp*dt);charX=res[0];charZ=res[1];var floorY=res[2];}else{var fres=collide(charX,charZ);var floorY=fres[2];}
+      if(isMov){mx/=len;mz/=len;tgtAng=Math.atan2(-mx,-mz);}
+      var iv=tbIceStep(isMov?mx*sp:0,isMov?mz*sp:0,dt); // 🧊 na lodzie z poślizgiem, poza lodem jak dotąd
+      if(isMov&&onGr)tbIceWalk(dt,isRun);
+      if(Math.abs(iv.x)+Math.abs(iv.z)>0.01){var tx=charX+iv.x*dt,tz=charZ+iv.z*dt,res=collide(tx,tz);if(Math.abs(res[0]-tx)>1e-4)ICEV.x=0;if(Math.abs(res[1]-tz)>1e-4)ICEV.z=0;charX=res[0];charZ=res[1];var floorY=res[2];}else{var fres=collide(charX,charZ);var floorY=fres[2];}
       var faceCam=camStyle==='fps'||wpnReady(); // z bronią postać zawsze patrzy tam, gdzie celownik
       var tgt=faceCam?camYaw:tgtAng,ad=tgt-charAng;
       while(ad>Math.PI)ad-=Math.PI*2;while(ad<-Math.PI)ad+=Math.PI*2;
       charAng+=ad*(faceCam?0.3:TSM);
       var wasGr=onGr&&velY<=0;
       if(keys.sp&&onGr){velY=JF;onGr=false;wasGr=false;}velY-=GR*dt;charY+=velY*dt;
-      if(charY<=floorY||(wasGr&&charY-floorY<0.45)){charY=floorY;velY=0;onGr=true;} // przyklejenie do podłoża przy schodzeniu
+      if(charY<=floorY||(wasGr&&charY-floorY<0.45)){if(!onGr&&velY<-2)tbIceLand(charX,charZ);charY=floorY;velY=0;onGr=true;} // przyklejenie do podłoża przy schodzeniu
       else if(charY-floorY>=0.45)onGr=false; // prawdziwe spadanie (np. z krawędzi)
       charGroup.position.set(charX,charY,charZ);
     }
@@ -7541,6 +7789,7 @@ function doExportHTML(opts){
   if(wCalls.length>0)inject+='// sciany kolizji\n'+wCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
+  inject+='cldSet('+(+TBCLD.d).toFixed(2)+','+(+TBCLD.s).toFixed(2)+'); // ☁ chmury z edytora\n';
   inject+='tbTerrSet('+JSON.stringify(tbTerrJson())+'); // ⛰ teren z edytora\n';
   inject+='\n// day-night cycle (ustawienia z edytora)\nvar dnTime='+(+dnTime).toFixed(2)+',dnSpeed='+(+dnSpeed)+',dnPaused='+(dnPaused?'true':'false')+',dnDirty=true;\nvar dnAmbient,dnSun,dnHemi,dnStars;\nvar dnC={night:{sky:new THREE.Color(0x0a0e1a),fog:new THREE.Color(0x0a0e1a),amb:new THREE.Color(0x112244),sun:0,hemi:0.05,gnd:new THREE.Color(0x1a2211)},dawn:{sky:new THREE.Color(0xd4734a),fog:new THREE.Color(0xc47755),amb:new THREE.Color(0x886655),sun:0.4,hemi:0.2,gnd:new THREE.Color(0x445533)},day:{sky:new THREE.Color(0x6699cc),fog:new THREE.Color(0x667799),amb:new THREE.Color(0x8899aa),sun:0.85,hemi:0.35,gnd:new THREE.Color(0x556644)},dusk:{sky:new THREE.Color(0xcc6644),fog:new THREE.Color(0xaa6655),amb:new THREE.Color(0x775544),sun:0.3,hemi:0.15,gnd:new THREE.Color(0x443322)}};\nfunction lerpC(a,b,t){return a.clone().lerp(b,t);}\n(function(){var ls=scene.children;for(var i=0;i<ls.length;i++){if(ls[i].isAmbientLight)dnAmbient=ls[i];if(ls[i].isDirectionalLight)dnSun=ls[i];if(ls[i].isHemisphereLight)dnHemi=ls[i];}})();\nvar stG=new THREE.BufferGeometry();var stV=[];for(var si=0;si<600;si++){var th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*0.8+0.2),r=90;stV.push(Math.sin(ph)*Math.cos(th)*r,Math.cos(ph)*r,Math.sin(ph)*Math.sin(th)*r);}stG.setAttribute(\'position\',new THREE.Float32BufferAttribute(stV,3));dnStars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.4,transparent:true,opacity:0}));scene.add(dnStars);\nfunction dnUpdate(dt){if(dnPaused){if(!dnDirty)return;dnDirty=false;}else{dnTime+=dt*dnSpeed;if(dnTime>=24)dnTime-=24;}var t=dnTime,s,f,a,si,hi,so,g,sy,sx,d=dnC;if(t>=22||t<4){s=d.night.sky;f=d.night.fog;a=d.night.amb;si=0;hi=d.night.hemi;so=0.9;g=d.night.gnd;sy=-10;sx=0;}else if(t<7){var p=(t-4)/3;s=lerpC(d.night.sky,d.dawn.sky,p);f=lerpC(d.night.fog,d.dawn.fog,p);a=lerpC(d.night.amb,d.dawn.amb,p);si=p*d.dawn.sun;hi=d.night.hemi+(d.dawn.hemi-d.night.hemi)*p;so=0.9*(1-p);g=lerpC(d.night.gnd,d.dawn.gnd,p);sy=p*15;sx=-20+p*10;}else if(t<10){var p=(t-7)/3;s=lerpC(d.dawn.sky,d.day.sky,p);f=lerpC(d.dawn.fog,d.day.fog,p);a=lerpC(d.dawn.amb,d.day.amb,p);si=d.dawn.sun+(d.day.sun-d.dawn.sun)*p;hi=d.dawn.hemi+(d.day.hemi-d.dawn.hemi)*p;so=0;g=lerpC(d.dawn.gnd,d.day.gnd,p);sy=15+p*20;sx=-10+p*30;}else if(t<17){s=d.day.sky;f=d.day.fog;a=d.day.amb;si=d.day.sun;hi=d.day.hemi;so=0;g=d.day.gnd;sy=35;sx=20-(t-10)/7*10;}else if(t<20){var p=(t-17)/3;s=lerpC(d.day.sky,d.dusk.sky,p);f=lerpC(d.day.fog,d.dusk.fog,p);a=lerpC(d.day.amb,d.dusk.amb,p);si=d.day.sun+(d.dusk.sun-d.day.sun)*p;hi=d.day.hemi+(d.dusk.hemi-d.day.hemi)*p;so=0;g=lerpC(d.day.gnd,d.dusk.gnd,p);sy=35-p*20;sx=10+p*10;}else{var p=(t-20)/2;s=lerpC(d.dusk.sky,d.night.sky,p);f=lerpC(d.dusk.fog,d.night.fog,p);a=lerpC(d.dusk.amb,d.night.amb,p);si=d.dusk.sun*(1-p);hi=d.dusk.hemi+(d.night.hemi-d.dusk.hemi)*p;so=p*0.9;g=lerpC(d.dusk.gnd,d.night.gnd,p);sy=15-p*25;sx=20;}scene.background.copy(s);scene.fog.color.copy(f);if(dnAmbient)dnAmbient.color.copy(a);if(dnSun){dnSun.intensity=si;dnSun.position.y=sy;dnSun.position.x=sx;}if(dnHemi)dnHemi.intensity=hi;if(dnStars)dnStars.material.opacity=so;var gm=scene.children.find(function(c){return c.isMesh&&c.geometry&&c.geometry.type===\'PlaneGeometry\'&&c.rotation.x<-1;});if(gm)gm.material.color.copy(g);}\n';
   inject+='dnTick=dnUpdate;\n';
@@ -7660,6 +7909,7 @@ function doExportZIP(opts){
   if(zWCalls.length>0)inject+='// sciany kolizji\n'+zWCalls.join('\n')+'\n';
   inject+='TBFOG.v='+(+TBFOG.v).toFixed(2)+'; // mgła z edytora\n';
   inject+='winSet('+(TBWIN.on?'true':'false')+','+(+TBWIN.fall).toFixed(2)+','+(+TBWIN.depth).toFixed(2)+'); // zima z edytora\n';
+  inject+='cldSet('+(+TBCLD.d).toFixed(2)+','+(+TBCLD.s).toFixed(2)+'); // ☁ chmury z edytora\n';
   inject+='tbTerrSet('+JSON.stringify(tbTerrJson())+'); // ⛰ teren z edytora\n';
   inject+='\n// day-night cycle (ustawienia z edytora)\nvar dnTime='+(+dnTime).toFixed(2)+',dnSpeed='+(+dnSpeed)+',dnPaused='+(dnPaused?'true':'false')+',dnDirty=true;\nvar dnAmbient,dnSun,dnHemi,dnStars;\nvar dnC={night:{sky:new THREE.Color(0x0a0e1a),fog:new THREE.Color(0x0a0e1a),amb:new THREE.Color(0x112244),sun:0,hemi:0.05,gnd:new THREE.Color(0x1a2211)},dawn:{sky:new THREE.Color(0xd4734a),fog:new THREE.Color(0xc47755),amb:new THREE.Color(0x886655),sun:0.4,hemi:0.2,gnd:new THREE.Color(0x445533)},day:{sky:new THREE.Color(0x6699cc),fog:new THREE.Color(0x667799),amb:new THREE.Color(0x8899aa),sun:0.85,hemi:0.35,gnd:new THREE.Color(0x556644)},dusk:{sky:new THREE.Color(0xcc6644),fog:new THREE.Color(0xaa6655),amb:new THREE.Color(0x775544),sun:0.3,hemi:0.15,gnd:new THREE.Color(0x443322)}};\nfunction lerpC(a,b,t){return a.clone().lerp(b,t);}\n(function(){var ls=scene.children;for(var i=0;i<ls.length;i++){if(ls[i].isAmbientLight)dnAmbient=ls[i];if(ls[i].isDirectionalLight)dnSun=ls[i];if(ls[i].isHemisphereLight)dnHemi=ls[i];}})();\nvar stG=new THREE.BufferGeometry();var stV=[];for(var si=0;si<600;si++){var th=Math.random()*Math.PI*2,ph=Math.acos(Math.random()*0.8+0.2),r=90;stV.push(Math.sin(ph)*Math.cos(th)*r,Math.cos(ph)*r,Math.sin(ph)*Math.sin(th)*r);}stG.setAttribute(\'position\',new THREE.Float32BufferAttribute(stV,3));dnStars=new THREE.Points(stG,new THREE.PointsMaterial({color:0xffffff,size:0.4,transparent:true,opacity:0}));scene.add(dnStars);\nfunction dnUpdate(dt){if(dnPaused){if(!dnDirty)return;dnDirty=false;}else{dnTime+=dt*dnSpeed;if(dnTime>=24)dnTime-=24;}var t=dnTime,s,f,a,si,hi,so,g,sy,sx,d=dnC;if(t>=22||t<4){s=d.night.sky;f=d.night.fog;a=d.night.amb;si=0;hi=d.night.hemi;so=0.9;g=d.night.gnd;sy=-10;sx=0;}else if(t<7){var p=(t-4)/3;s=lerpC(d.night.sky,d.dawn.sky,p);f=lerpC(d.night.fog,d.dawn.fog,p);a=lerpC(d.night.amb,d.dawn.amb,p);si=p*d.dawn.sun;hi=d.night.hemi+(d.dawn.hemi-d.night.hemi)*p;so=0.9*(1-p);g=lerpC(d.night.gnd,d.dawn.gnd,p);sy=p*15;sx=-20+p*10;}else if(t<10){var p=(t-7)/3;s=lerpC(d.dawn.sky,d.day.sky,p);f=lerpC(d.dawn.fog,d.day.fog,p);a=lerpC(d.dawn.amb,d.day.amb,p);si=d.dawn.sun+(d.day.sun-d.dawn.sun)*p;hi=d.dawn.hemi+(d.day.hemi-d.dawn.hemi)*p;so=0;g=lerpC(d.dawn.gnd,d.day.gnd,p);sy=15+p*20;sx=-10+p*30;}else if(t<17){s=d.day.sky;f=d.day.fog;a=d.day.amb;si=d.day.sun;hi=d.day.hemi;so=0;g=d.day.gnd;sy=35;sx=20-(t-10)/7*10;}else if(t<20){var p=(t-17)/3;s=lerpC(d.day.sky,d.dusk.sky,p);f=lerpC(d.day.fog,d.dusk.fog,p);a=lerpC(d.day.amb,d.dusk.amb,p);si=d.day.sun+(d.dusk.sun-d.day.sun)*p;hi=d.day.hemi+(d.dusk.hemi-d.day.hemi)*p;so=0;g=lerpC(d.day.gnd,d.dusk.gnd,p);sy=35-p*20;sx=10+p*10;}else{var p=(t-20)/2;s=lerpC(d.dusk.sky,d.night.sky,p);f=lerpC(d.dusk.fog,d.night.fog,p);a=lerpC(d.dusk.amb,d.night.amb,p);si=d.dusk.sun*(1-p);hi=d.dusk.hemi+(d.night.hemi-d.dusk.hemi)*p;so=p*0.9;g=lerpC(d.dusk.gnd,d.night.gnd,p);sy=15-p*25;sx=20;}scene.background.copy(s);scene.fog.color.copy(f);if(dnAmbient)dnAmbient.color.copy(a);if(dnSun){dnSun.intensity=si;dnSun.position.y=sy;dnSun.position.x=sx;}if(dnHemi)dnHemi.intensity=hi;if(dnStars)dnStars.material.opacity=so;var gm=scene.children.find(function(c){return c.isMesh&&c.geometry&&c.geometry.type===\'PlaneGeometry\'&&c.rotation.x<-1;});if(gm)gm.material.color.copy(g);}\n';
   inject+='dnTick=dnUpdate;\n';
@@ -8092,7 +8342,7 @@ function tabbyWallExtra(w){
 }
 // === PROJEKT: zbieranie danych (wspólne dla zapisu projektu, autozapisu i zapisu gry) ===
 function tabbyCollectProject(){
-  var d={objects:[],placed:[],dn:{time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused,fog:+(+TBFOG.v).toFixed(2),season:TBWIN.on?'winter':'summer',snow:+(+TBWIN.fall).toFixed(2),snowH:+(+TBWIN.depth).toFixed(2)}};
+  var d={objects:[],placed:[],dn:{cld:+(+TBCLD.d).toFixed(2),cls:+(+TBCLD.s).toFixed(2),time:+(+dnTime).toFixed(2),speed:+dnSpeed,auto:!dnPaused,fog:+(+TBFOG.v).toFixed(2),season:TBWIN.on?'winter':'summer',snow:+(+TBWIN.fall).toFixed(2),snowH:+(+TBWIN.depth).toFixed(2)}};
   loadedObjs.forEach(function(ob){
     if(ob.type==='glb'){d.objects.push({name:ob.name,parts:[]});return;}
     var eo={name:ob.name,parts:ob.parts};if(ob.veh)eo.veh=ob.veh;if(ob.action)eo.action=ob.action;if(ob.lifts)eo.lifts=ob.lifts; // 🛗 windy budynku też idą do projektu
@@ -8108,7 +8358,7 @@ function tabbyCollectProject(){
     if(po.action)pd.action=po.action;
     d.placed.push(pd);
   });
-  if(TBTER.on)d.ter=tbTerrJson(); // ⛰ teren
+  if(TBTER.on||(TBTER.st&&TBTER.st.length)||(TBTER.pp&&TBTER.pp.length))d.ter=tbTerrJson(); // ⛰ teren (losowy i/lub malowany, ścieżki)
   if(TB_MP)d.mp=1; // 🌐 gra z innymi
   if(TB_PVP)d.pvp=1; // ⚔ walka między graczami
   d.camIn=edCamOff.indoor; // 🎥 ustawienie kamery w budynku
@@ -8180,12 +8430,17 @@ async function tbOpenProject(){
   if(document.pointerLockElement)document.exitPointerLock();
   items.innerHTML='';
   if(!tbFsOk()){document.getElementById('tb-plist-input').click();return;}
-  var dir=null;try{dir=await tbProjDir(true);}catch(e){if(e&&e.name==='AbortError')return;}
-  if(!dir){document.getElementById('tb-plist-input').click();return;}
+  // okno pokazuje się zawsze — z przyciskiem „Inny plik z dysku…” (np. projekt pobrany z internetu)
+  var saved=null;try{saved=await tbKvGet('projDir');}catch(e){}
+  function noFolder(msg){info.textContent=msg;var b=document.createElement('button');b.innerHTML='<span>📂 Wskaż folder „'+TB_FOLDER+'”…</span>';
+    b.onclick=async function(){try{var d=await tbProjDir(true);if(d)tbOpenProject();}catch(e){}};items.appendChild(b);list.classList.add('show');}
+  if(!saved){noFolder('Folder „'+TB_FOLDER+'” nie jest jeszcze wybrany. Pobrany projekt otworzysz przyciskiem „📁 Inny plik z dysku…” na dole.');return;}
+  var dir=null;try{dir=await tbProjDir(true);}catch(e){}
+  if(!dir){noFolder('Brak dostępu do folderu „'+TB_FOLDER+'”. Plik spoza folderu otworzysz przyciskiem „📁 Inny plik z dysku…” na dole.');return;}
   var rows=[];
   for await (var ent of dir.values()){if(ent.kind==='file'&&/\.tabby$/i.test(ent.name)){var f=await ent.getFile();rows.push({h:ent,name:ent.name.replace(/\.tabby$/i,''),t:f.lastModified});}}
   rows.sort(function(a,b){return b.t-a.t;});
-  info.textContent=rows.length?'Projekty z folderu „'+TB_FOLDER+'”:':'Folder „'+TB_FOLDER+'” jest jeszcze pusty.';
+  info.textContent=(rows.length?'Projekty z folderu „'+TB_FOLDER+'”:':'Folder „'+TB_FOLDER+'” jest jeszcze pusty.')+' Inne pliki (np. pobrane) — „📁 Inny plik z dysku…” na dole.';
   rows.forEach(function(r){
     var b=document.createElement('button');var d=new Date(r.t);
     b.innerHTML='<span></span><small>'+d.toLocaleDateString('pl-PL')+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+'</small>';
@@ -8194,6 +8449,23 @@ async function tbOpenProject(){
     items.appendChild(b);
   });
   list.classList.add('show');
+}
+// === 🏠 TABBY-POKÓJ: wyjście do pokoju i powrót w tej samej karcie (window.name działa też z plików na dysku) ===
+function tbGoRoom(){
+  if(edDriveTarget){tbProjMsg('Najpierw wysiądź z pojazdu (E)',false);return;}
+  if(DRN.stage!=='none'){tbProjMsg('Najpierw odłóż drona',false);return;}
+  var d=tbProjJson();
+  d.back={x:+charX.toFixed(3),y:+charY.toFixed(3),z:+charZ.toFixed(3),ang:+charAng.toFixed(4),yaw:+camYaw.toFixed(4),pitch:+camPitch.toFixed(4)};
+  tbAutosave(false); // na wszelki wypadek — gdyby karta się zamknęła w pokoju, edytor zaproponuje przywrócenie
+  var url=location.href.split('#')[0].split('?')[0];
+  try{window.name='TABBY_BACK:'+JSON.stringify({url:url,proj:d});}catch(ex){tbProjMsg('Nie udało się zapamiętać świata',false);return;}
+  if(document.pointerLockElement)document.exitPointerLock();
+  location.href='tabby-pokoj.html';
+}
+function tbBackFromRoom(bk){ // wywoływane przy starcie, gdy wracamy z pokoju
+  var d=bk.proj;tabbyLoadEditorData(d);tabbyProjName=d.name||'';
+  var b=d.back;if(b){charX=b.x;charY=b.y;charZ=b.z;charAng=b.ang;tgtAng=b.ang;camYaw=b.yaw;camPitch=b.pitch;velY=0;
+    if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=charAng;}}
 }
 function tbInitProject(fromMenu){
   var $=function(id){return document.getElementById(id);};
@@ -8211,6 +8483,10 @@ function tbInitProject(fromMenu){
     m.addEventListener('keyup',function(e){e.stopPropagation();});
     m.addEventListener('mousedown',function(e){e.stopPropagation();if(e.target===m)m.classList.remove('show');});
     m.addEventListener('click',function(e){e.stopPropagation();});});
+  // 🖱 przeciągnij plik .tabby na okno edytora = otwórz projekt
+  window.addEventListener('dragover',function(e){if(e.dataTransfer&&Array.prototype.indexOf.call(e.dataTransfer.types||[],'Files')>=0)e.preventDefault();});
+  window.addEventListener('drop',function(e){var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f||!/\.(tabby|json)$/i.test(f.name))return;e.preventDefault();
+    var r=new FileReader();r.onload=function(){tbLoadProjectText(r.result,f.name.replace(/\.(tabby|json)$/i,''));};r.readAsText(f);});
   // Ctrl+S = zapisz projekt
   document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.code==='KeyS'){e.preventDefault();e.stopPropagation();tbSaveProject();}},true);
   // autozapis co 30 s i przy zamykaniu karty
@@ -8273,6 +8549,7 @@ function tabbyApplyDn(dn){
   if(typeof dn.time==='number')dnTime=Math.max(0,Math.min(24,dn.time));
   if(typeof dn.speed==='number')dnSpeed=dn.speed;
   dnPaused=!dn.auto;dnDirty=true;
+  cldSet(dn.cld||0,dn.cls||1);if(window.tabbyCldUI)window.tabbyCldUI(); // ☁ chmury
   fogSet(dn.fog||0);winSet(dn.season==='winter',dn.snow===undefined?0.5:dn.snow,dn.snowH===undefined?0.2:dn.snowH);if(window.tabbyWinUI)window.tabbyWinUI();var fs=document.getElementById('dn-fog-slider'),fl=document.getElementById('dn-fog-label');if(fs)fs.value=Math.round(TBFOG.v*100);if(fl)fl.textContent=Math.round(TBFOG.v*100)+'%';
   var sl=document.getElementById('dn-slider'),au=document.getElementById('dn-auto'),sp=document.getElementById('dn-speed-slider');
   if(sl)sl.value=dnTime;if(au)au.checked=!!dn.auto;
@@ -8484,6 +8761,12 @@ function init(){
   document.getElementById('dn-win').addEventListener('click',function(){winSet(true);winUI();});
   document.getElementById('dn-snow-slider').addEventListener('input',function(){winSet(true,this.value/100);winUI();});
   document.getElementById('dn-snowh-slider').addEventListener('input',function(){winSet(true,undefined,this.value/100);winUI();});
+  // ☁ chmury
+  function cldUI(){var a=document.getElementById('dn-cld-slider'),b=document.getElementById('dn-cls-slider');if(a)a.value=Math.round(TBCLD.d*100);if(b)b.value=TBCLD.s;
+    var la=document.getElementById('dn-cld-label'),lb=document.getElementById('dn-cls-label');if(la)la.textContent=Math.round(TBCLD.d*100)+'%';if(lb)lb.textContent=TBCLD.s+'×';}
+  window.tabbyCldUI=cldUI;
+  document.getElementById('dn-cld-slider').addEventListener('input',function(){cldSet(this.value/100);cldUI();});
+  document.getElementById('dn-cls-slider').addEventListener('input',function(){cldSet(TBCLD.d,parseFloat(this.value));cldUI();});
   document.getElementById('dn-fog-slider').addEventListener('input',function(){
     fogSet(this.value/100);document.getElementById('dn-fog-label').textContent=this.value+'%';
   });
@@ -8506,8 +8789,9 @@ function init(){
   });
   // Tabby budynki — osobna strona w tym samym folderze, otwiera się w osobnej karcie (jak Tabby Store)
   document.getElementById('bud-btn').addEventListener('click',function(e){e.stopPropagation();window.open('tabby-budynki.html','tabby-budynki');});
-  // Tabby-pokój — osobna strona w tym samym folderze, otwiera się w osobnej karcie (jak Tabby budynki)
-  document.getElementById('room-open').addEventListener('click',function(e){e.stopPropagation();window.open('tabby-pokoj.html','tabby-pokoj');});
+  // Tabby-pokój — osobna strona w tym samym folderze. Otwiera się w TEJ SAMEJ karcie:
+  // edytor wkłada „zakładkę” (projekt + miejsce postaci) do window.name, drzwi „Powrót do gry” w pokoju wracają tutaj.
+  document.getElementById('room-open').addEventListener('click',function(e){e.stopPropagation();tbGoRoom();});
 
   document.getElementById('ed-export-html').addEventListener('click',function(){if(tbMpNeed())return;tbSpawnCheck(function(){doExportHTML();},tbPlFocus);});
   document.getElementById('ed-export-zip').addEventListener('click',function(){if(tbMpNeed())return;tbSpawnCheck(function(){doExportZIP();},tbPlFocus);});
@@ -9186,9 +9470,27 @@ function init(){
     document.getElementById('cam-btn').addEventListener('click',function(e){e.stopPropagation();tabbyCamPop(!edCamAdjust);});
     document.getElementById('cam-pop-x').addEventListener('click',function(e){e.stopPropagation();tabbyCamPop(false);});
     pop.querySelectorAll('[data-c]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();tabbyCamStep(b.dataset.c);});});
-    document.getElementById('cam-reset').addEventListener('click',function(e){e.stopPropagation();var m=tabbyCamMode();edCamOff[m]={y:0,angle:0,dist:0};});
+    document.getElementById('cam-reset').addEventListener('click',function(e){e.stopPropagation();var m=tabbyCamMode();edCamOff[m]={y:0,angle:0,dist:0};if(TBTOP.on)tbTopView(false);});
+    // 🛰 widok z góry — jak z drona, prawie pionowo w dół (drugie kliknięcie = powrót do zwykłego widoku)
+    document.getElementById('cam-top').addEventListener('click',function(e){e.stopPropagation();tbTopView(!TBTOP.on);});
     ['mousedown','click','wheel'].forEach(function(t){pop.addEventListener(t,function(e){e.stopPropagation();});});
     setInterval(function(){if(edCamAdjust)tabbyCamLabel();},400);
+  })();
+  // 🛰 widok z góry: kamera wysoko i prawie pionowo nad postacią — wygodne przy malowaniu terenu
+  window.TBTOP={on:false,p:1.1,d:6.5,mx:1.2};
+  window.tbTopView=function(on){var b=document.getElementById('cam-top');
+    if(on&&!TBTOP.on){TBTOP.p=camPitch;TBTOP.d=CDIST;TBTOP.mx=CMAXP;CMAXP=1.5;camPitch=1.47;CDIST=45;TBTOP.on=true;}
+    else if(!on&&TBTOP.on){CMAXP=TBTOP.mx;camPitch=Math.min(TBTOP.p,CMAXP);CDIST=TBTOP.d;TBTOP.on=false;}
+    if(b)b.textContent=TBTOP.on?'↩ Zwykły widok':'🛰 Widok z góry';showMsg(TBTOP.on?'🛰 Widok z góry — Bliżej / Dalej zmienia wysokość':'↩ Zwykły widok');};
+  // jeden panel naraz: kliknięcie w przycisk panelu zamyka pozostałe
+  (function(){
+    var map={'cam-btn':'cam','dn-btn':'dn','ter-btn':'ter','pnt-btn':'pnt','tb-perf':'perf'};
+    function closeAll(ex){
+      if(ex!=='cam'&&edCamAdjust)tabbyCamPop(false);
+      ['dn','ter','pnt'].forEach(function(k){if(k===ex)return;var p=document.getElementById(k+'-pop');if(p&&p.classList.contains('show')){p.classList.remove('show');var b=document.getElementById(k+'-btn');if(b)b.setAttribute('aria-expanded','false');}});
+      if(ex!=='perf'&&typeof TBPERF!=='undefined'&&TBPERF.open){TBPERF.open=false;if(typeof perfDraw==='function')perfDraw(true);}}
+    document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('#cam-btn,#dn-btn,#ter-btn,#pnt-btn,#tb-perf');if(t)closeAll(map[t.id]);},true);
+    window.tbClosePops=closeAll;
   })();
   // === Pora dnia: przycisk ze słońcem + mały panelik ===
   (function(){
@@ -9240,6 +9542,12 @@ function init(){
   if('ontouchstart' in window){isMobile=true;initTouch();}
   // Scena wybrana w menu Tabby (przekazana przez window.name — działa też z plików na dysku)
   var tbFromMenu=false;
+  // 🏠 powrót z Tabby-pokoju — przywróć świat i miejsce postaci
+  if(typeof window.name==='string'&&window.name.indexOf('TABBY_BACK:')===0){
+    var bk=null;try{bk=JSON.parse(window.name.slice(11));}catch(ex){}
+    window.name='';
+    if(bk&&bk.proj&&bk.proj.placed){tbFromMenu=true;try{tbBackFromRoom(bk);}catch(ex){console.warn('Tabby: nie udało się wrócić z pokoju',ex);}}
+  }
   if(typeof window.name==='string'&&window.name.indexOf('TABBY_SCENE:')===0){
     var pend=window.name.slice(12);window.name='';tbFromMenu=true;
     try{tabbyLoadEditorData(JSON.parse(pend));}catch(ex){console.warn('Tabby: nie udało się wczytać sceny z menu',ex);}
@@ -9261,12 +9569,58 @@ function tbTerrReseat(){
 }
 var TBTER_DEF={h:12,size:60,oct:4,flat:30,seed:42};
 function tbTerrUI(){
+  if(typeof tbPntUI==='function')tbPntUI();
   var f={h:function(v){return v+' m';},size:function(v){return v+' m';},oct:function(v){return v;},flat:function(v){return v+' m';},seed:function(v){return v;}};
   Object.keys(f).forEach(function(k){var el=document.getElementById('ter-'+k);if(el)el.value=TBTER[k];var o=document.getElementById('ter-v-'+k);if(o)o.textContent=f[k](TBTER[k]);});
   var on=document.getElementById('ter-on');if(on)on.checked=!!TBTER.on;
-  var pop=document.getElementById('ter-pop');if(pop)pop.classList.toggle('off',!TBTER.on);
-  var b=document.getElementById('ter-btn');if(b)b.classList.toggle('on',!!TBTER.on);
+  var pop=document.getElementById('ter-pop');if(pop){pop.classList.toggle('off',!TBTER.on);pop.classList.toggle('paint',TBPAINT.sel!=='n');pop.classList.toggle('vsel',TBPAINT.sel==='v');pop.classList.toggle('fsel',TBPAINT.sel==='f');pop.classList.toggle('ssel',TBPAINT.sel==='s');
+    if(TBPAINT.sel!=='n'&&pop.classList.contains('show'))pop.style.left='12px';} // przy malowaniu panel odsuwa się na lewy brzeg — środek ekranu wolny
+  var tw=document.getElementById('ter-w');if(tw)tw.checked=!!TBTER.w;var ti=document.getElementById('ter-ice');if(ti)ti.checked=!!TBTER.ice;var ir=document.getElementById('ter-irow');if(ir)ir.classList.toggle('dis',!TBTER.w);
+  var b=document.getElementById('ter-btn');if(b)b.classList.toggle('on',tbTerrAny());
+  // 🏔🕳 wiersze: ptaszek = widać na świecie, zielony = to edytujesz (tylko jeden)
+  var sm=document.getElementById('ter-sm'),sv=document.getElementById('ter-sv'),sf=document.getElementById('ter-sf');if(sm)sm.checked=!!TBTER.sm;if(sv)sv.checked=!!TBTER.sv;if(sf)sf.checked=!!TBTER.sf;
+  document.querySelectorAll('#ter-pop .tr').forEach(function(r){r.classList.toggle('sel',r.dataset.s===TBPAINT.sel);});
+  var nm=0,nv=0,nf=0,ids={};(TBTER.st||[]).forEach(function(q){if(ids[q[4]])return;ids[q[4]]=1;if(q[2]>0)nm++;else if(q[2]<0)nv++;else nf++;});
+  var cm=document.getElementById('ter-cm'),cv=document.getElementById('ter-cv');if(cm)cm.textContent=nm?nm+' namal.':'';if(cv)cv.textContent=nv?nv+' namal.':'';var cf=document.getElementById('ter-cf');if(cf)cf.textContent=nf?nf+' namal.':'';
+  if(TBPAINT.sel!=='n'){var B=TBPAINT.b[TBPAINT.sel],ph=document.getElementById('ter-ph'),pr=document.getElementById('ter-pr');
+    if(ph)ph.value=B.h;if(pr)pr.value=B.r;document.getElementById('ter-l-ph').textContent=TBPAINT.sel==='m'?'Wysokość':'Głębokość';var S1={m:['jedna góra','grzbiet'],v:['jedna dolina','rów'],f:['jedno płaskie miejsce','płaski pas (np. droga)'],s:['wygładź w jednym miejscu','wygładź wzdłuż koryta / grzbietu']}[TBPAINT.sel];document.getElementById('ter-t1').textContent=S1[0];document.getElementById('ter-t2').textContent=S1[1];
+    document.getElementById('ter-v-ph').textContent=B.h+' m';document.getElementById('ter-v-pr').textContent=B.r+' m';
+    if(TBPAINT.sel==='s'){var ps=document.getElementById('ter-ps');if(ps)ps.value=B.s;document.getElementById('ter-v-ps').textContent=B.s;}}
 }
+// 🏔🕳 MALOWANIE TERENU: sel = 'n' (losowe góry — suwaki), 'm' (maluj góry), 'v' (maluj doliny); b = ustawienia pędzla dla gór i dolin
+var TBPAINT={sel:'n',b:{m:{h:2,r:3},v:{h:2,r:3},f:{h:0,r:10},s:{h:0,r:8,s:4}},hist:[],sid:0,drag:false,last:null,rot:false,ring:null,eat:false};
+// 🖌 MALOWANIE ścieżek: sel = '1'..'4' (rodzaj farby) albo 'e' (gumka); r = szerokość pędzla (promień)
+var TBPP={sel:'1',r:1.5,a:0.7}; // a = krycie farby (0.1–1)
+function tbBrushMode(){var tp=document.getElementById('ter-pop'),pp=document.getElementById('pnt-pop');
+  if(pp&&pp.classList.contains('show')&&TBPP.sel)return 'pnt';if(tp&&tp.classList.contains('show')&&TBPAINT.sel!=='n')return 'ter';return null;}
+function tbBrushR(){return tbBrushMode()==='pnt'?TBPP.r:TBPAINT.b[TBPAINT.sel].r;}
+function tbBrushCol(){if(tbBrushMode()==='pnt')return TBPP.sel==='e'?0xff7b72:0xe8c08a;return TBPAINT.sel==='m'?0xffc46b:TBPAINT.sel==='v'?0x58c8ff:TBPAINT.sel==='s'?0xd2a8ff:0xf4f4d0;}
+function tbPaintOn(){return !!tbBrushMode()&&!pLock&&!edDriveTarget;}
+function tbPntUI(){
+  var pop=document.getElementById('pnt-pop');if(!pop||typeof TBPP==='undefined')return;var cnt={},ids={};(TBTER.pp||[]).forEach(function(q){var k=q[3]+'/'+q[4];if(ids[k])return;ids[k]=1;cnt[q[3]]=(cnt[q[3]]||0)+1;});
+  pop.querySelectorAll('.tr').forEach(function(r){var k=r.dataset.p;r.classList.toggle('sel',k===TBPP.sel);var c=r.querySelector('input');if(c)c.checked=!!TBTER.pv[+k-1];
+    var sm=r.querySelector('small');if(sm&&k!=='e')sm.textContent=cnt[k]?cnt[k]+' namal.':'';});
+  var rr=document.getElementById('pnt-r');if(rr)rr.value=TBPP.r*2;var rv=document.getElementById('pnt-v-r');if(rv)rv.textContent=(TBPP.r*2)+' m';var ra=document.getElementById('pnt-a');if(ra)ra.value=Math.round(TBPP.a*100);var va=document.getElementById('pnt-v-a');if(va)va.textContent=Math.round(TBPP.a*100)+'%';
+  var b=document.getElementById('pnt-btn');if(b)b.classList.toggle('on',!!(TBTER.pp&&TBTER.pp.length));
+}
+(function(){
+  var btn=document.getElementById('pnt-btn'),pop=document.getElementById('pnt-pop');if(!btn||!pop)return;
+  function show(v){pop.classList.toggle('show',v);btn.setAttribute('aria-expanded',v?'true':'false');
+    if(v){var tp=document.getElementById('ter-pop');if(tp&&tp.classList.contains('show'))tp.classList.remove('show'); // jeden panel naraz
+      if(document.pointerLockElement)document.exitPointerLock();tbPntUI();}}
+  btn.onclick=function(e){e.stopPropagation();show(!pop.classList.contains('show'));};
+  document.getElementById('pnt-pop-x').onclick=function(){show(false);};
+  pop.addEventListener('keydown',function(e){if(e.code==='KeyZ')return;e.stopPropagation();if(e.key==='Escape')show(false);});
+  pop.addEventListener('keyup',function(e){e.stopPropagation();});
+  pop.querySelectorAll('.tr').forEach(function(r){var ci=r.querySelector('input');
+    if(ci){ci.addEventListener('click',function(e){e.stopPropagation();});ci.addEventListener('change',function(){TBTER.pv[+r.dataset.p-1]=ci.checked?1:0;tbPPChanged();tbPntUI();});}
+    r.addEventListener('click',function(){var k=r.dataset.p;TBPP.sel=k;if(k!=='e'&&!TBTER.pv[+k-1]){TBTER.pv[+k-1]=1;tbPPChanged();}tbPntUI();
+      showMsg(k==='e'?'🧽 Gumka — prowadź po farbie, żeby ją zmazać':'🖌 Maluj: '+r.querySelector('span').textContent+' — klik albo przytrzymaj i prowadź');});});
+  document.getElementById('pnt-r').addEventListener('input',function(){TBPP.r=parseFloat(this.value)/2;tbPntUI();}); // suwak = prawdziwa szerokość, w pamięci promień
+  document.getElementById('pnt-a').addEventListener('input',function(){TBPP.a=parseFloat(this.value)/100;tbPntUI();});
+  // ter-btn otwiera Teren — wtedy chowamy Malowanie
+  var tb=document.getElementById('ter-btn');if(tb)tb.addEventListener('click',function(){show(false);},true);
+})();
 (function(){
   var btn=document.getElementById('ter-btn'),pop=document.getElementById('ter-pop');if(!btn||!pop)return;
   function show(v){pop.classList.toggle('show',v);btn.setAttribute('aria-expanded',v?'true':'false');if(v){if(document.pointerLockElement)document.exitPointerLock();var rb=btn.getBoundingClientRect();pop.style.left=Math.max(8,Math.min(innerWidth-310,rb.left))+'px';pop.style.top=(rb.bottom+8)+'px';tbTerrUI();}}
@@ -9274,14 +9628,73 @@ function tbTerrUI(){
   document.getElementById('ter-pop-x').onclick=function(){show(false);};
   pop.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Escape')show(false);});
   pop.addEventListener('keyup',function(e){e.stopPropagation();});
-  document.getElementById('ter-on').onchange=function(){TBTER.on=this.checked;TBTER._dirty=true;tbTerrUI();showMsg(TBTER.on?'⛰ Góry włączone':'Teren znowu płaski');};
+  document.getElementById('ter-on').onchange=function(){TBTER.on=this.checked;TBTER._dirty=true;tbTerrUI();showMsg(TBTER.on?'⛰ Góry włączone':'⛰ Losowe góry ukryte');};
+  document.getElementById('ter-sm').onchange=function(){TBTER.sm=this.checked?1:0;TBTER._dirty=true;tbTerrUI();};
+  document.getElementById('ter-sv').onchange=function(){TBTER.sv=this.checked?1:0;TBTER._dirty=true;tbTerrUI();};
+  document.getElementById('ter-sf').onchange=function(){TBTER.sf=this.checked?1:0;TBTER._dirty=true;tbTerrUI();};
+  document.getElementById('ter-w').onchange=function(){TBTER.w=this.checked?1:0;tbTerrWater();TBTER._dirty=true;tbTerrUI();showMsg(TBTER.w?'💧 Woda w dolinach':'Doliny bez wody');};
+  document.getElementById('ter-ice').onchange=function(){TBTER.ice=this.checked?1:0;tbTerrWater();TBTER._dirty=true;tbTerrUI();showMsg(TBTER.ice?'🧊 Lód — uwaga, ślisko!':'💧 Lód stopniał');};
+  // klik w wiersz (nie w ptaszek) = edytujesz ten wiersz; od razu zaznacza się też jego ptaszek, żeby było widać, co robisz
+  pop.querySelectorAll('.tr').forEach(function(r){
+    var ci=r.querySelector('input');if(ci)ci.addEventListener('click',function(e){e.stopPropagation();});
+    r.addEventListener('click',function(){var k=r.dataset.s;TBPAINT.sel=k;
+      if(k==='n'&&!TBTER.on){TBTER.on=true;TBTER._dirty=true;}
+      if(k==='m'&&!TBTER.sm){TBTER.sm=1;TBTER._dirty=true;}if(k==='v'&&!TBTER.sv){TBTER.sv=1;TBTER._dirty=true;}if(k==='f'&&!TBTER.sf){TBTER.sf=1;TBTER._dirty=true;}
+      tbTerrUI();if(k==='s')showMsg('〰 Wygładzanie — prowadź pędzlem po górach albo dolinach');else if(k!=='n')showMsg(k==='m'?'🏔 Maluj góry — klik albo przytrzymaj i prowadź myszą po ziemi':k==='v'?'🕳 Maluj doliny — klik albo przytrzymaj i prowadź myszą po ziemi':'▭ Wyrównaj do poziomu 0 — klik albo przytrzymaj i prowadź myszą po ziemi');});});
+  ['ph','pr','ps'].forEach(function(k){var el=document.getElementById('ter-'+k);el.addEventListener('input',function(){if(TBPAINT.sel==='n')return;TBPAINT.b[TBPAINT.sel][{ph:'h',pr:'r',ps:'s'}[k]]=parseFloat(el.value);tbTerrUI();});});
   ['h','size','oct','flat','seed'].forEach(function(k){var el=document.getElementById('ter-'+k);
     el.addEventListener('input',function(){TBTER[k]=parseFloat(el.value);TBTER._dirty=true;tbTerrUI();});});
   document.getElementById('ter-rand').onclick=function(){TBTER.seed=1+Math.floor(Math.random()*999);TBTER._dirty=true;tbTerrUI();};
   document.getElementById('ter-def').onclick=function(){for(var k in TBTER_DEF)TBTER[k]=TBTER_DEF[k];TBTER._dirty=true;tbTerrUI();};
   tbTerrUI();
 })();
+// 🏔🕳 malowanie myszą po ziemi (panel Teren otwarty, zielony wiersz Góry albo Doliny) — uruchamiane po init(), bo potrzebuje renderera
+function tbPaintInit(){
+  var cv=renderer.domElement;
+  function hit(e){var r=cv.getBoundingClientRect(),m=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);rayc.setFromCamera(m,cam);
+    var gm=tbTerrGround(),h=gm?rayc.intersectObject(gm):[];var p=null;
+    if(h.length)p={x:h[0].point.x,z:h[0].point.z};else{var d=rayc.ray.direction,o=rayc.ray.origin;if(d.y<-0.001){var t=-o.y/d.y;p={x:o.x+d.x*t,z:o.z+d.z*t};}}
+    if(p&&(Math.abs(p.x)>100||Math.abs(p.z)>100))p=null;return p;}
+  function ring(p){var on=!!p&&tbPaintOn();
+    if(!TBPAINT.ring){if(!on)return;var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(65*3),3));
+      TBPAINT.ring=new THREE.Line(g,new THREE.LineBasicMaterial({color:0xffffff,depthTest:false,transparent:true}));TBPAINT.ring.renderOrder=999;TBPAINT.ring.frustumCulled=false;scene.add(TBPAINT.ring);}
+    var R=TBPAINT.ring;R.visible=on;if(!on)return;var BR=tbBrushR(),ps=R.geometry.attributes.position;
+    for(var i=0;i<=64;i++){var a=i/64*Math.PI*2,x=p.x+Math.cos(a)*BR,z=p.z+Math.sin(a)*BR;ps.setXYZ(i,x,tbTerrH(x,z)+0.25,z);}
+    ps.needsUpdate=true;R.material.color.setHex(tbBrushCol());}
+  function smooth(p){ // 〰 stemple gór i dolin pod pędzlem robią się szersze i niższe (objętość podobna) — ostra góra → pagórek
+    var B=TBPAINT.b.s,R=B.r,ch=false;(TBTER.st||[]).forEach(function(q){if(q[2]===0)return;var d=Math.hypot(q[0]-p.x,q[1]-p.z);if(d>=R)return;
+      var w=1-d/R,f=1+B.s*0.02*w;if(q[3]>=60)return;q[3]=Math.min(60,+(q[3]*f).toFixed(3));q[2]=+(q[2]/Math.pow(f,1.6)).toFixed(3);
+      if(Math.abs(q[2])<0.15)q[2]=q[2]<0?-0.15:0.15;ch=true;});
+    if(ch){TBTER._sv++;TBTER._dirty=true;}}
+  function pstamp(p){ // 🖌 farba albo gumka
+    if(TBPP.sel==='e'){var R=TBPP.r,n0=TBTER.pp.length;TBTER.pp=TBTER.pp.filter(function(q){return Math.hypot(q[0]-p.x,q[1]-p.z)>R*0.8;});if(TBTER.pp.length!==n0)tbPPChanged();return;}
+    var st=[+p.x.toFixed(2),+p.z.toFixed(2),TBPP.r,+TBPP.sel,TBPAINT.sid];if(TBPP.a<1)st.push(TBPP.a);TBTER.pp.push(st);tbPPChanged(true);}
+  function stamp(p){if(tbBrushMode()==='pnt'){pstamp(p);return;}if(TBPAINT.sel==='s'){smooth(p);return;}var B=TBPAINT.b[TBPAINT.sel];TBTER.st.push([+p.x.toFixed(2),+p.z.toFixed(2),TBPAINT.sel==='m'?B.h:TBPAINT.sel==='v'?-B.h:0,B.r,TBPAINT.sid]);TBTER._sv++;TBTER._dirty=true;}
+  cv.addEventListener('mousedown',function(e){if(!tbPaintOn())return;
+    if(e.button===2){TBPAINT.rot=true;e.preventDefault();return;}
+    if(e.button!==0)return;var p=hit(e);e.preventDefault();e.stopImmediatePropagation();TBPAINT.eat=true;if(!p)return;
+    TBPAINT.hist.push(JSON.stringify({st:TBTER.st||[],pp:TBTER.pp||[]}));if(TBPAINT.hist.length>40)TBPAINT.hist.shift(); // Z cofa całe pociągnięcie (także wygładzanie i gumkę)
+    TBPAINT.sid=1+(TBTER.st||[]).concat(TBTER.pp||[]).reduce(function(m,q){return Math.max(m,q[4]|0);},0);
+    TBPAINT.drag=true;TBPAINT.last=p;stamp(p);tbTerrUI();tbPntUI();},true);
+  window.addEventListener('mousemove',function(e){
+    if(TBPAINT.rot&&tbPaintOn()){camYaw-=e.movementX*CSENS;camPitch=Math.max(CMINP,Math.min(CMAXP,camPitch+e.movementY*CSENS));}
+    if(e.target!==cv&&!TBPAINT.drag){ring(null);return;}
+    var p=hit(e);ring(p);if(!TBPAINT.drag||!p||!tbPaintOn())return;
+    var st=Math.max(tbBrushMode()==='pnt'?0.15:0.6,tbBrushR()*(tbBrushMode()==='pnt'?0.3:0.35)),L=TBPAINT.last,d=Math.hypot(p.x-L.x,p.z-L.z);
+    if(d<st)return;var n=Math.floor(d/st);for(var i=1;i<=n;i++)stamp({x:L.x+(p.x-L.x)*i*st/d,z:L.z+(p.z-L.z)*i*st/d});
+    TBPAINT.last={x:L.x+(p.x-L.x)*n*st/d,z:L.z+(p.z-L.z)*n*st/d};});
+  window.addEventListener('mouseup',function(){if(TBPAINT.drag){TBPAINT.drag=false;tbTerrUI();tbPntUI();}TBPAINT.rot=false;});
+  cv.addEventListener('click',function(e){if(TBPAINT.eat||tbPaintOn()){TBPAINT.eat=false;e.stopImmediatePropagation();e.preventDefault();}},true); // nie stawiaj obiektu i nie łap myszy
+  document.addEventListener('keydown',function(e){ // Z — cofnij ostatnią górę / dolinę (całe pociągnięcie)
+    if(e.code!=='KeyZ'||e.ctrlKey||e.metaKey||e.repeat||!tbPaintOn())return;var t=e.target&&e.target.tagName;if(t==='INPUT'&&e.target.type!=='range'||t==='TEXTAREA')return;
+    e.preventDefault();e.stopImmediatePropagation();
+    if(TBPAINT.hist.length){var H=JSON.parse(TBPAINT.hist.pop());TBTER.st=H.st||[];TBTER.pp=H.pp||[];TBTER._sv++;tbPPChanged();TBTER._dirty=true;tbTerrUI();tbPntUI();showMsg('↩ Cofnięto');return;}
+    if(tbBrushMode()==='pnt'){var P=TBTER.pp||[];if(!P.length){showMsg('Nie ma już czego cofać');return;}var pid=P[P.length-1][4];TBTER.pp=P.filter(function(q){return q[4]!==pid;});tbPPChanged();tbPntUI();showMsg('↩ Cofnięto');return;}
+    var S=TBTER.st||[];if(!S.length){showMsg('Nie ma już czego cofać');return;} // po wczytaniu projektu: cofaj namalowane po kolei
+    var id=S[S.length-1][4];TBTER.st=S.filter(function(q){return q[4]!==id;});TBTER._sv++;TBTER._dirty=true;tbTerrUI();showMsg('↩ Cofnięto');},true);
+}
 init();
+tbPaintInit();
 })();
 </script>
 <script type="text/plain" id="tabby-inst-src">
@@ -9576,15 +9989,17 @@ function update(dt){
       if(keys.d){mx+=Math.cos(camYaw);mz-=Math.sin(camYaw);}
       var len=Math.sqrt(mx*mx+mz*mz);isMov=len>0.01;isRun=keys.sh&&isMov;
       var sp=(isRun?RSP:WSP)*(WPN.po?1-WPN.aimT*0.3:1)*winSlow();
-      if(isMov){mx/=len;mz/=len;tgtAng=Math.atan2(-mx,-mz);
-        var res=collide(charX+mx*sp*dt,charZ+mz*sp*dt);charX=res[0];charZ=res[1];var floorY=res[2];}else{var fres=collide(charX,charZ);var floorY=fres[2];}
+      if(isMov){mx/=len;mz/=len;tgtAng=Math.atan2(-mx,-mz);}
+      var iv=tbIceStep(isMov?mx*sp:0,isMov?mz*sp:0,dt); // 🧊 na lodzie z poślizgiem, poza lodem jak dotąd
+      if(isMov&&onGr)tbIceWalk(dt,isRun);
+      if(Math.abs(iv.x)+Math.abs(iv.z)>0.01){var tx=charX+iv.x*dt,tz=charZ+iv.z*dt,res=collide(tx,tz);if(Math.abs(res[0]-tx)>1e-4)ICEV.x=0;if(Math.abs(res[1]-tz)>1e-4)ICEV.z=0;charX=res[0];charZ=res[1];var floorY=res[2];}else{var fres=collide(charX,charZ);var floorY=fres[2];}
       var faceCam=camStyle==='fps'||wpnReady();
       var tgt=faceCam?camYaw:tgtAng;var ad=tgt-charAng;
       while(ad>Math.PI)ad-=Math.PI*2;while(ad<-Math.PI)ad+=Math.PI*2;
       charAng+=ad*(faceCam?0.3:TSM);
       var wasGr=onGr&&velY<=0;
       if(keys.sp&&onGr){velY=JF;onGr=false;wasGr=false;}velY-=GR*dt;charY+=velY*dt;
-      if(charY<=floorY||(wasGr&&charY-floorY<0.45)){charY=floorY;velY=0;onGr=true;} // przyklejenie do podłoża przy schodzeniu
+      if(charY<=floorY||(wasGr&&charY-floorY<0.45)){if(!onGr&&velY<-2)tbIceLand(charX,charZ);charY=floorY;velY=0;onGr=true;} // przyklejenie do podłoża przy schodzeniu
       else if(charY-floorY>=0.45)onGr=false; // prawdziwe spadanie (np. z krawędzi)
       charGroup.position.set(charX,charY,charZ);
     }
@@ -9695,7 +10110,10 @@ function init(){
   charGroup.position.set(charX,charY,charZ);
 
   // Desktop controls
-  renderer.domElement.addEventListener('click',function(){if(!pLock)renderer.domElement.requestPointerLock();});
+  // ⛶ gra na pełnym ekranie: kliknięcie w grę włącza pełny ekran (przeglądarka pozwala dopiero po kliknięciu), Esc z niego wychodzi
+  function tbFull(){var d=document.documentElement;if(document.fullscreenElement||document.webkitFullscreenElement)return;
+    try{var f=d.requestFullscreen||d.webkitRequestFullscreen;if(f){var r=f.call(d);if(r&&r.catch)r.catch(function(){});}}catch(e){}}
+  renderer.domElement.addEventListener('click',function(){tbFull();if(!pLock)renderer.domElement.requestPointerLock();});
   renderer.domElement.addEventListener('contextmenu',function(e){e.preventDefault();});
 
   document.addEventListener('pointerlockchange',function(){
@@ -9737,7 +10155,7 @@ init();
 <script>
 // Górny pasek: przyciski układają się od „Opcje” w lewo, zawsze z równym odstępem (niezależnie od czcionki i szerokości napisów)
 (function(){
-  var GAP=10,chain=['opt-btn','bud-btn','ter-btn','store-btn','scenes-btn','dn-btn','cam-btn','tb-perf'];
+  var GAP=10,chain=['opt-btn','pnt-btn','ter-btn','store-btn','scenes-btn','dn-btn','cam-btn','tb-perf'];
   function lay(){
     var ref=document.getElementById(chain[0]);if(!ref)return;
     var left=ref.getBoundingClientRect().left;

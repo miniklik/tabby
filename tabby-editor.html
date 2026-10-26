@@ -523,6 +523,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
               <option value="cpole">🚡 Kolejka: słup</option>
               <option value="ctop">🚡 Kolejka: stacja górna</option>
               <option value="rail">🚂 Kolej: zajezdnia (tory, rozjazdy, przystanki)</option>
+              <option value="zip">🪢 Tyrolka (lina między dwiema bramkami)</option>
               <option value="">Brak</option>
               <!-- ukryte: tylko do wyświetlania akcji, które przychodzą z assetu (drzwi, światło) -->
               <option value="open" hidden>Z assetu: otwieranie</option>
@@ -964,7 +965,7 @@ function getDriveCore(){
 }
 //@@DRIVE_CORE_START
 // ===== TEREN (góry i doliny) — wspólny dla edytora i eksportowanej gry =====
-var TBTER={on:false,h:12,size:60,oct:4,flat:30,seed:42,st:[],sm:1,sv:1,sf:1,w:0,ice:0,pp:[],pv:[1,1,1,1],_sv:0,_pv:0},TBTER_N=null,TBTER_K=null,TBTER_W=null; // w = 💧 woda w dolinach
+var TBTER={on:false,h:12,size:60,oct:4,flat:30,seed:42,st:[],sm:1,sv:1,sf:1,w:0,ice:0,wl:[],pp:[],pv:[1,1,1,1],_sv:0,_pv:0},TBTER_N=null,TBTER_K=null,TBTER_W=null; // w = 💧 woda w dolinach
 // 🏔🕳▭ malowane góry, doliny i płaskie miejsca: st = lista stempli [x, z, h, r, nrPociągnięcia] (h>0 góra, h<0 dolina, h=0 płasko — poziom 0); sm / sv / sf = czy je widać
 // płasko działa po kolei: wyrównuje wszystko, co było namalowane wcześniej (i losowe góry); to, co namalujesz później, stoi już na płaskim
 // góry łączą się „max”, doliny „min” — grzbiet z wielu stempli ma równą wysokość, a dolina wcina się też w górę
@@ -1034,12 +1035,12 @@ function tbTerrH(x,z){ // wysokość ziemi w punkcie (x,z) — z tego korzysta p
   if(Math.abs(x)>100||Math.abs(z)>100)return 0;
   var n=TBTER.on?tbTerrNoiseH(x,z):0;
   var h=TBTER.st&&TBTER.st.length?tbTerrPaint(x,z,n):n; // 🏔🕳▭ malowane — działają też bez losowych gór
-  if(TBTER.ice&&TBTER.w&&!TBTER._mesh&&h<TBTER_WL)h=TBTER_WL; // 🧊 lód: chodzi się i jeździ po tafli (siatka terenu pod lodem bez zmian)
+  if(TBTER.ice&&TBTER.w&&!TBTER._mesh&&h<TBTER_WL){var wl=tbWL(x,z);if(h<wl)h=wl;} // 🧊 lód: chodzi się i jeździ po tafli (siatka terenu pod lodem bez zmian)
   return h;
 }
 var TBTER_WL=-0.3; // poziom wody / lodu
 function tbTerrIceAt(x,z){ // czy w tym miejscu jest lód (dno doliny pod taflą)
-  if(!(TBTER.ice&&TBTER.w)||!tbTerrAny())return false;TBTER._mesh=true;var h;try{h=tbTerrH(x,z);}finally{TBTER._mesh=false;}return h<TBTER_WL+0.001;}
+  if(!(TBTER.ice&&TBTER.w)||!tbTerrAny())return false;TBTER._mesh=true;var h;try{h=tbTerrH(x,z);}finally{TBTER._mesh=false;}return h<tbWL(x,z)+0.001;}
 // 🧊 chodzenie po lodzie: postać nabiera prędkości powoli i ślizga się dalej po puszczeniu klawisza (poza lodem — jak dotąd, od razu)
 var ICEV={x:0,z:0};
 // 🧊 rysy na lodzie po lądowaniu z podskoku (bez pękania) — jeden wspólny obrazek, max 30 rys, każda znika po ~20 s
@@ -1058,7 +1059,7 @@ function tbIceLand(x,z){ // wołane przy lądowaniu po skoku
   if(!tbTerrIceAt(x,z)||typeof scene==='undefined')return;
   if(!ICEFX.geo)ICEFX.geo=new THREE.PlaneGeometry(1,1);
   var m=new THREE.Mesh(ICEFX.geo,new THREE.MeshBasicMaterial({map:tbIceTex(),transparent:true,depthWrite:false,opacity:0.85,polygonOffset:true,polygonOffsetFactor:-2}));
-  m.rotation.x=-Math.PI/2;m.rotation.z=Math.random()*Math.PI*2;var sc=1.5+Math.random()*0.9;m.scale.set(sc,sc,1);m.position.set(x,TBTER_WL+0.015,z);m.renderOrder=2;m.raycast=function(){};scene.add(m);
+  m.rotation.x=-Math.PI/2;m.rotation.z=Math.random()*Math.PI*2;var sc=1.5+Math.random()*0.9;m.scale.set(sc,sc,1);m.position.set(x,tbWL(x,z)+0.015,z);m.renderOrder=2;m.raycast=function(){};scene.add(m);
   ICEFX.cr.push({m:m,t:performance.now()});
   if(ICEFX.cr.length>30){var o=ICEFX.cr.shift();scene.remove(o.m);o.m.material.dispose();}
   tbIceNoise(0.16,3200,1.2,0.14);setTimeout(function(){tbIceNoise(0.07,5200,2,0.08);},40); // cichy trzask
@@ -1081,7 +1082,7 @@ function tbTerrNoiseH(x,z){ // losowe góry i doliny (suwaki)
   return h;
 }
 function tbTerrJson(){var j={on:!!TBTER.on,h:+TBTER.h,size:+TBTER.size,oct:+TBTER.oct,flat:+TBTER.flat,seed:+TBTER.seed};
-  if(TBTER.w)j.w=1;if(TBTER.w&&TBTER.ice)j.ice=1;
+  if(TBTER.w)j.w=1;if(TBTER.w&&TBTER.ice)j.ice=1;if(TBTER.w&&TBTER.wl&&TBTER.wl.length)j.wl=TBTER.wl.map(function(q){return [+(+q[0]).toFixed(1),+(+q[1]).toFixed(1),+(+q[2]).toFixed(2)];});
   if(TBTER.pp&&TBTER.pp.length){j.pp=TBTER.pp.map(function(q){var o=[+(+q[0]).toFixed(2),+(+q[1]).toFixed(2),+(+q[2]).toFixed(2),q[3]|0,q[4]|0];if(q[5]!==undefined&&q[5]<1)o.push(+(+q[5]).toFixed(2));return o;});j.pv=TBTER.pv.slice();}
   if(TBTER.st&&TBTER.st.length){j.st=TBTER.st.map(function(q){return [+(+q[0]).toFixed(2),+(+q[1]).toFixed(2),+(+q[2]).toFixed(2),+(+q[3]).toFixed(2),q[4]|0];});j.sm=TBTER.sm?1:0;j.sv=TBTER.sv?1:0;j.sf=TBTER.sf?1:0;}
   return j;}
@@ -1089,14 +1090,37 @@ function tbTerrGround(){
   if(typeof groundMesh!=='undefined'&&groundMesh)return groundMesh;
   var gm=null;scene.children.forEach(function(c){if(!gm&&c.isMesh&&c.geometry&&c.geometry.type==='PlaneGeometry'&&c.rotation.x<-1&&c.geometry.parameters&&c.geometry.parameters.width===200)gm=c;});return gm;
 }
-function tbTerrWater(){ // 💧 przezroczysta, zielonkawo-niebieska tafla tuż pod poziomem ziemi — widać ją tylko w dolinach
+// 💧 WODA W DOLINACH — każdy zbiornik osobno (osobna tafla i osobny poziom; domyślnie −0,3 m, można tylko obniżać)
+// siatka co 1 m: wysokości terenu, numer zbiornika w każdym punkcie; TBTER.wl = [[x,z,poziom],...] — punkt w zbiorniku + jego poziom
+var TBWB={H:null,C:null,lv:[],n:0,N:101,S:2,mat:null,sig:''}; // siatka co 2 m (szybko — przebudowa przy malowaniu terenu nie spowalnia)
+function tbWL(x,z){if(!TBWB.C)return TBTER_WL;var N=TBWB.N,S=TBWB.S,i=Math.round((x+100)/S),j=Math.round((z+100)/S);if(i<0||j<0||i>=N||j>=N)return TBTER_WL;var c=TBWB.C[j*N+i];return c>0?TBWB.lv[c]:TBTER_WL;}
+function tbWaterBasins(){var N=TBWB.N,H=new Float32Array(N*N),C=new Int32Array(N*N),o1=TBTER._mesh,o2=(typeof KM_MESH!=='undefined')?KM_MESH:null;TBTER._mesh=true;if(o2!==null)KM_MESH=true;
+  var S=TBWB.S;try{for(var j=0;j<N;j++)for(var i=0;i<N;i++)H[j*N+i]=tbTerrH(i*S-100,j*S-100);}finally{TBTER._mesh=o1;if(o2!==null)KM_MESH=o2;}
+  var n=0,st=[],mn=[0];for(var k=0;k<N*N;k++){if(C[k]||H[k]>=TBTER_WL)continue;n++;var lo=H[k];st.push(k);C[k]=n;
+    while(st.length){var q=st.pop(),qi=q%N,qj=(q-qi)/N;if(H[q]<lo)lo=H[q];[[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){var a=qi+d[0],b=qj+d[1];if(a<0||b<0||a>=N||b>=N)return;var r=b*N+a;if(!C[r]&&H[r]<TBTER_WL){C[r]=n;st.push(r);}});}
+    mn.push(lo);}
+  TBWB.H=H;TBWB.C=C;TBWB.n=n;TBWB.min=mn;TBWB.lv=[0];for(var b=1;b<=n;b++)TBWB.lv.push(TBTER_WL);
+  (TBTER.wl||[]).forEach(function(q){var i=Math.round((q[0]+100)/S),j=Math.round((q[1]+100)/S);if(i<0||j<0||i>=N||j>=N)return;var c=C[j*N+i];if(c>0)TBWB.lv[c]=Math.max(mn[c],Math.min(TBTER_WL,+q[2]));});}
+function tbWaterMeshes(){if(!TBTER_W)return;while(TBTER_W.children.length){var o=TBTER_W.children.pop();o.geometry.dispose();}
+  var N=TBWB.N,H=TBWB.H,C=TBWB.C;if(!C)return;var P=[];for(var b=0;b<=TBWB.n;b++)P.push([]);
+  for(var j=0;j<N-1;j++)for(var i=0;i<N-1;i++){var k=[j*N+i,j*N+i+1,(j+1)*N+i,(j+1)*N+i+1],done={};
+    for(var t=0;t<4;t++){var c=C[k[t]];if(!c||done[c])continue;var L=TBWB.lv[c];if(!(H[k[0]]<L||H[k[1]]<L||H[k[2]]<L||H[k[3]]<L))continue;done[c]=1;
+      var S=TBWB.S,x=i*S-100,z=j*S-100;P[c].push(x,L,z, x,L,z+S, x+S,L,z, x+S,L,z, x,L,z+S, x+S,L,z+S);}}
+  for(var c2=1;c2<=TBWB.n;c2++){if(!P[c2].length)continue;var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P[c2],3));g.computeVertexNormals();
+    var m=new THREE.Mesh(g,TBWB.mat);m.renderOrder=1;m.userData._water=1;m.userData.basin=c2;TBTER_W.add(m);}}
+function tbTerrWater(){ // 💧 przezroczyste, zielonkawo-niebieskie tafle w dolinach — każdy zbiornik osobno
   var on=!!TBTER.w&&tbTerrAny();
-  if(!TBTER_W){if(!on)return;TBTER_W=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0x2a9d9a,transparent:true,opacity:0.55,roughness:0.12,metalness:0.15,depthWrite:false}));
-    TBTER_W.rotation.x=-Math.PI/2;TBTER_W.position.y=-0.3;TBTER_W.renderOrder=1;TBTER_W.raycast=function(){};TBTER_W.userData._water=1;scene.add(TBTER_W);}
+  if(!TBTER_W){if(!on)return;TBWB.mat=new THREE.MeshStandardMaterial({color:0x2a9d9a,transparent:true,opacity:0.55,roughness:0.12,metalness:0.15,depthWrite:false,side:THREE.DoubleSide});
+    TBTER_W=new THREE.Group();TBTER_W.userData._water=1;scene.add(TBTER_W);}
   TBTER_W.visible=on;if(!on)return;
-  var ic=!!TBTER.ice,M=TBTER_W.material;if(M._ice!==ic){M._ice=ic; // 🧊 lód: biało-błękitny, mocniej błyszczy, mniej przezroczysty
+  var ic=!!TBTER.ice,M=TBWB.mat;if(M._ice!==ic){M._ice=ic; // 🧊 lód: biało-błękitny, mocniej błyszczy, mniej przezroczysty
     M.color.setHex(ic?0xd8f1ff:0x2a9d9a);M.opacity=ic?0.78:0.55;M.roughness=ic?0.05:0.12;M.metalness=ic?0.35:0.15;M.needsUpdate=true;}
+  tbWaterBasins();tbWaterMeshes();
 }
+// poziom jednego zbiornika (x,z = punkt w nim) — zapis w TBTER.wl, przebudowa tafli bez liczenia terenu od nowa
+function tbWaterSetLevel(x,z,L,live){var N=TBWB.N,S=TBWB.S,i=Math.round((x+100)/S),j=Math.round((z+100)/S),c=TBWB.C&&TBWB.C[j*N+i];if(!c)return;L=Math.max(TBWB.min[c],Math.min(TBTER_WL,L));TBWB.lv[c]=L;
+  TBTER.wl=(TBTER.wl||[]).filter(function(q){var a=Math.round((q[0]+100)/S),b=Math.round((q[1]+100)/S);return !(a>=0&&b>=0&&a<N&&b<N&&TBWB.C[b*N+a]===c);});
+  if(L<TBTER_WL-0.005)TBTER.wl.push([x,z,L]);tbWaterMeshes();}
 function tbTerrApply(){ // przebudowa siatki ziemi
   tbTerrWater();TBTER._mesh=true;try{tbTerrApply0();}finally{TBTER._mesh=false;}
   if(TBPM.mesh&&!(TBTER.pp&&TBTER.pp.length))TBPM.mesh.visible=false;}
@@ -1121,8 +1145,8 @@ function tbTerrApply0(){
   gm.material.vertexColors=true;gm.material.needsUpdate=true;
 }
 function tbTerrSet(o){
-  TBTER.st=[];TBTER.sm=1;TBTER.sv=1;TBTER.sf=1;TBTER.w=0;TBTER.ice=0;TBTER.pp=[];TBTER.pv=[1,1,1,1];
-  if(o){for(var k in o)if(k in TBTER&&k!=='st'&&k!=='pp'&&k!=='pv')TBTER[k]=o[k];if(Array.isArray(o.st))TBTER.st=o.st.map(function(q){return q.slice();});
+  TBTER.st=[];TBTER.sm=1;TBTER.sv=1;TBTER.sf=1;TBTER.w=0;TBTER.ice=0;TBTER.wl=[];TBTER.pp=[];TBTER.pv=[1,1,1,1];
+  if(o){for(var k in o)if(k in TBTER&&k!=='st'&&k!=='pp'&&k!=='pv'&&k!=='wl')TBTER[k]=o[k];if(Array.isArray(o.wl))TBTER.wl=o.wl.map(function(q){return q.slice();});if(Array.isArray(o.st))TBTER.st=o.st.map(function(q){return q.slice();});
     if(Array.isArray(o.pp))TBTER.pp=o.pp.map(function(q){return q.slice();});if(Array.isArray(o.pv))TBTER.pv=o.pv.slice();}else TBTER.on=false;
   TBTER._pv=(TBTER._pv||0)+1;
   TBTER._sv=(TBTER._sv||0)+1;if(typeof TBPAINT!=='undefined')TBPAINT.hist=[]; // nowy teren — stare cofanie nie dotyczy
@@ -6640,6 +6664,103 @@ trnUI=function(){if(!TRN.ui){_trnUIOld();if(!TRN.ui)return;
     '<div class="bt"><button data-k="undo">↶ Cofnij (Z)</button><button data-k="auto" class="'+(TRN.auto?'on':'')+'">'+(TRN.auto?'⏸ Stop':'▶ Jazda próbna')+'</button><button data-x="wipe" class="wp">🧹 Wyczyść</button></div>'+
     '<div class="nt">Tory '+len+' m • 🔀 '+KM.tris.length+' • 🚏 '+KM.stops.length+'<br>Mapa: lewy przycisk przesuwa, prawy obraca, kółko — wyżej / niżej.<br>'+(KM.drv==='auto'?'W grze pociąg rusza sam i jeździ, stając na przystankach. Wskocz na wagon — E na wagonie albo przy słupku = stop / start.':'W grze: E przy '+(mini?'ciuchci':'lokomotywie')+', W/S jazda, A/D zwrotnice.')+'</div>';
   if(TRN._msg){var mm=d.querySelector('#trn-msg');if(mm)mm.textContent=kMiniTxt(TRN._msg.t);}};
+
+// =====================================================================
+// 🪢 TYROLKA (asset z action {type:"zip", dx, dz}): dwie bramki na ziemi, lina przez ich środek na wysokości chwytu.
+// E pod liną = łapiesz lewą ręką (prawa wolna na broń), jedziesz tam, gdzie patrzysz (W szybciej, S hamuj), E / Spacja = puść.
+// Lina ugina się pod jadącym (V) i buja się po złapaniu i puszczeniu. Bramka A = asset, bramka B = action.dx/dz od A.
+// =====================================================================
+var ZIP={list:[],G:null,sig:'',ride:null,ui:null,keep:null,fling:null,sndT:0,edit:null,ed:false};
+var ZIP_H=2.5,ZIP_GW=1.6,ZIP_GH=3.0; // wysokość chwytu liny nad ziemią, szerokość i wysokość bramki
+function zipPlaced(){return wpnPlaced().filter(function(po){return po&&po.gr&&po.action&&po.action.type==='zip';});}
+function zipEnd(po){var a=po.action;if(a.dx===undefined||a.dz===undefined){var ry=po.gr.rotation.y||0;a.dx=-Math.sin(ry)*30;a.dz=-Math.cos(ry)*30;}return {x:po.gr.position.x+a.dx,z:po.gr.position.z+a.dz};}
+function zipGround(x,z){try{return tbTerrH(x,z);}catch(e){return 0;}}
+function zipGate(col){var g=new THREE.Group(),wood=new THREE.MeshStandardMaterial({color:0x8a5a2b,roughness:0.85}),dark=new THREE.MeshStandardMaterial({color:0x3a3f46,roughness:0.6,metalness:0.4}),acc=new THREE.MeshStandardMaterial({color:col,roughness:0.5});
+  [-ZIP_GW/2,ZIP_GW/2].forEach(function(x){var p=new THREE.Mesh(new THREE.BoxGeometry(0.16,ZIP_GH,0.16),wood);p.position.set(x,ZIP_GH/2,0);p.castShadow=true;g.add(p);
+    var f=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.12,0.34),dark);f.position.set(x,0.06,0);g.add(f);});
+  var top=new THREE.Mesh(new THREE.BoxGeometry(ZIP_GW+0.3,0.18,0.22),wood);top.position.y=ZIP_GH;top.castShadow=true;g.add(top);
+  var hang=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,ZIP_GH-ZIP_H,6),dark);hang.position.y=(ZIP_GH+ZIP_H)/2;g.add(hang); // wieszak liny pod belką
+  var ring=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.025,6,14),dark);ring.position.y=ZIP_H;ring.rotation.y=Math.PI/2;g.add(ring);
+  var band=new THREE.Mesh(new THREE.BoxGeometry(ZIP_GW+0.32,0.08,0.24),acc);band.position.y=ZIP_GH-0.16;g.add(band);
+  var ar=new THREE.Mesh(new THREE.ConeGeometry(0.28,0.6,3),acc);ar.rotation.x=Math.PI/2;ar.position.set(0,0.04,-1.0);ar.scale.y=0.25;g.add(ar); // strzałka na ziemi: w stronę liny
+  return g;}
+function zipCurve(Z,t,dip){var y=Z.ya+(Z.yb-Z.ya)*t-4*Z.sag*t*(1-t);if(dip)y-=dip;return {x:Z.ax+(Z.bx-Z.ax)*t,y:y,z:Z.az+(Z.bz-Z.az)*t};}
+function zipRopePts(Z){var P=[],R=ZIP.ride&&ZIP.ride.Z===Z?ZIP.ride:null,b=Z.bounce*Math.sin(Z.bt*9);
+  for(var i=0;i<=40;i++){var t=i/40,d=0;
+    if(R){var tr=R.t,k=t<=tr?(tr>0?t/tr:0):(tr<1?(1-t)/(1-tr):0);d=zipDip(tr,b)*k;} // V pod jadącym
+    else d=b*4*t*(1-t)*0.8;
+    var p=zipCurve(Z,t,d);P.push(new THREE.Vector3(p.x,p.y,p.z));}
+  return P;}
+function zipRopeMesh(Z){if(Z.rope){Z.G.remove(Z.rope);Z.rope.geometry.dispose();}var c=new THREE.CatmullRomCurve3(zipRopePts(Z));
+  Z.rope=new THREE.Mesh(new THREE.TubeGeometry(c,48,0.03,5,false),ZIP.ropeMat);Z.rope.userData._zi=Z;Z.G.add(Z.rope);}
+function zipBuild(){if(ZIP.G)scene.remove(ZIP.G);ZIP.G=new THREE.Group();scene.add(ZIP.G);ZIP.list=[];if(!ZIP.ropeMat)ZIP.ropeMat=new THREE.MeshStandardMaterial({color:0x2b2b2b,roughness:0.6,metalness:0.3});
+  zipPlaced().forEach(function(po,i){var e=zipEnd(po),ax=po.gr.position.x,az=po.gr.position.z,ga=zipGround(ax,az),gb=zipGround(e.x,e.z),yaw=Math.atan2(e.x-ax,e.z-az),L=Math.hypot(e.x-ax,e.z-az);
+    var Z={po:po,ax:ax,az:az,bx:e.x,bz:e.z,ya:ga+ZIP_H,yb:gb+ZIP_H,yaw:yaw,L:Math.hypot(L,gb-ga),sag:Math.min(2.5,0.02*L),bounce:0,bt:0,G:new THREE.Group()};ZIP.G.add(Z.G);
+    // bramka A doczepiona do assetu (klik w nią w edytorze = zaznaczenie, przesuwanie assetu przesuwa tyrolkę); bramka B — osobno
+    if(po._zipA&&po._zipA.parent)po._zipA.parent.remove(po._zipA);var A=zipGate(0xf2c200);A.position.set(0,ga-po.gr.position.y,0);A.rotation.y=yaw+Math.PI-(po.gr.rotation.y||0);po.gr.add(A);po._zipA=A;
+    var B=zipGate(0x3fb950);B.position.set(e.x,gb,e.z);B.rotation.y=yaw;B.traverse(function(o){o.userData._zi=Z;o.userData._zb=1;});Z.G.add(B);Z.B=B;
+    zipRopeMesh(Z);ZIP.list.push(Z);});}
+function zipSig(){return zipPlaced().map(function(po){var e=zipEnd(po);return po.gr.position.x.toFixed(2)+','+po.gr.position.z.toFixed(2)+','+e.x.toFixed(2)+','+e.z.toFixed(2);}).join('|')+'#'+(typeof TBTER!=='undefined'?TBTER._sv+'/'+TBTER.on+'/'+TBTER.seed+'/'+TBTER.h:'');}
+function zipSync(){var s=zipSig();if(s===ZIP.sig)return;ZIP.sig=s;if(ZIP.ride)zipRelease(false);zipBuild();}
+// ---------- jazda ----------
+function zipNear(){var best=null;ZIP.list.forEach(function(Z){for(var i=0;i<=60;i++){var t=i/60,p=zipCurve(Z,t,0),d=Math.hypot(p.x-charX,p.z-charZ),dy=p.y-charY;
+    if(d<1.5&&dy>1.2&&dy<3.4&&(!best||d<best.d))best={Z:Z,t:t,d:d};}});return best;}
+function zipLook(Z){var fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=(Z.bx-Z.ax),rz=(Z.bz-Z.az),l=Math.hypot(rx,rz)||1;return (fx*rx+fz*rz)/l>=0?1:-1;}
+function zipGrab(n){var Z=n.Z;ZIP.ride={Z:Z,t:Math.max(0.01,Math.min(0.99,n.t)),v:0,dir:zipLook(Z)}; // kierunek „naprzód” = gdzie patrzyłeś przy złapaniu; potem jedziesz tylko W / SZIP.keep={w:WSP,r:RSP,j:JF};WSP=0;RSP=0;JF=0;Z.bounce=0.35;Z.bt=0;
+  try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.08,'square',300,600,0.04,ac.destination);}catch(e){}}
+function zipRelease(jump){var R=ZIP.ride;if(!R)return;ZIP.ride=null;var Z=R.Z;Z.bounce=0.45;Z.bt=0;if(ZIP.keep){WSP=ZIP.keep.w;RSP=ZIP.keep.r;JF=ZIP.keep.j;ZIP.keep=null;}
+  var dx=(Z.bx-Z.ax)/Z.L,dz=(Z.bz-Z.az)/Z.L;ZIP.fling={x:dx*R.v*0.8,z:dz*R.v*0.8,t:0.7};velY=jump?5:0;if(typeof onGr!=='undefined')onGr=false;
+  ['armL'].forEach(function(n){if(bp[n])bp[n].rotation.set(0,0,0);});zipRopeMesh(Z);}
+function zipDip(t,b){return (0.35+b)*Math.sin(Math.PI*t);} // ugięcie liny pod jadącym — przy bramkach zero
+function zipPin(){var R=ZIP.ride;if(!R)return;var Z=R.Z,b=Z.bounce*Math.sin(Z.bt*9),p=zipCurve(Z,R.t,zipDip(R.t,b));charX=p.x;charZ=p.z;charY=Math.max(zipGround(p.x,p.z),p.y-2.08);velY=0;
+  var s=R.v>=0.05?1:(R.v<=-0.05?-1:R.dir),dx=(Z.bx-Z.ax)*s,dz=(Z.bz-Z.az)*s;charAng=Math.atan2(-dx,-dz);
+  if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=charAng;}
+  if(bp.armL){bp.armL.rotation.set(Math.PI*0.97,0,-0.12);} // lewa ręka do góry, na linie
+  if(bp.armL&&charGroup){charGroup.updateMatrixWorld(true);var sh=new THREE.Vector3();bp.armL.getWorldPosition(sh);charX+=p.x-sh.x;charZ+=p.z-sh.z;charGroup.position.set(charX,charY,charZ);} // lewa dłoń dokładnie pod liną
+  if(bp.legL){bp.legL.rotation.x=0.25+Math.sin(performance.now()/300)*0.08;bp.legR.rotation.x=0.15-Math.sin(performance.now()/300)*0.08;}}
+function zipTick(dt){dt=Math.min(dt,0.05);
+  ZIP.list.forEach(function(Z){if(Z.bounce>0.003||(ZIP.ride&&ZIP.ride.Z===Z)){Z.bt+=dt;Z.bounce*=Math.exp(-dt*1.6);zipRopeMesh(Z);}});
+  if(ZIP.fling){var F=ZIP.fling;F.t-=dt;charX+=F.x*dt;charZ+=F.z*dt;F.x*=Math.exp(-dt*1.5);F.z*=Math.exp(-dt*1.5);if(charGroup)charGroup.position.set(charX,charY,charZ);if(F.t<=0)ZIP.fling=null;}
+  var R=ZIP.ride;if(!R){zipPrompt();return;}var Z=R.Z,look=zipLook(Z),slope=(Z.yb-Z.ya)/Z.L; // nachylenie wzdłuż liny (A→B)
+  var acc=(keys.w?1:0)-(keys.s?1:0); // W naprzód, S w tył (najpierw hamuje) — kamera kręci się niezależnie
+  if(acc){var want=acc*R.dir,brake=R.v*want<0;R.v+=want*(brake?9:5)*dt;}else R.v*=Math.exp(-dt*0.25);
+  R.v-=9.8*slope*0.5*dt;R.v=Math.max(-14,Math.min(14,R.v));
+  R.t+=R.v*dt/Z.L;if(R.t<=0.005||R.t>=0.995){R.t=Math.max(0.005,Math.min(0.995,R.t));zipRelease(false);var e=R.t>0.5?{x:Z.bx,z:Z.bz}:{x:Z.ax,z:Z.az},d=R.t>0.5?1:-1;charX=e.x+(Z.bx-Z.ax)/Z.L*d*1.6;charZ=e.z+(Z.bz-Z.az)/Z.L*d*1.6;charY=zipGround(charX,charZ);ZIP.fling=null;zipPrompt();return;}
+  zipPin();
+  var sp=Math.abs(R.v);ZIP.sndT-=dt;if(sp>1&&ZIP.sndT<=0){ZIP.sndT=0.12;try{if(typeof tbIceNoise==='function')tbIceNoise(0.16,700+sp*90,0.7,0.012+0.03*Math.min(1,sp/12));}catch(e){}}
+  zipPrompt();}
+function zipPrompt(){if(!ZIP.ui){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:31;padding:8px 16px;border-radius:10px;font:bold 15px sans-serif;color:#fff;pointer-events:none;display:none;white-space:nowrap;background:rgba(24,30,40,0.5);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.22);text-shadow:0 1px 2px rgba(0,0,0,0.5)';document.body.appendChild(d);ZIP.ui=d;}
+  var t='';if(ZIP.ride)t='🪢 W naprzód • S hamuj / w tył • kamera dowolnie • E / Spacja puść • '+Math.round(Math.abs(ZIP.ride.v)*3.6)+' km/h';
+  else if(!(typeof TRN!=='undefined'&&(TRN.drive||TRN.edit))&&!(typeof DRV!=='undefined'&&DRV.t)&&zipNear())t='🪢 Złap linę (E)';
+  if(ZIP.ui._t!==t){ZIP.ui._t=t;ZIP.ui.textContent=t;ZIP.ui.style.display=t?'block':'none';}}
+window.addEventListener('keydown',function(e){if(e.repeat||/INPUT|TEXTAREA/.test((e.target&&e.target.tagName)||''))return;
+  if(ZIP.ride&&(e.code==='KeyE'||e.code==='Space')){zipRelease(e.code==='Space');e.stopImmediatePropagation();e.preventDefault();return;}
+  if(e.code==='KeyE'&&!ZIP.ride&&!(typeof TRN!=='undefined'&&(TRN.drive||TRN.edit))&&!(typeof DRV!=='undefined'&&DRV.t)){var n=zipNear();if(n){zipGrab(n);zipPin();e.stopImmediatePropagation();e.preventDefault();}}},true);
+var _zipUpd=update;update=function(dt){zipPin();_zipUpd(dt);zipTick(dt);};
+var _zipAnim=typeof animCh==='function'?animCh:null;if(_zipAnim)animCh=function(dt){if(ZIP.ride){isMov=false;isRun=false;}_zipAnim(dt);if(ZIP.ride)zipPin();};
+setInterval(function(){try{zipSync();}catch(e){}},300);
+// ---------- edytor: drugi koniec (klik w linę albo zieloną bramkę przy klawiszu 1, potem klik na mapie) ----------
+function zipEditStart(po){if(typeof toggleSelMode==='function'&&typeof selMode!=='undefined'&&selMode)try{toggleSelMode();}catch(e){}if(document.exitPointerLock)try{document.exitPointerLock();}catch(e){}
+  ZIP.edit=po;if(!ZIP.eui){var d=document.createElement('div');d.style.cssText='position:fixed;top:56px;left:12px;z-index:41;width:280px;padding:12px 14px;border-radius:12px;background:rgba(24,30,40,0.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,0.22);color:#fff;font:13px sans-serif;text-shadow:0 1px 2px rgba(0,0,0,0.5)';document.body.appendChild(d);ZIP.eui=d;
+    d.addEventListener('click',function(e){e.stopPropagation();if(e.target.closest('[data-z="x"]'))zipEditEnd();});['mousedown','wheel'].forEach(function(t){d.addEventListener(t,function(e){e.stopPropagation();});});}
+  zipEditUI();ZIP.eui.style.display='block';}
+function zipEditUI(){var po=ZIP.edit;if(!po||!ZIP.eui)return;var a=po.action,L=Math.hypot(a.dx,a.dz),Z=ZIP.list.filter(function(z){return z.po===po;})[0],dh=Z?(Z.yb-Z.ya):0;
+  ZIP.eui.innerHTML='<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:14px;margin-bottom:6px"><span>🪢 Tyrolka</span><button data-z="x" style="background:none;border:none;color:#ddd;font-size:18px;cursor:pointer">✕</button></div>'+
+    '<div style="line-height:1.5">Kliknij na mapie, gdzie ma stać <b style="color:#7ee787">zielona bramka</b> (drugi koniec liny). Możesz też trzymać i ciągnąć.</div>'+
+    '<div style="margin-top:8px;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.08)">Długość: <b>'+L.toFixed(1).replace('.',',')+' m</b> • różnica wysokości: <b>'+(dh>=0?'+':'−')+Math.abs(dh).toFixed(1).replace('.',',')+' m</b></div>'+
+    '<div style="margin-top:6px;font-size:11.5px;color:#d6e2ea">Gotowe = ✕ albo Esc. Żółta bramka = asset (przesuwasz go jak każdy obiekt).</div>';}
+function zipEditEnd(){ZIP.edit=null;if(ZIP.eui)ZIP.eui.style.display='none';if(typeof refreshUI==='function')try{refreshUI();}catch(e){}}
+function zipEditSet(e){var po=ZIP.edit;if(!po)return;var r=renderer.domElement.getBoundingClientRect(),rc=new THREE.Raycaster();rc.setFromCamera(new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),cam);
+  var gm=typeof groundMesh!=='undefined'&&groundMesh?groundMesh:null,h=gm?rc.intersectObject(gm,false):[],p=null;if(h.length)p=h[0].point;else{var o=rc.ray.origin,d=rc.ray.direction;if(d.y<-0.001){var t=-o.y/d.y;p={x:o.x+d.x*t,z:o.z+d.z*t};}}
+  if(!p)return;var dx=p.x-po.gr.position.x,dz=p.z-po.gr.position.z,L=Math.hypot(dx,dz);if(L<4){dx=dx/(L||1)*4;dz=dz/(L||1)*4;}if(L>150){dx=dx/L*150;dz=dz/L*150;}po.action.dx=+dx.toFixed(2);po.action.dz=+dz.toFixed(2);zipSync();zipEditUI();}
+window.addEventListener('mousedown',function(e){if(!ZIP.edit||e.button!==0||(ZIP.eui&&ZIP.eui.contains(e.target))||e.target!==renderer.domElement)return;ZIP.drag=true;zipEditSet(e);e.stopImmediatePropagation();e.preventDefault();},true);
+window.addEventListener('mousemove',function(e){if(ZIP.edit&&ZIP.drag)zipEditSet(e);},true);
+window.addEventListener('mouseup',function(){ZIP.drag=false;},true);
+window.addEventListener('click',function(e){if(ZIP.edit&&e.target===renderer.domElement){e.stopImmediatePropagation();e.preventDefault();}},true);
+window.addEventListener('keydown',function(e){if(ZIP.edit&&e.key==='Escape'){zipEditEnd();e.stopImmediatePropagation();}},true);
+function zipHitEdit(rc){if(!ZIP.G)return null;var M=[];ZIP.list.forEach(function(Z){if(Z.rope)M.push(Z.rope);Z.B.traverse(function(o){if(o.isMesh)M.push(o);});});var h=rc.intersectObjects(M,false);if(!h.length)return null;
+  var Z=h[0].object.userData._zi;return Z?{po:Z.po,d:h[0].distance}:null;}
+
 //@@WEAPON_CORE_END
 
 var OCOL=['#58a6ff','#3fb950','#f85149','#d29922','#bc8cff','#f778ba'];
@@ -6772,7 +6893,7 @@ function update(dt){
     var bestIdx=-1,bestDist=INTERACT_DIST;
     for(var pi=0;pi<placedObjs.length;pi++){
       var po=placedObjs[pi];
-      if(!po.action||/^(gate|enemy|objective|demolish|player|rail)$/.test(po.action.type)||!po.gr.visible)continue;
+      if(!po.action||/^(gate|enemy|objective|demolish|player|rail|zip)$/.test(po.action.type)||!po.gr.visible)continue;
       var dx=charX-po.gr.position.x,dz=charZ-po.gr.position.z,dist=Math.sqrt(dx*dx+dz*dz);
       if(dist<bestDist){bestDist=dist;bestIdx=pi;}
     }
@@ -6888,6 +7009,10 @@ function showActParams(type,existing){
     ap.innerHTML='<input id="act-src" placeholder="dzwieki/plik.mp3" value="'+(existing&&existing.src?existing.src:'')+'">';
   }else if(type==='light'){
     ap.innerHTML='<label style="font-size:11px;color:#888">Moc:</label><input id="act-lint" placeholder="1.5" value="'+(existing&&existing.intensity?existing.intensity:'1.5')+'" style="width:50px"><label style="font-size:11px;color:#888">Zasieg:</label><input id="act-ldist" placeholder="12" value="'+(existing&&existing.distance?existing.distance:'12')+'" style="width:50px">';
+  }else if(type==='zip'){
+    ap.innerHTML='<button id="act-zip-edit" style="width:100%;padding:8px;font-weight:bold;background:#2a9d9a;color:#fff;border:0;border-radius:7px;cursor:pointer">🪢 Ustaw drugi koniec liny</button>'+
+      '<div style="font-size:10.5px;color:#888;margin-top:4px;width:100%">Żółta bramka = ten obiekt, zielona = drugi koniec (albo klik w linę przy klawiszu 1). W grze: E pod liną, jedziesz tam, gdzie patrzysz, W szybciej, S hamuj, E / Spacja puść.</div>';
+    setTimeout(function(){var b=document.getElementById('act-zip-edit');if(b)b.onclick=function(){if(editIdx<0)return;var po=placedObjs[editIdx],old=po.action&&po.action.type==='zip'?po.action:null;po.action={type:'zip'};if(old){po.action.dx=old.dx;po.action.dz=old.dz;}zipEditStart(po);};},0);
   }else if(type==='rail'){
     ap.innerHTML='<button id="act-rail-edit" style="width:100%;padding:8px;font-weight:bold;background:#1f6feb;color:#fff;border:0;border-radius:7px;cursor:pointer">🚂 Edytuj tory</button>'+
       '<div style="font-size:10.5px;color:#888;margin-top:4px;width:100%">'+(existing&&existing.mini?'🎠 Mała kolej: ciuchcia z wagonami-platformami. Edytuj tory (albo klik w pociąg / tor): kropki, rozjazdy, przystanki, obrót, łączenie końców w koło. W grze jeździ sama albo prowadzi gracz (E przy ciuchci, W/S, A/D zwrotnice).':'Zajezdnia 1 z pociągiem. Edytuj tory: kropki, rozjazdy, przystanki, tunele, nasypy, kolejne zajezdnie na końcach torów. W grze: E przy lokomotywie, W/S jazda, A/D zwrotnice.')+'</div>';
@@ -8264,6 +8389,11 @@ var AI_PROMPT = [
 '   Silnik SAM stawia krotki tor z ciuchcia i wagonami. Tory (petle, rozjazdy, przystanki) uzytkownik rysuje potem w edytorze —',
 '   NIE wymyslaj torow. Na jednej mapie moze byc tylko jedna kolej. Zostaw wokol niej ok. 25 m wolnego miejsca.',
 '',
+'13. TYROLKA (zjazd na linie, jak w Fortnite) — JEDEN obiekt-znacznik:',
+'   {"name":"Tyrolka","parts":[{"shape":"box","size":[1.2,0.04,1.2],"color":"#8a5a2b","position":[0,0.02,0]}],"action":{"type":"zip","dx":0,"dz":-30}}',
+'   Silnik SAM stawia dwie bramki i rozpina line. dx, dz = gdzie stoi druga bramka wzgledem pierwszej (w metrach, 4-150).',
+'   Najlepiej ze wzgorza w doline albo nad woda. Tyrolek moze byc dowolnie wiele.',
+'',
 'Jesli uzytkownik nie prosi o interakcje - nie dodawaj pola "action".',
 'Jesli prosi o obiekt ktory "sie otwiera", "mowi", "przenosi" - dodaj odpowiednia akcje.',
 '',
@@ -8810,6 +8940,8 @@ function init(){
         var hits=rayc.intersectObjects(meshes,false);
         if(hits.length>0&&hits[0].distance<closestDist){closestDist=hits[0].distance;closest=idx;}
       });
+      // 🪢 klik w linę tyrolki albo w jej zieloną bramkę = ustawianie drugiego końca
+      if(typeof zipHitEdit==='function'){var zh=zipHitEdit(rayc);if(zh&&zh.d<closestDist){deselectObj();zipEditStart(zh.po);return;}}
       // 🚂 klik w pociąg (ciuchcię, wagon) albo w tor = od razu edycja torów tej kolei (kamera w górę, widać kropki)
       if(typeof TRN!=='undefined'&&KM.pa){var rm=[];TRN.cars.forEach(function(c){c.traverse(function(m){if(m.isMesh)rm.push(m);});});
         if(TRN.trackG)TRN.trackG.traverse(function(m){if(m.isMesh)rm.push(m);});
@@ -9550,6 +9682,7 @@ function init(){
       var ei=document.getElementById('act-lint'),ed=document.getElementById('act-ldist');
       action.intensity=ei?parseFloat(ei.value)||1.5:1.5;
       action.distance=ed?parseFloat(ed.value)||12:12;
+    }else if(type==='zip'){var oz=placedObjs[editIdx].action;if(oz&&oz.type==='zip'){action.dx=oz.dx;action.dz=oz.dz;}
     }else if(type==='rail'){var oldr=placedObjs[editIdx].action;if(oldr&&oldr.type==='rail'&&oldr.mini)action.mini=true;if(oldr&&oldr.type==='rail'&&oldr.net)action.net=oldr.net;
     }else if(type==='cpole'){var eh=document.getElementById('act-kh'),hv=eh?parseFloat(String(eh.value).replace(',','.')):14;action.h=Math.max(6,Math.min(40,isNaN(hv)?14:hv));
     }else if(type==='cstation'){var esp=document.getElementById('act-ksp'),sv=esp?parseFloat(String(esp.value).replace(',','.')):7;action.speed=Math.max(2,Math.min(15,isNaN(sv)?7:sv));
@@ -9869,6 +10002,32 @@ function tbPaintInit(){
 }
 init();
 tbPaintInit();
+
+// ---------- 💧 EDYTOR: Esc → klik w zbiornik = okienko z poziomem wody tylko tego zbiornika ----------
+(function(){var st=document.createElement('style');st.textContent=
+ '#wl-pop{position:fixed;z-index:60;display:none;width:250px;padding:10px 12px 12px;border-radius:12px;background:rgba(24,30,40,0.45);-webkit-backdrop-filter:blur(14px) saturate(1.15);backdrop-filter:blur(14px) saturate(1.15);border:1px solid rgba(255,255,255,0.22);box-shadow:0 10px 30px rgba(0,0,0,0.3);color:#fff;font:13px sans-serif;text-shadow:0 1px 2px rgba(0,0,0,0.5)}'+
+ '#wl-pop .hd{display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:14px;margin-bottom:6px}#wl-pop .x{background:none;border:none;color:#ddd;font-size:18px;cursor:pointer;padding:0 2px}'+
+ '#wl-pop label{display:flex;justify-content:space-between;font-size:12px}#wl-pop b{color:#7fe3e0}#wl-pop input{width:100%;accent-color:#2a9d9a;margin:4px 0 2px}'+
+ '#wl-pop .row{display:flex;gap:6px;margin-top:8px}#wl-pop .row button{flex:1;padding:6px;border:none;border-radius:7px;background:rgba(42,157,154,0.35);color:#fff;font-weight:bold;cursor:pointer}#wl-pop .nt{font-size:11px;color:#d6e2ea;margin-top:6px;line-height:1.4}';
+ document.head.appendChild(st);var d=document.createElement('div');d.id='wl-pop';document.body.appendChild(d);
+ var W={x:0,z:0,c:0};
+ function fmt(v){return (v<0?'−':'')+Math.abs(v).toFixed(1).replace('.',',')+' m';}
+ function show(x,z,c,mx,my){W.x=x;W.z=z;W.c=c;var lo=TBWB.min[c]-TBTER_WL,cur=TBWB.lv[c]-TBTER_WL,mn=Math.floor(lo*10)/10;
+   d.innerHTML='<div class="hd"><span>💧 Zbiornik</span><button class="x" data-w="x">✕</button></div><label><span>Obniżenie poziomu wody</span><b id="wl-v">'+fmt(cur)+'</b></label>'+
+     '<input type="range" min="'+mn+'" max="0" step="0.1" value="'+cur.toFixed(1)+'" id="wl-r"><div class="row"><button data-w="dry">🏜 Suche dno</button><button data-w="reset">↺ Przywróć</button></div><div class="nt">Zmienia tylko ten jeden zbiornik. Głębokość do dna: '+fmt(lo)+'.</div>';
+   d.style.display='block';d.style.left=Math.min(innerWidth-262,mx+14)+'px';d.style.top=Math.min(innerHeight-170,my-20)+'px';}
+ function set(v){tbWaterSetLevel(W.x,W.z,TBTER_WL+v);var b=document.getElementById('wl-v');if(b)b.textContent=fmt(TBWB.lv[W.c]-TBTER_WL);var r=document.getElementById('wl-r');if(r)r.value=(TBWB.lv[W.c]-TBTER_WL).toFixed(1);}
+ d.addEventListener('input',function(e){if(e.target.id==='wl-r')set(+e.target.value);});
+ d.addEventListener('click',function(e){e.stopPropagation();var b=e.target.closest('[data-w]');if(!b)return;var k=b.getAttribute('data-w');if(k==='x')d.style.display='none';else if(k==='reset')set(0);else if(k==='dry')set(-99);});
+ ['mousedown','wheel','keydown'].forEach(function(t){d.addEventListener(t,function(e){e.stopPropagation();});});
+ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&d.style.display==='block')d.style.display='none';});
+ document.addEventListener('mousedown',function(e){if(d.style.display==='block'&&!d.contains(e.target))d.style.display='none';},true);
+ function busy(){return pLock||!TBTER_W||!TBTER_W.visible||selMode||edPlacing||pasteMode||moveMode||(typeof TRN!=='undefined'&&TRN.edit)||(typeof tbBrushMode==='function'&&tbBrushMode())||(typeof edDriveTarget!=='undefined'&&edDriveTarget);}
+ renderer.domElement.addEventListener('click',function(e){if(busy())return;var r=renderer.domElement.getBoundingClientRect(),rc=new THREE.Raycaster();
+   rc.setFromCamera(new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),cam);
+   var hw=rc.intersectObjects(TBTER_W.children,false);if(!hw.length)return;var hg=groundMesh?rc.intersectObject(groundMesh,false):[];if(hg.length&&hg[0].distance<hw[0].distance-0.05)return;
+   var p=hw[0].point,c=hw[0].object.userData.basin;if(!c)return;e.stopImmediatePropagation();e.preventDefault();show(p.x,p.z,c,e.clientX,e.clientY);},true);
+})();
 })();
 </script>
 <script type="text/plain" id="tabby-inst-src">
@@ -10065,7 +10224,7 @@ function checkInteract(){
   if(drnFlying()||DRN.stage==='toBase'){nearIdx=-1;var ipx=document.getElementById('interact-prompt');if(ipx)ipx.style.display='none';return;}
   var oldNear=nearIdx;nearIdx=-1;
   for(var i=0;i<placedActions.length;i++){
-    var pa=placedActions[i];if(!pa.gr.visible||/^(gate|enemy|objective|demolish|player|rail)$/.test(pa.action.type))continue;
+    var pa=placedActions[i];if(!pa.gr.visible||/^(gate|enemy|objective|demolish|player|rail|zip)$/.test(pa.action.type))continue;
     var dx=charX-pa.gr.position.x,dz=charZ-pa.gr.position.z,dd=Math.sqrt(dx*dx+dz*dz);
     if(dd<INTERACT_DIST&&(nearIdx<0||dd<nearD)){nearIdx=i;var nearD=dd;} // najbliższy, nie pierwszy z listy
   }

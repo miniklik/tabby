@@ -43,7 +43,7 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 .act-row select,.act-row input{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);color:#e6edf3;padding:4px 8px;border-radius:5px;font-size:11px;font-family:sans-serif}
 .act-row input{flex:1;min-width:100px}
 .act-info{font-size:11px;color:#3fb950;margin-top:4px}
-#ed-panel{position:fixed;top:52px;right:-360px;width:350px;height:calc(100% - 52px);border-top-left-radius:12px;border-top:1px solid rgba(255,255,255,0.12);z-index:30;background:rgba(14,17,23,0.97);border-left:1px solid rgba(255,255,255,0.12);transition:right 0.25s;display:flex;flex-direction:column;font-family:sans-serif;font-size:13px;color:#e6edf3}
+#ed-panel{position:fixed;top:52px;right:-360px;width:350px;height:calc(100% - 52px);border-top-left-radius:12px;border-top:1px solid rgba(255,255,255,0.12);z-index:30;background:rgba(24,30,40,0.42);-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15);box-shadow:-8px 0 30px rgba(0,0,0,0.25);border-left:1px solid rgba(255,255,255,0.22);text-shadow:0 1px 2px rgba(0,0,0,0.45);transition:right 0.25s;display:flex;flex-direction:column;font-family:sans-serif;font-size:13px;color:#e6edf3}
 #ed-panel.open{right:0}
 .insp-veh-row{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:11.5px;color:#ddd;cursor:pointer;user-select:none;line-height:1.35}
 .insp-veh-row input{width:15px;height:15px;margin:1px 0 0;accent-color:#f0a35e;cursor:pointer;flex:none}
@@ -5639,6 +5639,11 @@ var _kolUpd=update;update=function(dt){kolPin();_kolUpd(dt);kolPin();}; // gracz
 var TRN={ez:55,st:null,pcs:[],pts:[],len:0,loop:false,mode:'',edit:false,nW:4,s:0,v:0,auto:false,wait:0,drive:false,keep:null,
   grp:null,trackG:null,cars:[],on:-1,prev:[],ui:null,prompt:null,save:'tabby-kolej-v1',cd0:undefined,thr:0,hint:null};
 var TRN_STOP=104,TRN_FLOOR=1.0,TRN_LOCO=13,TRN_WAG=8.5,TRN_GAP=1.1,TRN_VMAX=18,TRN_GAUGE=1.435;
+// 🎠 MAŁA KOLEJ (asset „Kolej”, action.mini): ten sam kod i ta sama fizyka co Zajezdnia — tylko mniejsze rozmiary (wąskie tory, ciuchcia, niskie platformy)
+function kq(big,mini){return (typeof KM!=='undefined'&&KM&&KM.mini)?mini:big;}
+function kMiniApply(on){on=!!on;if(KM._mset&&KM.mini===on)return false;KM.mini=on;KM._mset=1;
+  TRN_FLOOR=on?0.4:1.0;TRN_LOCO=on?3.6:13;TRN_WAG=on?2.8:8.5;TRN_GAP=on?0.5:1.1;TRN_GAUGE=on?0.6:1.435;
+  DEP_BACK=on?-16:-85;DEP_EXIT=on?1:5;JD=on?12:26;JH=on?9:22;K_RMIN=on?8:26;return true;}
 function trnMat(c,o){o=o||{};o.color=c;if(o.roughness===undefined)o.roughness=0.75;return new THREE.MeshStandardMaterial(o);}
 var TM=null;function trnMats(){if(TM)return TM;TM={con:trnMat(0xa7adb5,{roughness:0.95}),dark:trnMat(0x2f343b,{roughness:0.6,metalness:0.4}),red:trnMat(0xc8323a,{roughness:0.5}),
   orange:trnMat(0xe2702a,{roughness:0.55}),yel:trnMat(0xf2c200),white:trnMat(0xf0f0f0),brick:trnMat(0xa8553a,{roughness:0.9}),roof:trnMat(0x3d4a5c,{roughness:0.6}),
@@ -5671,7 +5676,7 @@ function trnStationCols(st){for(var i=wCols.length-1;i>=0;i--)if(wCols[i]._trn)w
     wCols.push({x:wx,z:wz,hw:hw,hd:hd,y:0,h:q[4],_trn:1});});}
 
 // ---------- lokomotywa i wagony ----------
-function trnLoco(){var M=trnMats(),g=new THREE.Group(),y=TRN_FLOOR;
+function trnLoco(){if(KM.mini)return trnLocoMini();var M=trnMats(),g=new THREE.Group(),y=TRN_FLOOR;
   tBox(g,2.9,0.5,TRN_LOCO,M.dark,0,y-0.05,0);[-1,1].forEach(function(e){tBox(g,2.4,0.7,3.2,M.dark,0,0.5,e*(TRN_LOCO/2-2.4));
     [-0.9,0.9].forEach(function(z){[-0.8,0.8].forEach(function(x){var w=tCyl(g,0.46,0.18,M.steel,x,0.5,e*(TRN_LOCO/2-2.4)+z,16);w.rotation.z=Math.PI/2;w.userData._wheel=1;});});});
   tBox(g,2.3,2.2,TRN_LOCO-4.6,M.orange,0,y+1.3,-1.6);tBox(g,2.34,0.25,TRN_LOCO-4.6,M.yel,0,y+0.55,-1.6,1); // długa maska
@@ -5681,7 +5686,7 @@ function trnLoco(){var M=trnMats(),g=new THREE.Group(),y=TRN_FLOOR;
   [-0.8,0.8].forEach(function(x){var l=new THREE.Mesh(new THREE.SphereGeometry(0.16,10,8),new THREE.MeshBasicMaterial({color:0xfff2b0}));l.position.set(x,y+1.0,TRN_LOCO/2+0.06);g.add(l);});
   var hl=new THREE.SpotLight(0xfff2c0,1.2,60,0.5,0.5,1.2);hl.position.set(0,y+1.2,TRN_LOCO/2+0.3);hl.target.position.set(0,0,TRN_LOCO/2+30);g.add(hl);g.add(hl.target);
   g.userData.len=TRN_LOCO;return g;}
-function trnWagon(i){var M=trnMats(),g=new THREE.Group(),y=TRN_FLOOR,L=TRN_WAG,col=[M.red,M.green,M.rust,M.orange][i%4];
+function trnWagon(i){if(KM.mini)return trnWagonMini(i);var M=trnMats(),g=new THREE.Group(),y=TRN_FLOOR,L=TRN_WAG,col=[M.red,M.green,M.rust,M.orange][i%4];
   tBox(g,2.9,0.3,L,M.dark,0,y-0.15,0);tBox(g,2.7,0.06,L-0.2,M.wood,0,y+0.03,0); // otwarta platforma z drewnianą podłogą
   [-1.4,1.4].forEach(function(x){tBox(g,0.12,0.8,L,col,x,y+0.4,0);});[-1,1].forEach(function(e){tBox(g,2.9,0.8,0.12,col,0,y+0.4,e*(L/2-0.06));
     tBox(g,2.2,0.7,2.4,M.dark,0,0.5,e*(L/2-1.6));[-0.6,0.6].forEach(function(z){[-0.8,0.8].forEach(function(x){var w=tCyl(g,0.44,0.16,M.steel,x,0.48,e*(L/2-1.6)+z,16);w.rotation.z=Math.PI/2;w.userData._wheel=1;});});});
@@ -5699,27 +5704,27 @@ function trnFloor(){ // po ruchu postaci: podłoga wagonu, ścianki (nie wypadas
   TRN.on=-1;if(TRN.drive)return;
   for(var i=0;i<TRN.cars.length;i++){var c=TRN.cars[i],L=c.userData.len,l=trnLocal(c,charX,charZ),fl=c.position.y+(i===0?TRN_FLOOR+0.0:TRN_FLOOR+0.06);
     if(i===0)continue; // na lokomotywę wchodzi się przez kabinę (E)
-    if(Math.abs(l.x)<1.45&&Math.abs(l.z)<L/2&&charY>fl-0.6&&charY<fl+1.6){
+    if(Math.abs(l.x)<kq(1.45,0.66)&&Math.abs(l.z)<L/2&&charY>fl-0.6&&charY<fl+1.6){
       if(charY<=fl+0.05&&velY<=0){charY=fl;velY=0;if(typeof onGr!=='undefined')onGr=true;}
-      if(charY<fl+0.75){var cx=Math.max(-1.18,Math.min(1.18,l.x)),cz=Math.max(-L/2+0.3,Math.min(L/2-0.3,l.z));if(cx!==l.x||cz!==l.z){var cy=Math.cos(c.rotation.y),sy=Math.sin(c.rotation.y);charX=c.position.x+cx*cy+cz*sy;charZ=c.position.z-cx*sy+cz*cy;}}
+      if(charY<fl+0.75){var cx=Math.max(-kq(1.18,0.5),Math.min(kq(1.18,0.5),l.x)),cz=Math.max(-L/2+0.3,Math.min(L/2-0.3,l.z));if(cx!==l.x||cz!==l.z){var cy=Math.cos(c.rotation.y),sy=Math.sin(c.rotation.y);charX=c.position.x+cx*cy+cz*sy;charZ=c.position.z-cx*sy+cz*cy;}}
       if(charGroup)charGroup.position.set(charX,charY,charZ);TRN.on=i;return;}}}
-function trnSeat(){var c=TRN.cars[0],v=new THREE.Vector3(0.6,TRN_FLOOR+0.3,TRN_LOCO/2-2.2);c.localToWorld(v);return v;}
-function trnPin(){if(!TRN.drive||!TRN.cars[0])return;var v=trnSeat();charX=v.x;charY=v.y;charZ=v.z;velY=0;charAng=TRN.cars[0].rotation.y;if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=charAng;}}
-function trnNearCab(){var c=TRN.cars[0];if(!c)return false;var l=trnLocal(c,charX,charZ);return Math.abs(l.z-(TRN_LOCO/2-2))<3.2&&Math.abs(l.x)<3.4&&charY<c.position.y+TRN_FLOOR+2.5;}
+function trnSeat(){var c=TRN.cars[0],v=KM.mini?new THREE.Vector3(0,TRN_FLOOR+0.05,-TRN_LOCO/2+0.75):new THREE.Vector3(0.6,TRN_FLOOR+0.3,TRN_LOCO/2-2.2);c.localToWorld(v);return v;}
+function trnPin(){if(!TRN.drive||!TRN.cars[0])return;var v=trnSeat();charX=v.x;charY=v.y;charZ=v.z;velY=0;charAng=TRN.cars[0].rotation.y+Math.PI; /* maszynista patrzy w stronę jazdy (przód postaci = −sin, −cos) */if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=charAng;}}
+function trnNearCab(){var c=TRN.cars[0];if(!c)return false;var l=trnLocal(c,charX,charZ);if(KM.mini)return Math.abs(l.z-(-TRN_LOCO/2+0.75))<1.8&&Math.abs(l.x)<1.8&&charY<c.position.y+TRN_FLOOR+1.6;return Math.abs(l.z-(TRN_LOCO/2-2))<3.2&&Math.abs(l.x)<3.4&&charY<c.position.y+TRN_FLOOR+2.5;}
 function trnUse(){
   if(TRN.drive){if(Math.abs(TRN.v)>0.3){TRN.exitReq=true;trnMsg('Hamuję — zaraz wysiądziesz.');return true;}TRN.exitReq=false;TRN.drive=false;if(TRN.keep){WSP=TRN.keep.w;RSP=TRN.keep.r;JF=TRN.keep.j;TRN.keep=null;}
-    var c=TRN.cars[0],v=new THREE.Vector3(-2.4,0,TRN_LOCO/2-2.0);c.localToWorld(v);charX=v.x;charZ=v.z;charY=c.position.y;velY=0;
+    var c=TRN.cars[0],v=new THREE.Vector3(kq(-2.4,-1.3),0,kq(TRN_LOCO/2-2.0,-TRN_LOCO/2+0.75));c.localToWorld(v);charX=v.x;charZ=v.z;charY=c.position.y;velY=0;
     // wysiadasz na peron, jeśli jest obok
     if(TRN.st){var ls=trnLocal({position:{x:TRN.st.x,z:TRN.st.z},rotation:{y:TRN.st.ry}},charX,charZ);if(Math.abs(ls.x+3.6)<2.2&&ls.z>-25&&ls.z<15)charY=TRN_FLOOR;}
     trnUI();return true;}
   if(trnNearCab()){TRN.drive=true;TRN.auto=false;TRN.keep={w:WSP,r:RSP,j:JF};WSP=0;RSP=0;JF=0;trnPin();trnUI();try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.6,'square',330,330,0.04,ac.destination);wpnTone(ac,ac.currentTime+0.15,0.6,'square',262,262,0.04,ac.destination);}catch(e){}return true;}
   return false;}
 function trnCam(dt){if(typeof CDIST==='undefined')return;var z=0;if(TRN.drive)z=Math.min(1,Math.abs(TRN.v)/8);if(TRN.edit)z=1;
-  if(TRN.cd0===undefined){if(z===0)return;TRN.cd0=CDIST;}var tgt=TRN.cd0+(TRN.edit?TRN.ez:12*z);/* edycja: kamera wysoko nad mapą (kółko myszy = wyżej / niżej) */CDIST+=(tgt-CDIST)*(1-Math.exp(-dt*1.6));
+  if(TRN.cd0===undefined){if(z===0)return;TRN.cd0=CDIST;}var tgt=TRN.cd0+(TRN.edit?TRN.ez:kq(12,5)*z);/* edycja: kamera wysoko nad mapą (kółko myszy = wyżej / niżej) */CDIST+=(tgt-CDIST)*(1-Math.exp(-dt*1.6));
   if(z===0&&Math.abs(CDIST-TRN.cd0)<0.03){CDIST=TRN.cd0;TRN.cd0=undefined;}}
 function trnPromptTick(){var t='';
   if(TRN.drive)t='🚂 W — naprzód • S — hamuj / wstecz • E — wysiądź • '+Math.round(Math.abs(TRN.v)*3.6)+' km/h';
-  else if(trnNearCab())t='🚂 Wsiądź do lokomotywy (E)';else if(TRN.on>0)t=TRN.v!==0?'🚃 Jedziesz na wagonie — Spacja = zeskok':'🚃 Stoisz na wagonie';
+  else if(trnNearCab())t='🚂 Wsiądź do '+kq('lokomotywy','ciuchci')+' (E)';else if(TRN.on>0)t=TRN.v!==0?'🚃 Jedziesz na wagonie — Spacja = zeskok':'🚃 Stoisz na wagonie';
   if(!TRN.prompt){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:30;background:rgba(16,21,29,.88);color:#fff;border:1px solid #30363d;border-radius:10px;padding:8px 16px;font:bold 15px sans-serif;pointer-events:none;display:none';document.body.appendChild(d);TRN.prompt=d;}
   if(TRN.prompt._t!==t){TRN.prompt._t=t;TRN.prompt.textContent=t;TRN.prompt.style.display=t?'block':'none';}}
 
@@ -5827,13 +5832,15 @@ function depInside(d,out){var pts=[];for(var z=DEP_BACK;z<=DEP_EXIT;z+=0.5)pts.p
 function lineGeo(L,stack){stack=stack||[];if(KM.geo[L.id])return KM.geo[L.id];if(stack.indexOf(L.id)>=0)return null;stack=stack.concat([L.id]);
   var S,tS,E,tE,pre=[],post=[];
   if(L.start.t==='dep'){var d=kDep(L.start.id);if(!d)return null;S=depPt(d,DEP_EXIT);tS=kDir(d.ry);pre=depInside(d,true);}
+  else if(L.start.t==='depB'){var db=kDep(L.start.id);if(!db)return null;S=depPt(db,DEP_BACK);var kb=kDir(db.ry);tS={x:-kb.x,z:-kb.z};} // 🎠 tor wychodzący do tyłu
   else{var tg=triGeo(kTri(L.start.id),stack);if(!tg)return null;S=tg.A;tS=tg.n;}
   if(L.end.t==='dep'){var d2=kDep(L.end.id);if(!d2)return null;E=depPt(d2,DEP_EXIT);var k2=kDir(d2.ry);tE={x:-k2.x,z:-k2.z};post=depInside(d2,false);}
   else if(L.end.t==='tri'){var tg2=triGeo(kTri(L.end.id),stack);if(tg2){E=tg2.A;tE={x:-tg2.n.x,z:-tg2.n.z};}else{E=L.end.last||{x:S.x+tS.x*30,z:S.z+tS.z*30};tE=null;}}
+  else if(L.end.t==='join'){E={x:L.end.x,z:L.end.z};var LO=kLine(L.end.l),pA=kPrevKnot(L,stack),pB=LO&&kPrevKnot(LO,stack);tE=null;if(pA&&pB){var jx=pB.x-pA.x,jz=pB.z-pA.z,jl=Math.hypot(jx,jz)||1;tE={x:jx/jl,z:jz/jl};}} // 🔗 złączone końce: gładko przez punkt złączenia
   else{E={x:L.end.x,z:L.end.z};tE=null;}
   // węzły krzywej: zwykłe kropki (kierunek liczony sam) i KOTWICE — przystanek albo trójkąt: stały prosty odcinek w stałym miejscu
   var K=[{p:S,t:tS,h:0,key:'S'}],anch=[];
-  L.dots.forEach(function(d){if(d.k){var hl=d.k==='stop'?18:JD+6,dv=kDir(d.yaw);K.push({p:{x:d.x-dv.x*hl,z:d.z-dv.z*hl},t:dv,a:d,h:0,key:d.k+d.id});K.push({p:{x:d.x+dv.x*hl,z:d.z+dv.z*hl},t:dv,a2:d,h:0,key:d.k+d.id+'b'});anch.push(d);}else K.push({p:d,h:d.h||0,key:'d'+d.id});});
+  L.dots.forEach(function(d){if(d.k){var hl=d.k==='stop'?kq(18,8):JD+6,dv=kDir(d.yaw);K.push({p:{x:d.x-dv.x*hl,z:d.z-dv.z*hl},t:dv,a:d,h:0,key:d.k+d.id});K.push({p:{x:d.x+dv.x*hl,z:d.z+dv.z*hl},t:dv,a2:d,h:0,key:d.k+d.id+'b'});anch.push(d);}else K.push({p:d,h:d.h||0,key:'d'+d.id});});
   K.push({p:E,t:tE,h:L.end.t==='free'?(L.end.h||0):0,key:'E'});var T=[];
   for(var i=0;i<K.length;i++){var pv=K[Math.max(0,i-1)].p,nx=K[Math.min(K.length-1,i+1)].p,ch;
     if(K[i].t){ch=i===0?Math.hypot(K[1].p.x-K[0].p.x,K[1].p.z-K[0].p.z):(K[i].a2||i===K.length-1?Math.hypot(K[i].p.x-pv.x,K[i].p.z-pv.z):Math.hypot(nx.x-K[i].p.x,nx.z-K[i].p.z));
@@ -5863,13 +5870,17 @@ function triGeo(t,stack){if(!t)return null;var key='t'+t.id;if(KM.geo[key])retur
 function kGeoAll(){KM.geo={};KM.lines.forEach(function(L){lineGeo(L);});KM.tris.forEach(function(t){triGeo(t);});
   KM.lines.forEach(function(L){if(L.end.t==='tri'){var tg=triGeo(kTri(L.end.id));if(tg)L.end.last={x:tg.A.x,z:tg.A.z};}});}
 // ---------- sieć torów dla pociągu ----------
-function kGraph(){NET.nodes=[];NET.edges=[];NET.nid=1;NET.eid=1;var apex={};
+function kGraph(){NET.nodes=[];NET.edges=[];NET.nid=1;NET.eid=1;var apex={},shr={};
   KM.tris.forEach(function(t){var g=triGeo(t);if(g){var n=nNode(g.A.x,g.A.z);n.tri=t.id;n.role='C';apex[t.id]=n;}});
   KM.lines.forEach(function(L){var g=lineGeo(L);if(!g)return;var cuts=[];
     KM.tris.forEach(function(t){if(t.line!==L.id)return;var tg=triGeo(t);if(!tg||!apex[t.id])return;cuts.push({s:tg.sa,t:t,role:'A'});cuts.push({s:tg.sb,t:t,role:'B'});});
     cuts.sort(function(a,b){return a.s-b.s;});
-    var startN=L.start.t==='tri'?apex[L.start.id]:null;if(!startN){startN=nNode(g.pts[0].x,g.pts[0].z);startN.dead=true;if(L.start.t==='dep')startN.dep=L.start.id;}
-    var endN=L.end.t==='tri'?apex[L.end.id]:null;if(!endN){var lp=g.pts[g.pts.length-1];endN=nNode(lp.x,lp.z);endN.dead=true;if(L.end.t==='dep')endN.dep=L.end.id;}
+    var startN=L.start.t==='tri'?apex[L.start.id]:null;
+    if(!startN&&(L.start.t==='dep'||L.start.t==='depB')&&KM.lines.some(function(o){return o!==L&&o.start.id===L.start.id&&(o.start.t==='dep'||o.start.t==='depB');})){var sk='d'+L.start.id;if(!shr[sk]){shr[sk]=nNode(g.pts[0].x,g.pts[0].z);shr[sk].dep=L.start.id;}startN=shr[sk];} // przód i tył toru to jeden tor
+    if(!startN){startN=nNode(g.pts[0].x,g.pts[0].z);startN.dead=true;if(L.start.t==='dep')startN.dep=L.start.id;}
+    var endN=L.end.t==='tri'?apex[L.end.id]:null;
+    if(!endN&&L.end.t==='join'){var jk='j'+Math.min(L.id,L.end.l)+'-'+Math.max(L.id,L.end.l);if(!shr[jk])shr[jk]=nNode(L.end.x,L.end.z);endN=shr[jk];}
+    if(!endN){var lp=g.pts[g.pts.length-1];endN=nNode(lp.x,lp.z);endN.dead=true;if(L.end.t==='dep')endN.dep=L.end.id;}
     var prevN=startN,prevS=0;
     cuts.concat([{s:g.len,end:true}]).forEach(function(c){var nd;if(c.end)nd=endN;else{var p=kAt(g.pts,g.len,c.s);nd=nNode(p.x,p.z);nd.tri=c.t.id;nd.role=c.role;if(c.role==='A')c.t._nA=nd.id;else c.t._nB=nd.id;}
       var seg=[];var a=kAt(g.pts,g.len,prevS);seg.push({x:a.x,z:a.z,y:a.y});g.pts.forEach(function(q){if(q.s>prevS+1e-6&&q.s<c.s-1e-6)seg.push({x:q.x,z:q.z,y:q.y||0});});var b=kAt(g.pts,g.len,c.s);seg.push({x:b.x,z:b.z,y:b.y});
@@ -5883,19 +5894,19 @@ function kSwApply(){KM.tris.forEach(function(t){if(!t._e1)return;var nA=nGet(t._
 function kSwRead(n){var t=kTri(n.tri);if(!t)return;var sw=nSwitch(n);if(!sw)return;var ch=(n.sw==='L'?sw.L:sw.R).e.id;
   if(n.role==='A')t.swA=ch===t._e1;else if(n.role==='B')t.swB=ch===t._e2;else t.swC=ch===t._e2?'b':'a';}
 // ---------- modele: zajezdnia (hala z dachem) i przystanek (peron z wiatą) ----------
-function depModel(first){var M=trnMats(),g=new THREE.Group(),W=8.4,L=56,zc=DEP_EXIT-L/2;
+function depModel(first){if(KM.mini)return depModelMini(first);var M=trnMats(),g=new THREE.Group(),W=8.4,L=56,zc=DEP_EXIT-L/2;
   tBox(g,W,0.12,L,M.con,0,0.06,zc);[-1,1].forEach(function(s){tBox(g,0.5,6,L,M.brick,s*W/2,3,zc);for(var z=zc-L/2+4;z<zc+L/2;z+=8)tBox(g,0.08,1.4,2.4,M.glass,s*(W/2+0.26),3.6,z,1);});
   tBox(g,W+0.5,6,0.5,M.brick,0,3,zc-L/2);
   for(var k=0;k<2;k++){var r=tBox(g,W*0.62,0.25,L+1,M.roof,(k?1:-1)*W*0.27,6.85,zc);r.rotation.z=(k?-1:1)*0.42;}tBox(g,0.4,0.4,L+1,M.dark,0,7.55,zc);
   tBox(g,W+0.6,1.4,0.5,M.brick,0,5.6,DEP_EXIT);var c=document.createElement('canvas');c.width=1024;c.height=128;var x=c.getContext('2d');x.fillStyle='#1d3557';x.fillRect(0,0,1024,128);
   x.fillStyle='#fff';x.font='bold 70px sans-serif';x.textAlign='center';x.fillText(first?'🏠 ZAJEZDNIA 1':'🏠 ZAJEZDNIA',512,92);var sg=new THREE.Mesh(new THREE.PlaneGeometry(6.6,0.82),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));sg.position.set(0,5.6,DEP_EXIT+0.27);g.add(sg);
   tBox(g,2.6,1.1,0.5,M.red,0,0.75,DEP_BACK+0.6);return g;} // kozioł oporowy w środku
-function stopModel(){var M=trnMats(),g=new THREE.Group(),PL=34;tBox(g,3.4,TRN_FLOOR,PL,M.con,0,TRN_FLOOR/2,0);tBox(g,0.22,0.02,PL,M.yel,1.55,TRN_FLOOR+0.01,0,1);
+function stopModel(){if(KM.mini)return stopModelMini();var M=trnMats(),g=new THREE.Group(),PL=34;tBox(g,3.4,TRN_FLOOR,PL,M.con,0,TRN_FLOOR/2,0);tBox(g,0.22,0.02,PL,M.yel,1.55,TRN_FLOOR+0.01,0,1);
   tBox(g,2.0,0.5,1.2,M.con,0,0.25,PL/2+0.6);tBox(g,2.0,0.5,1.2,M.con,0,0.25,-PL/2-0.6);
   [-3,3].forEach(function(z){tBox(g,0.15,2.6,0.15,M.dark,-1.2,TRN_FLOOR+1.3,z);});tBox(g,1.8,0.12,7.6,M.roof,-0.9,TRN_FLOOR+2.65,0);tBox(g,0.06,1.8,6,M.glass,-1.55,TRN_FLOOR+1.2,0,1);
   tBox(g,0.5,0.45,2.2,M.wood,-0.8,TRN_FLOOR+0.23,0);var c=document.createElement('canvas');c.width=512;c.height=128;var x=c.getContext('2d');x.fillStyle='#1d3557';x.fillRect(0,0,512,128);x.fillStyle='#fff';x.font='bold 62px sans-serif';x.textAlign='center';x.fillText('🚏 PRZYSTANEK',256,88);
   var sg=new THREE.Mesh(new THREE.PlaneGeometry(2.6,0.65),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),side:THREE.DoubleSide}));sg.position.set(-0.3,TRN_FLOOR+3.1,6);sg.rotation.y=Math.PI/2;g.add(sg);return g;}
-function stopGeo(st){if(st.x===undefined)return null;var n={x:st.side*Math.cos(st.yaw),z:-st.side*Math.sin(st.yaw)};return {x:st.x+n.x*3.5,z:st.z+n.z*3.5,yaw:st.yaw,side:st.side,tx:st.x,tz:st.z};} // przystanek stoi w stałym miejscu (kotwica toru)
+function stopGeo(st){if(st.x===undefined)return null;var n={x:st.side*Math.cos(st.yaw),z:-st.side*Math.sin(st.yaw)};return {x:st.x+n.x*kq(3.5,1.6),z:st.z+n.z*kq(3.5,1.6),yaw:st.yaw,side:st.side,tx:st.x,tz:st.z};} // przystanek stoi w stałym miejscu (kotwica toru)
 // ---------- rysowanie ----------
 function kRib(pts,half,dy,mat,off){var pos=[],idx=[];for(var i=0;i<pts.length;i++){var a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,c=off||0,y=(pts[i].y||0)+dy;
     pos.push(pts[i].x+nx*(c-half),y,pts[i].z+nz*(c-half),pts[i].x+nx*(c+half),y,pts[i].z+nz*(c+half));if(i){var k=i*2;idx.push(k-2,k,k-1,k-1,k,k+1);}}
@@ -5905,13 +5916,13 @@ var KMAT=null;function kMats(){if(KMAT)return KMAT;KMAT={earth:new THREE.MeshSta
 function kEmbank(G,P){ // nasyp: skośne zbocza od toru do ziemi; powyżej 7 m — wiadukt na filarach
   var KM2=kMats(),runs=[],cur=null;P.forEach(function(q){if((q.y||0)>0.05){if(!cur){cur=[];runs.push(cur);}cur.push(q);}else cur=null;});
   runs.forEach(function(R){if(R.length<2)return;var pos=[],idx=[];
-    for(var i=0;i<R.length;i++){var a=R[Math.max(0,i-1)],b=R[Math.min(R.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,y=Math.min(R[i].y,7),top=2.1,bot=top+y*1.5;
+    for(var i=0;i<R.length;i++){var a=R[Math.max(0,i-1)],b=R[Math.min(R.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,y=Math.min(R[i].y,7),top=kq(2.1,1.0),bot=top+y*1.5;
       pos.push(R[i].x-nx*bot,0,R[i].z-nz*bot, R[i].x-nx*top,y,R[i].z-nz*top, R[i].x+nx*top,y,R[i].z+nz*top, R[i].x+nx*bot,0,R[i].z+nz*bot);
       if(i){var k=i*4,p=k-4;idx.push(p,k,p+1,p+1,k,k+1, p+1,k+1,p+2,p+2,k+1,k+2, p+2,k+2,p+3,p+3,k+2,k+3);}}
     var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();var m=new THREE.Mesh(g,KM2.grass);m.receiveShadow=true;m.castShadow=true;G.add(m);
     var acc=0;for(var j=1;j<R.length;j++){acc+=Math.hypot(R[j].x-R[j-1].x,R[j].z-R[j-1].z);if(R[j].y>7&&acc>12){acc=0;var h=R[j].y-0.35,pl=new THREE.Mesh(new THREE.BoxGeometry(1.6,h,1.6),KM2.conc);pl.position.set(R[j].x,h/2,R[j].z);pl.castShadow=true;G.add(pl);}}
     var deck=R.filter(function(q){return q.y>7;});if(deck.length>1)G.add(kRib(R.map(function(q){return {x:q.x,z:q.z,y:q.y>7?q.y:-5};}),2.3,-0.3,KM2.conc));});}
-function kTunnel(G,P){var M=trnMats(),Rr=3.4,H=2.2,seg=12,pos=[],idx=[],rows=0;
+function kTunnel(G,P){var M=trnMats(),Rr=kq(3.4,1.5),H=kq(2.2,1.4),seg=12,pos=[],idx=[],rows=0;
   for(var i=0;i<P.length;i+=2){var a=P[Math.max(0,i-1)],b=P[Math.min(P.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,y0=P[i].y||0;
     for(var j=0;j<=seg+2;j++){var x,y;if(j===0){x=-Rr;y=0;}else if(j===seg+2){x=Rr;y=0;}else{var an=Math.PI*(1-(j-1)/seg);x=Math.cos(an)*Rr;y=H+Math.sin(an)*Rr;}pos.push(P[i].x+nx*x,y0+y,P[i].z+nz*x);}
     if(rows){var w=seg+3,k=rows*w;for(var q=0;q<w-1;q++)idx.push(k-w+q,k+q,k-w+q+1,k-w+q+1,k+q,k+q+1);}rows++;}
@@ -5920,19 +5931,20 @@ function kTunnel(G,P){var M=trnMats(),Rr=3.4,H=2.2,seg=12,pos=[],idx=[],rows=0;
     tBox(p,1.0,H+Rr+0.6,1.2,M.brick,-Rr-0.4,(H+Rr+0.6)/2,0);tBox(p,1.0,H+Rr+0.6,1.2,M.brick,Rr+0.4,(H+Rr+0.6)/2,0);tBox(p,2*Rr+1.8,0.9,1.2,M.brick,0,H+Rr+0.15,0);G.add(p);});
   var mid=P[Math.floor(P.length/2)],lt=new THREE.PointLight(0xffd9a0,0.8,18,1.5);lt.position.set(mid.x,(mid.y||0)+H+Rr-0.6,mid.z);G.add(lt);}
 function trnBuildTrack(){
-  kGeoAll();kGraph();
+  kGeoAll();kGraph();kMiniStopsPos();
   if(TRN.trackG){scene.remove(TRN.trackG);TRN.trackG.traverse(function(o){if(o.geometry)o.geometry.dispose();});}
   var G=new THREE.Group(),M=trnMats();TRN.trackG=G;scene.add(G);var sl=[];
-  NET.edges.forEach(function(e){if(e.pts.length<2)return;G.add(kRib(e.pts,1.7,0.04,M.ballast));[-TRN_GAUGE/2,TRN_GAUGE/2].forEach(function(o){G.add(kRib(e.pts,0.05,0.24,M.steel,o));});
-    for(var s=0.3;s<e.len;s+=0.65)sl.push(eAt(e,s));});
-  if(sl.length){var im=new THREE.InstancedMesh(new THREE.BoxGeometry(2.5,0.14,0.24),M.wood,sl.length),dm=new THREE.Object3D();sl.forEach(function(a,i){dm.position.set(a.x,(a.y||0)+0.11,a.z);dm.rotation.set(0,a.yaw,0);dm.updateMatrix();im.setMatrixAt(i,dm.matrix);});im.receiveShadow=true;G.add(im);}
+  NET.edges.forEach(function(e){if(e.pts.length<2)return;G.add(kRib(e.pts,kq(1.7,0.75),0.04,M.ballast));[-TRN_GAUGE/2,TRN_GAUGE/2].forEach(function(o){G.add(kRib(e.pts,kq(0.05,0.03),kq(0.24,0.13),M.steel,o));});
+    for(var s=0.3;s<e.len;s+=kq(0.65,0.45))sl.push(eAt(e,s));});
+  if(sl.length){var im=new THREE.InstancedMesh(new THREE.BoxGeometry(kq(2.5,1.1),kq(0.14,0.07),kq(0.24,0.14)),M.wood,sl.length),dm=new THREE.Object3D();sl.forEach(function(a,i){dm.position.set(a.x,(a.y||0)+kq(0.11,0.05),a.z);dm.rotation.set(0,a.yaw,0);dm.updateMatrix();im.setMatrixAt(i,dm.matrix);});im.receiveShadow=true;G.add(im);}
   KM.lines.forEach(function(L){var g=lineGeo(L);if(!g)return;kEmbank(G,g.pts);g.tun.forEach(function(t){var P=g.pts.filter(function(q){return q.s>=t[0]&&q.s<=t[1];});if(P.length>3)kTunnel(G,P);});});
   KM.deps.forEach(function(d,i){var m=depModel(i===0);m.position.set(d.x,0,d.z);m.rotation.y=d.ry;G.add(m);});
   for(var i=wCols.length-1;i>=0;i--)if(wCols[i]._trn)wCols.splice(i,1);
-  KM.stops.forEach(function(st){var sg=stopGeo(st);if(!sg)return;var m=stopModel();m.position.set(sg.x,0,sg.z);m.rotation.y=sg.yaw+(st.side>0?Math.PI:0);G.add(m);
-    var c=Math.cos(sg.yaw),s=Math.sin(sg.yaw),hw=Math.abs(1.7*c)+Math.abs(17*s),hd=Math.abs(1.7*s)+Math.abs(17*c);wCols.push({x:sg.x,z:sg.z,hw:Math.min(hw,6),hd:Math.min(hd,17),y:0,h:TRN_FLOOR,_trn:1});});
+  KM.stops.forEach(function(st){var sg=stopGeo(st);if(!sg)return;KM._cs={st:st,sg:sg};var m=stopModel();KM._cs=null;m.position.set(sg.x,0,sg.z);m.rotation.y=sg.yaw+(st.side>0?Math.PI:0);G.add(m);
+    if(st.s!==undefined&&st._segs){st._segs.forEach(function(q){wCols.push({x:q.x,z:q.z,hw:q.hw,hd:q.hd,y:0,h:TRN_FLOOR,_trn:1});});return;} // peron na łuku: kolizja kawałkami
+    var c=Math.cos(sg.yaw),s=Math.sin(sg.yaw),hw=Math.abs(kq(1.7,0.8)*c)+Math.abs(kq(17,6)*s),hd=Math.abs(kq(1.7,0.8)*s)+Math.abs(kq(17,6)*c);wCols.push({x:sg.x,z:sg.z,hw:Math.min(hw,kq(6,3)),hd:Math.min(hd,kq(17,6)),y:0,h:TRN_FLOOR,_trn:1});});
   // latarnie zwrotnic: ▲ = prosto, ↖ / ↗ = w lewo / w prawo
-  TRN.swSigns=[];NET.nodes.forEach(function(n){var sw=nSwitch(n);if(!sw)return;var g=new THREE.Group();g.position.set(n.x+Math.cos(sw.th)*3.2,0,n.z-Math.sin(sw.th)*3.2);
+  TRN.swSigns=[];NET.nodes.forEach(function(n){var sw=nSwitch(n);if(!sw)return;var g=new THREE.Group();g.position.set(n.x+Math.cos(sw.th)*kq(3.2,1.6),0,n.z-Math.sin(sw.th)*kq(3.2,1.6));if(KM.mini)kMiniSwPos(g,n,sw);
     tBox(g,0.15,1.8,0.15,M.dark,0,0.9,0);var c=document.createElement('canvas');c.width=128;c.height=128;var tx=new THREE.CanvasTexture(c);
     var pl=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tx}));pl.position.y=2.2;pl.rotation.y=sw.th+Math.PI;g.add(pl); // strzałka tylko od strony, z której wjeżdża się na zwrotnicę (od tyłu nie jest lustrzanym odbiciem)
     var bk=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({color:0x10151d}));bk.position.y=2.2;bk.rotation.y=sw.th;g.add(bk);G.add(g);TRN.swSigns.push({n:n,c:c,tx:tx,g:g});});trnSwDraw();
@@ -5941,18 +5953,18 @@ function trnSwDraw(){(TRN.swSigns||[]).forEach(function(S){var n=S.n,t=kTri(n.tr
   x.fillStyle='#10151d';x.fillRect(0,0,128,128);x.fillStyle=br?'#f2c200':'#3fb950';x.font='bold 96px sans-serif';x.textAlign='center';x.fillText(br?(n.sw==='L'?'↖':'↗'):'▲',64,98);S.tx.needsUpdate=true;});}
 // tryb 🏠: na każdym wolnym końcu toru półprzezroczysta zajezdnia z napisem — „tu możesz postawić”
 function kDepAt(L){var g=lineGeo(L);if(!g)return null;var P=g.pts,a=P[P.length-3]||P[0],b=P[P.length-1],ry=Math.atan2(b.x-a.x,b.z-a.z)+Math.PI;return {x:b.x-Math.sin(ry)*DEP_EXIT,z:b.z-Math.cos(ry)*DEP_EXIT,ry:ry};}
-function kGhostDep(L){var d=kDepAt(L);if(!d)return;var g=new THREE.Group(),Ls=56,zc=DEP_EXIT-Ls/2;g.position.set(d.x,0,d.z);g.rotation.y=d.ry;
-  var box=new THREE.Mesh(new THREE.BoxGeometry(8.4,6.5,Ls),new THREE.MeshBasicMaterial({color:0xbc8cff,transparent:true,opacity:0.18,depthWrite:false}));box.position.set(0,3.25,zc);g.add(box);
+function kGhostDep(L){var d=kDepAt(L);if(!d)return;var g=new THREE.Group(),Ls=kq(56,DEP_EXIT-DEP_BACK+1),zc=DEP_EXIT-Ls/2;g.position.set(d.x,0,d.z);g.rotation.y=d.ry;
+  var box=new THREE.Mesh(new THREE.BoxGeometry(kq(8.4,2.2),kq(6.5,1.6),Ls),new THREE.MeshBasicMaterial({color:0xbc8cff,transparent:true,opacity:0.18,depthWrite:false}));box.position.set(0,kq(3.25,0.8),zc);g.add(box);
   var ed=new THREE.LineSegments(new THREE.EdgesGeometry(box.geometry),new THREE.LineBasicMaterial({color:0xbc8cff}));ed.position.copy(box.position);g.add(ed);
   var c=document.createElement('canvas');c.width=1024;c.height=200;var x=c.getContext('2d');x.fillStyle='rgba(16,21,29,0.85)';x.fillRect(0,0,1024,200);x.fillStyle='#bc8cff';x.fillRect(0,0,1024,10);
-  x.fillStyle='#fff';x.font='bold 64px sans-serif';x.textAlign='center';x.fillText('🏠 Kliknij — tu zajezdnia',512,95);x.fillStyle='#c9d1d9';x.font='40px sans-serif';x.fillText('koniec toru',512,160);
-  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));sp.scale.set(26,5.1,1);sp.position.set(0,12,zc);g.add(sp);KM.dotG.add(g);}
+  x.fillStyle='#fff';x.font='bold 64px sans-serif';x.textAlign='center';x.fillText(kq('🏠 Kliknij — tu zajezdnia','🛑 Kliknij — tu kozioł'),512,95);x.fillStyle='#c9d1d9';x.font='40px sans-serif';x.fillText('koniec toru',512,160);
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));sp.scale.set(kq(26,13),kq(5.1,2.55),1);sp.position.set(0,kq(12,5),zc);g.add(sp);KM.dotG.add(g);}
 function kDots(){if(KM.dotG)scene.remove(KM.dotG);KM.dotG=new THREE.Group();scene.add(KM.dotG);if(!TRN.edit)return;
   function lbl(p,h,red){var c=document.createElement('canvas');c.width=160;c.height=80;var x=c.getContext('2d');x.fillStyle=red?'rgba(200,40,40,0.9)':'rgba(16,21,29,0.85)';x.fillRect(0,0,160,80);x.fillStyle='#fff';x.font='bold 48px sans-serif';x.textAlign='center';x.fillText((h>0?'+':'')+h+' m',80,58);
     var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));sp.scale.set(4,2,1);sp.position.set(p.x,(h||0)+4,p.z);KM.dotG.add(sp);}
   function dot(p,col,on){var m=new THREE.Mesh(new THREE.SphereGeometry(on?1.6:1.2,16,12),new THREE.MeshBasicMaterial({color:on?0xffffff:col}));m.position.set(p.x,(p.h||0)+0.9,p.z);KM.dotG.add(m);
     var r=new THREE.Mesh(new THREE.TorusGeometry(2.0,0.12,8,28),new THREE.MeshBasicMaterial({color:col}));r.rotation.x=Math.PI/2;r.position.set(p.x,(p.h||0)+0.3,p.z);KM.dotG.add(r);}
-  var D=KM.drag,SL=KM.sel;KM.lines.forEach(function(L){var gg=lineGeo(L),st=gg?gg.steep:{};L.dots.forEach(function(d,i){if(d.k)return;dot(d,0xff8a3d,(D&&D.t==='dot'&&D.l===L.id&&D.i===i)||(SL&&SL.t==='dot'&&SL.l===L.id&&SL.i===i));lbl(d,d.h||0,st['d'+d.id]);});if(L.end.t==='free'){dot(L.end,0xbc8cff,(D&&D.t==='end'&&D.l===L.id)||(SL&&SL.t==='end'&&SL.l===L.id));lbl(L.end,L.end.h||0,st.E);if(TRN.mode==='dep')kGhostDep(L);}});}
+  var D=KM.drag,SL=KM.sel;KM.lines.forEach(function(L){var gg=lineGeo(L),st=gg?gg.steep:{};L.dots.forEach(function(d,i){if(d.k)return;dot(d,0xff8a3d,(D&&D.t==='dot'&&D.l===L.id&&D.i===i)||(SL&&SL.t==='dot'&&SL.l===L.id&&SL.i===i));lbl(d,d.h||0,st['d'+d.id]);});if(L.end.t==='free'){dot(L.end,0xbc8cff,(D&&D.t==='end'&&D.l===L.id)||(SL&&SL.t==='end'&&SL.l===L.id));lbl(L.end,L.end.h||0,st.E);if(TRN.mode==='dep')kGhostDep(L);}if(L.end.t==='join'&&L.id<L.end.l)dot(L.end,0x3fb950,false);});}
 
 // ---------- pociąg na sieci ----------
 function trnOffsets(){var o=[],d=0;TRN.cars.forEach(function(c,i){var L=c.userData.len;if(i)d+=L/2;o.push(d);d+=L/2+TRN_GAP;});return o;}
@@ -5986,7 +5998,7 @@ function trnTick(dt){
   nPruneHist(trnTrainLen());
   if(TRN.v!==0){var ok=nAdvance(TRN.v*dt);if(!ok){TRN.v=0;if(TRN.auto&&TRN.wait<=0){TRN.wait=5;TRN.rev=true;}}}
   if(TRN.v<0){var TL=trnTrainLen(),r1=nBack(TL),r0=nBack(TL-0.6);if(Math.hypot(r1.x-r0.x,r1.z-r0.z)<0.3){TRN.v=0;if(TRN.auto&&TRN.wait<=0){TRN.wait=5;TRN.rev=true;}}}
-  trnPlace();TRN.cars.forEach(function(c){var w=TRN.v*dt/0.46;c.traverse(function(m){if(m.userData._wheel)m.rotation.x+=w;});});
+  trnPlace();TRN.cars.forEach(function(c){var w=TRN.v*dt/kq(0.46,0.2);c.traverse(function(m){if(m.userData._wheel)m.rotation.x+=w;});});
   TRN.delta=TRN.cars.map(function(c,i){return {px:prev[i].x,pz:prev[i].z,dy:c.rotation.y-prev[i].yaw};});
   if(Math.abs(TRN.v)>0.5&&(!TRN.snd||performance.now()-TRN.snd>Math.max(220,9000/Math.abs(TRN.v)))){TRN.snd=performance.now();try{var ac2=wpnAC();wpnTone(ac2,ac2.currentTime,0.12,'triangle',90,60,0.035,ac2.destination);wpnTone(ac2,ac2.currentTime+0.09,0.12,'triangle',95,60,0.03,ac2.destination);}catch(e){}}
   TRN.ahead=TRN.drive?kAhead():null;trnPromptTick();}
@@ -5999,13 +6011,13 @@ a.n.sw=dir;kSwRead(a.n);trnSwDraw();kSave();
 function trnPromptTick(){var t='';
   if(TRN.drive){t='🚂 W naprzód • S hamuj/wstecz • E wysiądź • '+Math.round(Math.abs(TRN.v)*3.6)+' km/h';var a=TRN.ahead;
     if(a){var tr=kTri(a.n.tri),br=a.n.role==='A'?tr&&tr.swA:a.n.role==='B'?tr&&tr.swB:true;t+='   |   🔀 zwrotnica '+(kTravelDir()<0?'za pociągiem ':'')+'za '+Math.round(a.dist)+' m: '+(br?((a.n.sw==='L')!==(kTravelDir()<0)?'◀ W LEWO':'W PRAWO ▶'):'▲ PROSTO')+'  [A ◀ | D ▶]';}}
-  else if(trnNearCab())t='🚂 Wsiądź do lokomotywy (E)';else if(TRN.on>0)t=TRN.v!==0?'🚃 Jedziesz na wagonie — Spacja = zeskok':'🚃 Stoisz na wagonie';
+  else if(trnNearCab())t='🚂 Wsiądź do '+kq('lokomotywy','ciuchci')+' (E)';else if(TRN.on>0)t=TRN.v!==0?'🚃 Jedziesz na wagonie — Spacja = zeskok':'🚃 Stoisz na wagonie';
   if(!TRN.prompt){var d=document.createElement('div');d.style.cssText='position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:30;background:rgba(16,21,29,.88);color:#fff;border:1px solid #30363d;border-radius:10px;padding:8px 16px;font:bold 15px sans-serif;pointer-events:none;display:none;white-space:nowrap';document.body.appendChild(d);TRN.prompt=d;}
   if(TRN.prompt._t!==t){TRN.prompt._t=t;TRN.prompt.textContent=t;TRN.prompt.style.display=t?'block':'none';}}
 window.addEventListener('keydown',function(e){if(!TRN.drive||e.repeat)return;if(e.code==='KeyA'||e.code==='KeyD'){if(trnSwitch(e.code==='KeyA'?'L':'R'))e.stopImmediatePropagation();}},true);
 // ---------- edycja ----------
-function kSnap(){return JSON.stringify({deps:KM.deps,lines:KM.lines,tris:KM.tris.map(function(t){return {id:t.id,line:t.line,f:t.f,side:t.side,swA:!!t.swA,swB:!!t.swB,swC:t.swC||'a'};}),stops:KM.stops.map(function(s){return {id:s.id,line:s.line,x:s.x,z:s.z,yaw:s.yaw,side:s.side};}),nid:KM.nid,nW:TRN.nW});}
-function kRestore(j){var d=JSON.parse(j);KM.deps=d.deps||[];KM.lines=d.lines||[];KM.nid=d.nid||1;KM.lines.forEach(function(L){L.dots.forEach(function(x){if(!x.k&&!x.id)x.id=KM.nid++;});});KM.tris=d.tris||[];KM.stops=d.stops||[];KM.nid=Math.max(KM.nid,d.nid||1);TRN.nW=d.nW===undefined?4:d.nW;}
+function kSnap(){return JSON.stringify({deps:KM.deps,lines:KM.lines,tris:KM.tris.map(function(t){return {id:t.id,line:t.line,f:t.f,side:t.side,swA:!!t.swA,swB:!!t.swB,swC:t.swC||'a'};}),stops:KM.stops.map(function(s){return {id:s.id,line:s.line,x:s.x,z:s.z,yaw:s.yaw,side:s.side,s:s.s};}),nid:KM.nid,nW:TRN.nW,drv:KM.drv});}
+function kRestore(j){var d=JSON.parse(j);KM.deps=d.deps||[];KM.lines=d.lines||[];KM.nid=d.nid||1;KM.lines.forEach(function(L){L.dots.forEach(function(x){if(!x.k&&!x.id)x.id=KM.nid++;});});KM.tris=d.tris||[];KM.stops=d.stops||[];KM.nid=Math.max(KM.nid,d.nid||1);KM.drv=d.drv||(KM.mini?'auto':'sam');TRN.nW=d.nW===undefined?kq(4,3):Math.min(kq(7,5),d.nW);}
 function kPush(){KM.hist.push(kSnap());if(KM.hist.length>60)KM.hist.shift();}
 function kSave(){try{localStorage.setItem('tabby-kolej-zajezdnie',kSnap());}catch(e){}}
 function kLoad(){try{var j=localStorage.getItem('tabby-kolej-zajezdnie');if(!j)return;kRestore(j);kAll(true);}catch(e){}}
@@ -6026,7 +6038,7 @@ function kNearDot(p){var sc=kNearDotScreen();if(sc)return sc;for(var i=0;i<KM.li
 function kInsertKnot(L,g,s,item){function sOf(pt){var b=0,bd=1e9;g.pts.forEach(function(q){var d=Math.hypot(q.x-pt.x,q.z-pt.z);if(d<bd){bd=d;b=q.s;}});return b;}
   var pos=0;while(pos<L.dots.length&&sOf(L.dots[pos])<s)pos++;L.dots.splice(pos,0,item);}
 function kAnchorFree(L,g,s,half){ // czy w tym miejscu zmieści się prosty odcinek kotwicy (z dala od końców toru i innych kotwic / kropek)
-  if(s-half<g.f0+6||s+half>g.f1-6)return false;return !L.dots.some(function(d){var b=1e9,bs=0;g.pts.forEach(function(q){var dd=Math.hypot(q.x-d.x,q.z-d.z);if(dd<b){b=dd;bs=q.s;}});var h2=d.k==='stop'?18:d.k?JD+6:0;return Math.abs(bs-s)<half+h2+(d.k?4:2);});} // zwykła kropka przeszkadza tylko, gdy leży w samym prostym odcinku
+  if(s-half<g.f0+6||s+half>g.f1-6)return false;return !L.dots.some(function(d){var b=1e9,bs=0;g.pts.forEach(function(q){var dd=Math.hypot(q.x-d.x,q.z-d.z);if(dd<b){b=dd;bs=q.s;}});var h2=d.k==='stop'?kq(18,8):d.k?JD+6:0;return Math.abs(bs-s)<half+h2+(d.k?4:2);});} // zwykła kropka przeszkadza tylko, gdy leży w samym prostym odcinku
 var K_RMIN=26;
 function kMinR(L){KM.geo={};var g=lineGeo(L);if(!g)return {r:1e9};var P=g.pts,best={r:1e9},st=6; // co ~3 m: promień okręgu przez 3 punkty
   for(var i=st;i<P.length-st;i+=2){var a=P[i-st],b=P[i],c=P[i+st];if(b.s<g.f0+1||b.s>g.f1-1)continue;var A=Math.hypot(b.x-a.x,b.z-a.z),B=Math.hypot(c.x-b.x,c.z-b.z),C=Math.hypot(c.x-a.x,c.z-a.z),ar=Math.abs((b.x-a.x)*(c.z-a.z)-(c.x-a.x)*(b.z-a.z))/2;
@@ -6044,17 +6056,17 @@ function kWasDrag(){var r=KM.dragMoved&&performance.now()-(KM.dragT||0)<400;KM.d
 function trnClick(e){if(kWasDrag())return;var p=trnGroundHit(e);if(!p)return;
   if(TRN.mode==='dep'){
     if(!KM.deps.length){kPush();var ry2=Math.atan2(-Math.sin(camYaw),-Math.cos(camYaw)),d2={id:kId(),x:p.x,z:p.z,ry:ry2},ex=depPt(d2,DEP_EXIT);KM.deps.push(d2);
-      KM.lines.push({id:kId(),start:{t:'dep',id:d2.id},dots:[],end:{t:'free',x:ex.x+Math.sin(ry2)*40,z:ex.z+Math.cos(ry2)*40}});
+      KM.lines.push({id:kId(),start:{t:'dep',id:d2.id},dots:[],end:{t:'free',x:ex.x+Math.sin(ry2)*kq(40,20),z:ex.z+Math.cos(ry2)*kq(40,20)}});
       trnMsg('🏠 Zajezdnia 1 z pociągiem. Ciągnij fioletową kropkę — tor się wydłuża.');TRN.mode='dots';kAll(true);return;}
     // kolejne zajezdnie: tylko na wolnym końcu toru (fioletowa kropka) — wtedy cały świat ma jedną sieć torów
-    var near=null,bd=1e9;KM.lines.forEach(function(L){if(L.end.t!=='free')return;var d=Math.hypot(L.end.x-p.x,L.end.z-p.z),gd=kDepAt(L);if(gd){var c=depPt(gd,DEP_EXIT-28);d=Math.min(d,Math.max(0,Math.hypot(c.x-p.x,c.z-p.z)-14));}if(d<14&&d<bd){bd=d;near=L;}}); // klik przy końcu toru albo w fioletową zajezdnię
+    var near=null,bd=1e9;KM.lines.forEach(function(L){if(L.end.t!=='free')return;var d=Math.hypot(L.end.x-p.x,L.end.z-p.z),gd=kDepAt(L);if(gd){var c=depPt(gd,kq(DEP_EXIT-28,(DEP_EXIT+DEP_BACK)/2));d=Math.min(d,Math.max(0,Math.hypot(c.x-p.x,c.z-p.z)-kq(14,6)));}if(d<kq(14,6)&&d<bd){bd=d;near=L;}}); // klik przy końcu toru albo w fioletową zajezdnię
     if(!near){trnMsg('Kolejną zajezdnię stawiasz tylko na końcu toru — kliknij w fioletową zajezdnię z napisem.');return;}
     kPush();var g=lineGeo(near),P=g.pts,a2=P[P.length-3]||P[0],b2=P[P.length-1],h=Math.atan2(b2.x-a2.x,b2.z-a2.z),ry=h+Math.PI,d={id:kId(),x:b2.x-Math.sin(ry)*DEP_EXIT,z:b2.z-Math.cos(ry)*DEP_EXIT,ry:ry};
     KM.deps.push(d);near.end={t:'dep',id:d.id};trnMsg('🏠 Zajezdnia na końcu toru — tor do niej wjeżdża.');TRN.mode='dots';kAll();return;}
   if(!KM.deps.length){trnMsg('Najpierw postaw zajezdnię (🏠).');return;}
   if(TRN.mode==='dots'){if(kNearDot(p))return;var h=kNearLine(p,6);if(!h){trnMsg('Kliknij na tor.');return;}kPush();var L=h.L,g=h.g;
     function sOf(pt){var b=0,bd=1e9;g.pts.forEach(function(q){var d=Math.hypot(q.x-pt.x,q.z-pt.z);if(d<bd){bd=d;b=q.s;}});return b;}
-    if(!kAnchorFree(L,g,h.s,0)&&L.dots.some(function(d){return d.k&&Math.hypot(d.x-h.x,d.z-h.z)<(d.k==='stop'?20:JD+8);})){trnMsg('To jest przystanek / rozjazd — tu tor jest prosty i stoi w miejscu. Kropkę postaw obok.');return;}
+    if(!kAnchorFree(L,g,h.s,0)&&L.dots.some(function(d){return d.k&&Math.hypot(d.x-h.x,d.z-h.z)<(d.k==='stop'?kq(20,10):JD+8);})){trnMsg('To jest przystanek / rozjazd — tu tor jest prosty i stoi w miejscu. Kropkę postaw obok.');return;}
     var pos=0;while(pos<L.dots.length&&sOf(L.dots[pos])<h.s)pos++;var hy=kAt(g.pts,g.len,h.s).y||0;L.dots.splice(pos,0,{id:kId(),x:h.x,z:h.z,h:Math.round(hy)});KM.sel={t:'dot',l:L.id,i:pos};kAll();trnMsg('Kropka postawiona — przeciągnij ją, a wysokość zmienisz w menu (▲▼) albo kółkiem myszy nad kropką.');return;}
   if(TRN.mode==='jun'){var hj=kNearLine(p,30);if(!hj||!kTriOk(hj.L,hj.f,hj.side)){trnMsg('Tu trójkąt się nie zmieści — za blisko końca toru, innego rozjazdu albo przystanku.');return;}
     KM.rBefore=kRAll();hj.g=lineGeo(hj.L);kPush();var t={id:kId(),line:hj.L.id,f:hj.f,side:hj.side,swA:false,swB:false,swC:'a'},qa=kAt(hj.g.pts,hj.g.len,hj.s);kInsertKnot(hj.L,hj.g,hj.s,{k:'tri',id:t.id,x:qa.x,z:qa.z,yaw:qa.yaw});KM.tris.push(t);KM.geo={};var tg=triGeo(t);KM.geo={};
@@ -6062,8 +6074,11 @@ function trnClick(e){if(kWasDrag())return;var p=trnGroundHit(e);if(!p)return;
   if(TRN.mode==='tun'){var ht=kNearLine(p,6);if(!ht){trnMsg('Kliknij na tor.');return;}var ks=ht.g.ks,key=null;for(var i=0;i+1<ks.length;i++)if(ht.s>=ks[i].s&&ht.s<=ks[i+1].s){key=ks[i].key;break;}
     if(!key||/^(stop|tri)/.test(key)&&!/b$/.test(key)&&false){return;}if(/^(stop|tri)\d+$/.test(key)){trnMsg('Na przystanku i rozjeździe tunelu nie będzie — kliknij obok.');return;}
     kPush();var L=ht.L;L.tun=L.tun||[];var ix=L.tun.indexOf(key);if(ix>=0){L.tun.splice(ix,1);trnMsg('Tunel usunięty.');}else{L.tun.push(key);trnMsg('🚇 Tunel między sąsiednimi kropkami. Klik jeszcze raz = usuń.');}kAll();return;}
-  if(TRN.mode==='stop'){var hs=kNearLine(p,12);if(!hs){trnMsg('Kliknij blisko toru — po tej stronie, gdzie ma być peron.');return;}
-    if(!kAnchorFree(hs.L,hs.g,hs.s,18)){trnMsg('Tu przystanek się nie zmieści — za blisko końca toru, rozjazdu albo kropki.');return;}
+  if(TRN.mode==='stop'){var hs=kNearLine(p,kq(12,6));if(!hs){trnMsg('Kliknij blisko toru — po tej stronie, gdzie ma być peron.');return;}
+    if(KM.mini){var gS=lineGeo(hs.L),half=MINI_PL/2+0.5;if(hs.s-half<1||hs.s+half>gS.len-1){trnMsg('Za blisko końca toru — przystanek postaw trochę dalej.');return;}
+      if(KM.stops.some(function(o){return o.line===hs.L.id&&o.s!==undefined&&Math.abs(o.s-hs.s)<MINI_PL+1;})){trnMsg('Tu już stoi przystanek — postaw kolejny dalej.');return;}
+      kPush();var qm=kAt(gS.pts,gS.len,hs.s);KM.stops.push({id:kId(),line:hs.L.id,s:hs.s,x:qm.x,z:qm.z,yaw:qm.yaw,side:hs.side});kAll();trnMsg('🚏 Przystanek gotowy — może stać nawet na łuku. W jeździe próbnej pociąg stanie tu na 8 s.');return;}
+    if(!kAnchorFree(hs.L,hs.g,hs.s,kq(18,8))){trnMsg('Tu przystanek się nie zmieści — za blisko końca toru, rozjazdu albo kropki.');return;}
     KM.rBefore=kRAll();hs.g=lineGeo(hs.L);kPush();var qs=kAt(hs.g.pts,hs.g.len,hs.s),sid=kId();kInsertKnot(hs.L,hs.g,hs.s,{k:'stop',id:sid,x:qs.x,z:qs.z,yaw:qs.yaw});KM.stops.push({id:sid,line:hs.L.id,x:qs.x,z:qs.z,yaw:qs.yaw,side:hs.side});var bad=kCheckAll(KM.rBefore);if(bad){kUndo();trnMsg('⚠ Tu przystanek zrobiłby za ostry łuk (ciaśniej niż '+K_RMIN+' m). Postaw go na prostszym kawałku toru.');return;}kAll();trnMsg('🚏 Przystanek gotowy. W jeździe auto pociąg tu stanie na 8 s.');}}
 window.addEventListener('mousedown',function(e){if(!TRN.edit||(TRN.ui&&TRN.ui.contains(e.target)))return;var p=trnGroundHit(e);if(!p)return;var d=kNearDot(p);if(d){kPush();KM.drag=d;KM.sel=d;KM.dragMoved=false;kDots();trnUI();}},true);
 function kSelH(dh){var S=KM.sel;if(!S)return;var L=kLine(S.l);if(!L)return;var o=S.t==='dot'?L.dots[S.i]:L.end;if(!o||o.k)return;kPush();o.h=Math.max(0,Math.min(12,(o.h||0)+dh));kAll();}
@@ -6084,7 +6099,7 @@ window.addEventListener('mousemove',function(e){if(!TRN.edit)return;var p=trnGro
   if(KM.drag.t==='dot'){var od=L.dots[KM.drag.i];od.x=p.x;od.z=p.z;}else{L.end={t:'free',x:p.x,z:p.z,h:L.end.h||0};}
   var now=performance.now();if(KM.lastB&&now-KM.lastB<30)return;KM.lastB=now;kDragPreview(L);
   if(KM.drag.t==='dot'&&TRN.mode==='del')return;
-  if(KM.drag.t==='end'){var h2=kNearLine(p,JH+8,L.id),ok=h2&&h2.d>3&&kTriOk(h2.L,h2.f,h2.side);KM.link=ok?h2:null;var tg=ok&&kTempTri(h2);kPreview(tg?[tg.l1,tg.l2]:null,0x58a6ff);if(tg)trnMsg('🔗 Puść — tor połączy się trójkątem z tym torem.');}
+  if(KM.drag.t==='end'&&!(KM.mini&&kJoinTry(L,p))){var h2=kNearLine(p,JH+8,L.id),ok=h2&&h2.d>3&&kTriOk(h2.L,h2.f,h2.side);KM.link=ok?h2:null;var tg=ok&&kTempTri(h2);kPreview(tg?[tg.l1,tg.l2]:null,0x58a6ff);if(tg)trnMsg('🔗 Puść — tor połączy się trójkątem z tym torem.');}
   if(KM.dragBad)trnMsg('⚠ Za ostry łuk (czerwony) — po puszczeniu kropka cofnie się do granicy '+K_RMIN+' m.');});
 window.addEventListener('mouseup',function(){if(!KM.drag)return;KM.dragT=performance.now();var L=kLine(KM.drag.l);
   if(L&&KM.dragMoved){var lim=Math.min(K_RMIN,KM.dragR0||K_RMIN)-0.5,o=KM.drag.t==='dot'?L.dots[KM.drag.i]:L.end,to={x:o.x,z:o.z},fr=KM.dragFrom;
@@ -6092,9 +6107,11 @@ window.addEventListener('mouseup',function(){if(!KM.drag)return;KM.dragT=perform
       o.x=fr.x+(to.x-fr.x)*lo;o.z=fr.z+(to.z-fr.z)*lo;KM.link=null;trnMsg('⚠ Za ostry łuk — kropka stanęła na granicy '+K_RMIN+' m.');}}
   if(KM.dpv){while(KM.dpv.children.length)KM.dpv.remove(KM.dpv.children[0]);}KM.dragBad=false;KM.dragFrom=null;
 
+  if(KM.drag.t==='end'&&KM.joinTo&&L){var JO=KM.joinTo,JP={x:JO.end.x,z:JO.end.z};L.end={t:'join',l:JO.id,x:JP.x,z:JP.z};JO.end={t:'join',l:L.id,x:JP.x,z:JP.z};KM.link=null;trnMsg('🔗 Tory połączone — pociąg może jechać w kółko. Dwuklik w złączenie = rozetnij.');}
+  KM.joinTo=null;
   if(KM.drag.t==='end'&&KM.link&&L){var t={id:kId(),line:KM.link.L.id,f:KM.link.f,side:KM.link.side,swA:false,swB:false,swC:'a'},ql=kAt(KM.link.g.pts,KM.link.g.len,KM.link.s);kInsertKnot(KM.link.L,KM.link.g,KM.link.s,{k:'tri',id:t.id,x:ql.x,z:ql.z,yaw:ql.yaw});KM.tris.push(t);L.end={t:'tri',id:t.id};trnMsg('🔗 Połączone trójkątem — zwrotnice przestawiasz A / D z lokomotywy.');}
   KM.link=null;kPreview(null);KM.drag=null;kAll();},true);
-window.addEventListener('dblclick',function(e){if(!TRN.edit)return;var p=trnGroundHit(e);if(!p)return;var d=kNearDot(p);
+window.addEventListener('dblclick',function(e){if(!TRN.edit)return;var p=trnGroundHit(e);if(!p)return;if(kUnjoinAt(p))return;var d=kNearDot(p);
   if(d&&d.t==='dot'){kPush();kLine(d.l).dots.splice(d.i,1);kAll();trnMsg('Kropka usunięta.');return;}
   for(var i=0;i<KM.lines.length;i++){var L=KM.lines[i];if(L.end.t!=='tri')continue;var tg=triGeo(kTri(L.end.id));if(tg&&Math.hypot(tg.A.x-p.x,tg.A.z-p.z)<4){kPush();var tid=L.end.id;KM.tris=KM.tris.filter(function(t){return t.id!==tid;});KM.lines.forEach(function(LL){LL.dots=LL.dots.filter(function(d){return !(d.k==='tri'&&d.id===tid);});});L.end={t:'free',x:tg.A.x+tg.n.x*12,z:tg.A.z+tg.n.z*12};kAll();trnMsg('Połączenie usunięte.');return;}}
   for(var k=0;k<KM.stops.length;k++){var sg=stopGeo(KM.stops[k]);if(sg&&Math.hypot(sg.x-p.x,sg.z-p.z)<5){kPush();var sid2=KM.stops[k].id;KM.lines.forEach(function(LL){LL.dots=LL.dots.filter(function(d){return !(d.k==='stop'&&d.id===sid2);});});KM.stops.splice(k,1);kAll();trnMsg('Przystanek usunięty.');return;}}},true);
@@ -6109,7 +6126,7 @@ function trnUI(){
       else if(k==='hm')kSelH(-1);else if(k==='hp')kSelH(1);
       else if(k==='tun'){TRN.mode='tun';trnMsg('Kliknij na tor — kawałek między dwiema sąsiednimi kropkami dostanie tunel.');}
       else if(k==='stop'){TRN.mode='stop';trnMsg('Kliknij obok toru, po tej stronie, gdzie ma stać peron.');}
-      else if(k==='wm'){TRN.nW=Math.max(0,TRN.nW-1);trnBuildTrain();kAll(true);}else if(k==='wp'){TRN.nW=Math.min(7,TRN.nW+1);trnBuildTrain();kAll(true);}
+      else if(k==='wm'){TRN.nW=Math.max(0,TRN.nW-1);trnBuildTrain();kAll(true);}else if(k==='wp'){TRN.nW=Math.min(kq(7,5),TRN.nW+1);trnBuildTrain();kAll(true);}
       else if(k==='undo')kUndo();else if(k==='auto'){if(!KM.deps.length)return;TRN.auto=!TRN.auto;TRN.drive=false;TRN.wait=0;TRN.dir=1;}
       kDots();trnUI();},true);}
   var E=TRN.edit,mb=function(k,t,on){return '<button data-k="'+k+'" style="background:'+(on?'#1f6feb':'#21262d')+';color:#e6edf3;border:1px solid #30363d;border-radius:7px;padding:6px 4px;font:12.5px sans-serif;cursor:pointer;flex:1">'+t+'</button>';};
@@ -6154,7 +6171,7 @@ var _trnPTW=trnPromptTick;trnPromptTick=function(){_trnPTW();if(TRN.drive||TRN.e
 
 // ---------- 🚦 SŁUPEK NA PRZYSTANKU: zielona = start / przywołaj pociąg, czerwona = stop (E przy słupku) ----------
 var _stopModelC=stopModel;stopModel=function(){var g=_stopModelC(),M=trnMats();
-  var post=new THREE.Group();post.position.set(-0.9,TRN_FLOOR,-9);g.add(post);tBox(post,0.22,1.5,0.22,M.dark,0,0.75,0);tBox(post,0.5,0.95,0.3,M.dark,0,1.75,0);
+  var post=new THREE.Group();post.position.set(kq(-0.9,-0.4),TRN_FLOOR,kq(-9,-2.2));g.add(post);tBox(post,0.22,1.5,0.22,M.dark,0,0.75,0);tBox(post,0.5,0.95,0.3,M.dark,0,1.75,0);
   var on=function(c){return new THREE.MeshBasicMaterial({color:c});},G0=new THREE.MeshStandardMaterial({color:0x0e3d1b,roughness:0.5}),R0=new THREE.MeshStandardMaterial({color:0x3d0e0e,roughness:0.5});
   var lg=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),G0),lr=new THREE.Mesh(new THREE.SphereGeometry(0.15,12,10),R0);lg.position.set(0.17,2.0,0);lr.position.set(0.17,1.55,0);post.add(lg);post.add(lr);
   [-1,1].forEach(function(s){var lg2=lg.clone(),lr2=lr.clone();lg2.position.x=s*0.17;lr2.position.x=s*0.17;post.add(lg2);post.add(lr2);}); // lampki z obu stron słupka
@@ -6237,7 +6254,7 @@ function kDelTri(id){var t=kTri(id);if(!t)return;
   KM.lines.forEach(function(L){L.dots=L.dots.filter(function(d){return !(d.k==='tri'&&d.id===id);});if(L.end.t==='tri'&&L.end.id===id){var g=triGeo(t);L.end=g?{t:'free',x:g.A.x+g.n.x*12,z:g.A.z+g.n.z*12,h:0}:{t:'free',x:L.end.last?L.end.last.x:0,z:L.end.last?L.end.last.z:0,h:0};}});
   KM.tris=KM.tris.filter(function(x){return x.id!==id;});
   KM.lines.filter(function(L){return L.start.t==='tri'&&L.start.id===id;}).forEach(function(L){kDelLine(L.id);});}
-function kDelLine(id){var L=kLine(id);if(!L)return;KM.lines=KM.lines.filter(function(x){return x.id!==id;});
+function kDelLine(id){var L=kLine(id);if(!L)return;KM.lines=KM.lines.filter(function(x){return x.id!==id;});if(L.end.t==='join'){var LO=kLine(L.end.l);if(LO&&LO.end.t==='join'&&LO.end.l===id)LO.end={t:'free',x:LO.end.x,z:LO.end.z,h:0};}
   KM.stops=KM.stops.filter(function(s){return s.line!==id;});
   if(L.end.t==='dep')KM.deps=KM.deps.filter(function(d){return d.id!==L.end.id;});
   if(L.end.t==='tri'){var te=L.end.id;KM.lines.forEach(function(LL){LL.dots=LL.dots.filter(function(d){return !(d.k==='tri'&&d.id===te);});});KM.tris=KM.tris.filter(function(x){return x.id!==te;});}
@@ -6249,9 +6266,9 @@ function kDelAt(p){ // co jest najbliżej kliknięcia — to usuwamy
   KM.tris.forEach(function(t){var g=triGeo(t);if(!g)return;[g.A,g.a,g.b].forEach(function(q){cand(Math.hypot(q.x-p.x,q.z-p.z),'rozjazd razem z jego torem',function(){kDelTri(t.id);});});
     [g.l1,g.l2].forEach(function(P){P.forEach(function(q){cand(Math.hypot(q.x-p.x,q.z-p.z)+1,'rozjazd razem z jego torem',function(){kDelTri(t.id);});});});});
   KM.lines.forEach(function(L){if(L.start.t!=='tri')return;var g=lineGeo(L);if(!g)return;for(var i=0;i<g.pts.length;i+=4){var q=g.pts[i];cand(Math.hypot(q.x-p.x,q.z-p.z)+2,'ten tor (razem z rozjazdem)',function(){kDelTri(L.start.id);});}});
-  KM.deps.forEach(function(d,i){if(i===0)return;var c=depPt(d,DEP_EXIT-28);cand(Math.max(0,Math.hypot(c.x-p.x,c.z-p.z)-12),'zajezdnię',function(){KM.lines.forEach(function(L){if(L.end.t==='dep'&&L.end.id===d.id){var e=depPt(d,DEP_EXIT+8);L.end={t:'free',x:e.x,z:e.z,h:0};}});KM.deps=KM.deps.filter(function(x){return x!==d;});});});
+  KM.deps.forEach(function(d,i){if(i===0)return;var c=depPt(d,kq(DEP_EXIT-28,(DEP_EXIT+DEP_BACK)/2));cand(Math.max(0,Math.hypot(c.x-p.x,c.z-p.z)-kq(12,6)),'zajezdnię',function(){KM.lines.forEach(function(L){if(L.end.t==='dep'&&L.end.id===d.id){var e=depPt(d,DEP_EXIT+8);L.end={t:'free',x:e.x,z:e.z,h:0};}});KM.deps=KM.deps.filter(function(x){return x!==d;});});});
   if(best&&best.d<8){kPush();best.fn();kAll();trnMsg('🗑 Usunięto '+best.what+'. Pomyłka? ↶ Cofnij (Z).');return true;}
-  if(KM.deps[0]){var c0=depPt(KM.deps[0],DEP_EXIT-28);if(Math.hypot(c0.x-p.x,c0.z-p.z)<30){trnMsg('Zajezdni 1 nie usuwasz pojedynczo — użyj 🧹 Nowy świat (czyści całą mapę).');return false;}}
+  if(KM.deps[0]){var c0=depPt(KM.deps[0],kq(DEP_EXIT-28,(DEP_EXIT+DEP_BACK)/2));if(Math.hypot(c0.x-p.x,c0.z-p.z)<kq(30,12)){trnMsg('Zajezdni 1 nie usuwasz pojedynczo — użyj 🧹 Nowy świat (czyści całą mapę).');return false;}}
   trnMsg('Kliknij bliżej tego, co chcesz usunąć: kropka, przystanek, rozjazd, odnoga albo zajezdnia.');return false;}
 function kWipe(){if(!confirm('Wyczyścić całą mapę? Zniknie wszystko: zajezdnie, tory, rozjazdy i przystanki. (Pamięć przeglądarki też.)'))return;
   kPush();KM.deps=[];KM.lines=[];KM.tris=[];KM.stops=[];KM.sel=null;KM.drag=null;try{localStorage.removeItem('tabby-kolej-zajezdnie');}catch(e){}
@@ -6275,7 +6292,8 @@ window.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.
 // ---------- ⛰ zaznaczona kropka: obok niej pływające ▲ wysokość ▼ (żeby od razu było widać, jak zrobić nasyp) ----------
 var _trnClick1=trnClick;trnClick=function(e){if(TRN.edit&&TRN.mode!=='del'&&TRN.mode!=='dep'){var hit=kNearDotScreen();if(hit){KM.sel=hit;kDots();trnUI();kSelBox();return;}}_trnClick1(e);}; // klik w kropkę = tylko ją zaznacz (w każdym trybie)
 function kSelObj(){var S=KM.sel,L=S&&kLine(S.l);if(!L)return null;var o=S.t==='dot'?L.dots[S.i]:L.end;if(!o||o.k||(S.t==='end'&&L.end.t!=='free'))return null;return o;}
-function kSelBox(){var o=TRN.edit&&!KM.drag?kSelObj():null;
+function kSelBox(){var o=null; // ▲▼ przy kropce usunięte — wysokość ustawia się suwakiem w panelu kolei
+
   if(!KM.sb){var d=document.createElement('div');d.style.cssText='position:fixed;z-index:46;display:none;background:rgba(16,21,29,.92);border:1px solid #f2c200;border-radius:10px;padding:4px;gap:4px;align-items:center;font:bold 14px sans-serif;color:#fff';
     var mk=function(t,dh){var b=document.createElement('button');b.textContent=t;b.style.cssText='width:38px;height:34px;font:bold 18px sans-serif;border-radius:8px;border:1px solid #30363d;background:#21262d;color:#fff;cursor:pointer';
       var go=function(e){e.preventDefault();e.stopPropagation();kSelH(dh);kSelBox();};b.addEventListener('mousedown',function(e){e.stopPropagation();});b.addEventListener('click',go);b.addEventListener('touchstart',go,{passive:false});return b;};
@@ -6289,13 +6307,72 @@ setInterval(kSelBox,100);
 // sam zaznaczony / ciągnięty — nie chowaj okienka przy kliknięciu w nie
 window.addEventListener('mousedown',function(e){if(KM.sb&&KM.sb.contains(e.target))e.stopImmediatePropagation();},true);
 
+// ---------- 🎠 MAŁA KOLEJ: ciuchcia, wagony-platformy, kozioł oporowy, mały przystanek ----------
+function trnLocoMini(){var M=trnMats(),g=new THREE.Group(),L=TRN_LOCO,F=TRN_FLOOR; // przód = +z, kabina z tyłu; najwyżej ok. 1,9 m (komin)
+  tBox(g,1.2,0.18,L,M.dark,0,F-0.12,0);tBox(g,1.36,0.22,0.16,M.red,0,F-0.12,L/2-0.08);tBox(g,1.36,0.22,0.16,M.red,0,F-0.12,-L/2+0.08); // rama i zderzaki
+  [-0.95,0,0.95].forEach(function(z){[-0.56,0.56].forEach(function(x){var w=tCyl(g,0.22,0.1,M.red,x,0.22,z,16);w.rotation.z=Math.PI/2;w.userData._wheel=1;var h=tCyl(g,0.08,0.12,M.yel,x*1.04,0.22,z,8);h.rotation.z=Math.PI/2;});});
+  tBox(g,0.08,0.05,2.0,M.steel,0.62,0.24,0,1);tBox(g,0.08,0.05,2.0,M.steel,-0.62,0.24,0,1); // drążki kół
+  var b=tCyl(g,0.42,2.0,M.green,0,F+0.45,0.45,20);b.rotation.x=Math.PI/2; // kocioł
+  [-0.35,0.45,1.25].forEach(function(z){var r=tCyl(g,0.435,0.07,M.yel,0,F+0.45,z,20);r.rotation.x=Math.PI/2;}); // mosiężne obręcze
+  var sb=tCyl(g,0.45,0.3,M.dark,0,F+0.45,L/2-0.25,20);sb.rotation.x=Math.PI/2; // dymnica
+  tCyl(g,0.12,0.5,M.dark,0,F+1.1,1.25,12);tCyl(g,0.19,0.14,M.dark,0,F+1.4,1.25,12); // komin (góra: 0,4+1,47 ≈ 1,87 m)
+  var dm=new THREE.Mesh(new THREE.SphereGeometry(0.17,14,10),M.yel);dm.position.set(0,F+0.88,0.35);dm.castShadow=true;g.add(dm); // kopułka
+  var lp=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),new THREE.MeshBasicMaterial({color:0xfff2b0}));lp.position.set(0,F+0.55,L/2-0.08);g.add(lp);
+  tBox(g,1.2,0.12,0.25,M.red,0,F-0.1,L/2+0.05); // pług z przodu
+  // kabina bez dachu (maszynista ma głowę na wierzchu), z tyłu
+  var cz=-L/2+0.75;tBox(g,1.3,0.06,1.5,M.wood,0,F+0.0,cz); // podłoga kabiny
+  tBox(g,1.3,1.05,0.1,M.red,0,F+0.52,cz+0.72);tBox(g,0.1,0.7,1.5,M.red,0.62,F+0.35,cz);tBox(g,0.1,0.7,1.5,M.red,-0.62,F+0.35,cz); // ściana przednia i boczne
+  tBox(g,1.36,0.08,0.14,M.yel,0,F+1.07,cz+0.72);tBox(g,0.14,0.08,1.56,M.yel,0.62,F+0.72,cz);tBox(g,0.14,0.08,1.56,M.yel,-0.62,F+0.72,cz); // listwy
+  [-0.32,0.32].forEach(function(x){tBox(g,0.32,0.3,0.04,M.glass,x,F+0.78,cz+0.78,1);}); // okienka
+  var hl=new THREE.SpotLight(0xfff2c0,0.9,30,0.5,0.5,1.2);hl.position.set(0,F+0.55,L/2+0.2);hl.target.position.set(0,0,L/2+20);g.add(hl);g.add(hl.target);
+  g.userData.len=L;return g;}
+function trnWagonMini(i){var M=trnMats(),g=new THREE.Group(),L=TRN_WAG,F=TRN_FLOOR,col=[M.red,M.yel,M.green,M.orange][i%4];
+  tBox(g,1.1,0.14,L,M.dark,0,F-0.1,0);tBox(g,1.32,0.06,L-0.06,M.wood,0,F+0.03,0); // niska platforma: podłoga ok. 0,46 m — wchodzi się zwykłym krokiem
+  [-0.64,0.64].forEach(function(x){tBox(g,0.06,0.16,L,col,x,F+0.12,0);}); // niska krawędź (nie zasłania wejścia)
+  [-1,1].forEach(function(e){tBox(g,0.5,0.12,0.2,M.dark,0,F-0.1,e*(L/2+0.08));[-0.56,0.56].forEach(function(x){var w=tCyl(g,0.18,0.1,M.steel,x,0.19,e*(L/2-0.55),14);w.rotation.z=Math.PI/2;w.userData._wheel=1;});}); // sprzęg i koła
+  [-1,1].forEach(function(e){tBox(g,0.06,0.5,0.06,col,0.6,F+0.25,e*(L/2-0.1));tBox(g,0.06,0.5,0.06,col,-0.6,F+0.25,e*(L/2-0.1));}); // słupki w rogach
+  g.userData.len=L;return g;}
+function depModelMini(first){return new THREE.Group();} // mała kolej: bez kozła — tor ma kropki na obu końcach
+function depModelMiniOld(first){var M=trnMats(),g=new THREE.Group(),zb=DEP_BACK+0.25; // zamiast hali: kozioł oporowy (i tablica przy pierwszym)
+  tBox(g,1.2,0.4,0.3,M.red,0,0.42,zb);[-0.4,0,0.4].forEach(function(x){tBox(g,0.14,0.41,0.31,M.white,x,0.42,zb,1);});
+  [-0.45,0.45].forEach(function(x){var s=tBox(g,0.12,0.12,1.0,M.dark,x,0.25,zb-0.45);s.rotation.x=0.45;});
+  if(first){[-0.8,0.8].forEach(function(z){tBox(g,0.08,1.6,0.08,M.dark,-1.25,0.8,DEP_BACK+4+z);});
+    var c=document.createElement('canvas');c.width=512;c.height=128;var x=c.getContext('2d');x.fillStyle='#c8323a';x.fillRect(0,0,512,128);x.fillStyle='#f2c200';x.fillRect(0,0,512,10);x.fillRect(0,118,512,10);
+    x.fillStyle='#fff';x.font='bold 70px sans-serif';x.textAlign='center';x.fillText('🚂 KOLEJ',256,90);
+    kSign2(g,c,1.8,0.45,-1.25,1.45,DEP_BACK+4);}
+  return g;}
+var MINI_PL=8; // długość peronu małej kolei (m)
+function kMiniStopsPos(){KM.stops.forEach(function(st){if(st.s===undefined)return;var L=kLine(st.line),g=L&&lineGeo(L);if(!g)return;st.s=Math.max(MINI_PL/2+1,Math.min(g.len-MINI_PL/2-1,st.s));var q=kAt(g.pts,g.len,st.s);st.x=q.x;st.z=q.z;st.yaw=q.yaw;});}
+function kMiniPlatform(g,F,M){var cs=KM._cs;if(!cs||cs.st.s===undefined)return false;var st=cs.st,sg=cs.sg,L=kLine(st.line),geo=L&&lineGeo(L);if(!geo)return false;
+  var ry=sg.yaw+(st.side>0?Math.PI:0),co=Math.cos(ry),si=Math.sin(ry);function loc(x,z){var dx=x-sg.x,dz=z-sg.z;return {x:dx*co-dz*si,z:dx*si+dz*co};}
+  function at(s,off){var q=kAt(geo.pts,geo.len,s),nx=st.side*Math.cos(q.yaw),nz=-st.side*Math.sin(q.yaw);return {x:q.x+nx*off,z:q.z+nz*off};}
+  var N=Math.max(4,Math.round(MINI_PL)),s0=st.s-MINI_PL/2;st._segs=[];
+  for(var i=0;i<N;i++){var sa=s0+MINI_PL*i/N,sb=s0+MINI_PL*(i+1)/N;[[1.6,1.6,F,M.con,F/2,0],[0.88,0.14,0.02,M.yel,F+0.01,1]].forEach(function(P,k){
+      var a=at(sa,P[0]),b=at(sb,P[0]),la=loc(a.x,a.z),lb=loc(b.x,b.z),len=Math.hypot(lb.x-la.x,lb.z-la.z)+0.06,bx=tBox(g,P[1],P[2],len,P[3],(la.x+lb.x)/2,P[4],(la.z+lb.z)/2,P[5]);bx.rotation.y=Math.atan2(lb.x-la.x,lb.z-la.z);
+      if(!k){var wy=Math.atan2(b.x-a.x,b.z-a.z),c2=Math.abs(Math.cos(wy)),s2=Math.abs(Math.sin(wy));st._segs.push({x:(a.x+b.x)/2,z:(a.z+b.z)/2,hw:len/2*s2+0.8*c2,hd:len/2*c2+0.8*s2});}});}
+  [[s0,-1],[s0+MINI_PL,1]].forEach(function(E){var a=at(E[0]+E[1]*0.25,1.6),la=loc(a.x,a.z),q=kAt(geo.pts,geo.len,E[0]),bx=tBox(g,1.0,0.2,0.5,M.con,la.x,0.1,la.z+E[1]*0.01);bx.rotation.y=q.yaw-ry;}); // schodki na końcach
+  return true;}
+function stopModelMini(){var M=trnMats(),g=new THREE.Group(),PL=12,F=TRN_FLOOR;
+  if(!kMiniPlatform(g,F,M)){tBox(g,1.6,F,PL,M.con,0,F/2,0);tBox(g,0.14,0.02,PL,M.yel,0.72,F+0.01,0,1);
+  tBox(g,1.0,0.2,0.5,M.con,0,0.1,PL/2+0.25);tBox(g,1.0,0.2,0.5,M.con,0,0.1,-PL/2-0.25);} // stary, prosty peron (przystanki postawione wcześniej)
+  [-1.2,1.2].forEach(function(z){tBox(g,0.1,2.2,0.1,M.dark,-0.6,F+1.1,z);});tBox(g,1.0,0.08,3.2,M.red,-0.35,F+2.24,0); // daszek
+  tBox(g,0.4,0.36,1.3,M.wood,-0.5,F+0.18,0); // ławka
+  var c=document.createElement('canvas');c.width=512;c.height=128;var x=c.getContext('2d');x.fillStyle='#1d3557';x.fillRect(0,0,512,128);x.fillStyle='#fff';x.font='bold 62px sans-serif';x.textAlign='center';x.fillText('🚏 PRZYSTANEK',256,88);
+  kSign2(g,c,1.6,0.4,-0.35,F+2.55,0);return g;}
+function kSign2(g,c,w,h,x,y,z){var tx=new THREE.CanvasTexture(c);[1,-1].forEach(function(s){var m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tx}));m.position.set(x+s*0.01,y,z);m.rotation.y=s*Math.PI/2;g.add(m);});} // tablica czytelna z obu stron (bez lustrzanego odbicia)
+// napisy w panelu i podpowiedziach: w małej kolei zamiast zajezdni jest kozioł, zamiast lokomotywy — ciuchcia
+function kMiniTxt(t){if(!KM.mini||typeof t!=='string')return t;
+  return t.replace('🚂 Inkubator: kolej','🚂 Kolej').replace(/Zajezdnia 1 z pociągiem/g,'Kolej z ciuchcią').replace(/Zajezdni 1/g,'Pierwszego kozła')
+    .replace(/zajezdnię/g,'kozioł').replace(/zajezdnie/g,'kozły').replace(/zajezdnia/g,'kozioł').replace(/zajezdni/g,'kozła').replace(/Zajezdnia/g,'Kozioł').replace(/Zajezdnię/g,'Kozioł')
+    .replace(/🏠/g,'🛑').replace(/lokomotywę/g,'ciuchcię').replace(/lokomotyw[yaie]+/g,'ciuchci').replace(/\/ 7</g,'/ 5<');}
+var _trnMsgMini=trnMsg;trnMsg=function(t){return _trnMsgMini(kMiniTxt(t));};
 // ---------- 🚂 KOLEJ W TABBY: sieć torów należy do assetu „Zajezdnia” (akcja type:'rail'), zapis w action.net ----------
 // Edytor: zaznacz zajezdnię → Interakcja → „🚂 Edytuj tory”. Gra: tory i pociąg budują się same z zapisu.
 var RAIL_ED=typeof toggleSelMode==='function'; // jesteśmy w edytorze?
 function kTerrY(x,z){try{return typeof tbTerrH==='function'?(tbTerrH(x,z)||0):0;}catch(e){return 0;}}
 function kRailPa(){var L=wpnPlaced();for(var i=0;i<L.length;i++){var p=L[i];if(p&&p.gr&&p.action&&p.action.type==='rail')return p;}return null;}
 function kDepFromPa(pa){var g=pa.gr;return {id:(KM.deps[0]&&KM.deps[0].id)||1,x:g.position.x,z:g.position.z,ry:g.rotation.y||0};}
-function kDefaultNet(pa){var d=kDepFromPa(pa);d.id=1;var ex=depPt(d,DEP_EXIT);return {deps:[d],lines:[{id:2,start:{t:'dep',id:1},dots:[],end:{t:'free',x:ex.x+Math.sin(d.ry)*40,z:ex.z+Math.cos(d.ry)*40}}],tris:[],stops:[],nid:3,nW:4};}
+function kDefaultNet(pa){var d=kDepFromPa(pa);d.id=1;var ex=depPt(d,DEP_EXIT);return {deps:[d],lines:[{id:2,start:{t:'dep',id:1},dots:[],end:{t:'free',x:ex.x+Math.sin(d.ry)*kq(40,20),z:ex.z+Math.cos(d.ry)*kq(40,20)}}],tris:[],stops:[],nid:3,nW:kq(4,3)};}
 // zapis: zamiast pamięci przeglądarki — prosto do akcji zajezdni (idzie do projektu .tabby i do zapisanej gry)
 function kSave(){var pa=KM.pa;if(!pa||!pa.action)return;try{pa.action.net=JSON.parse(kSnap());}catch(e){}}
 function kLoad(){}
@@ -6303,22 +6380,24 @@ function kClearAll(){if(TRN.trackG){scene.remove(TRN.trackG);TRN.trackG=null;}if
   for(var i=wCols.length-1;i>=0;i--)if(wCols[i]._trn)wCols.splice(i,1);KM.deps=[];KM.lines=[];KM.tris=[];KM.stops=[];NET.nodes=[];NET.edges=[];TRN.fe=0;TRN.drive=false;}
 function kBind(){var pa=kRailPa();
   if(!pa){if(KM.pa){KM.pa=null;kClearAll();if(TRN.edit)kRailEdit(false);}return;}
-  if(KM.pa!==pa){KM.pa=pa;KM.hist=[];var net=pa.action.net&&pa.action.net.deps&&pa.action.net.deps.length?pa.action.net:kDefaultNet(pa);kRestore(JSON.stringify(net));
+  if(kMiniApply(!!(pa.action&&pa.action.mini))&&KM.pa){KM.pa=null;kClearAll();} // zmiana: duża ↔ mała kolej — wszystko budujemy od nowa w nowych rozmiarach
+  if(KM.pa!==pa){KM.pa=pa;KM.hist=[];var net=pa.action.net&&pa.action.net.deps&&pa.action.net.deps.length?pa.action.net:kDefaultNet(pa);kRestore(JSON.stringify(net));kMiniBack();
     var d0=kDepFromPa(pa);KM.deps[0].x=d0.x;KM.deps[0].z=d0.z;KM.deps[0].ry=d0.ry;KM.sig=kPaSig(pa);kAll(true);return;}
   var s=kPaSig(pa);if(s!==KM.sig&&!KM.drag){KM.sig=s;var d1=kDepFromPa(pa);KM.deps[0].x=d1.x;KM.deps[0].z=d1.z;KM.deps[0].ry=d1.ry;kAll(true);}} // zajezdnię przesunięto w edytorze
 function kPaSig(pa){var g=pa.gr;return g.position.x.toFixed(2)+','+g.position.z.toFixed(2)+','+(g.rotation.y||0).toFixed(3);}
 // wejście / wyjście z edycji torów (tylko edytor)
 function kRailEdit(on){if(on&&!KM.pa)return;if(on&&RAIL_ED&&typeof selMode!=='undefined'&&selMode){try{toggleSelMode();}catch(e){}}
-  trnEdit(on);if(on){var d=KM.deps[0];if(d){charX=d.x+Math.sin(d.ry)*40;charZ=d.z+Math.cos(d.ry)*40;if(charGroup)charGroup.position.set(charX,charY,charZ);}trnMsg('🚂 Edycja torów: kropki, rozjazdy, przystanki, tunele. Gotowe = ✔ Edycja.');}
+  trnEdit(on);if(on){var d=KM.deps[0];if(d){charX=d.x+Math.sin(d.ry)*kq(40,6);charZ=d.z+Math.cos(d.ry)*kq(40,6);if(charGroup)charGroup.position.set(charX,charY,charZ);}trnMsg('🚂 Edycja torów. Gotowe = ✕ w rogu panelu.');}
   else{kSave();if(typeof refreshUI==='function')try{refreshUI();}catch(e){}}
   if(TRN.ui)TRN.ui.style.display=on?'block':'none';}
+var _kRailEditP=kRailEdit;kRailEdit=function(on){if(on){TRN.auto=false;TRN.v=0;}else TRN._autoGo=0;var r=_kRailEditP(on);if(on&&TRN.edit&&typeof edOpen!=='undefined'&&edOpen&&typeof toggleEd==='function'){try{if(typeof panelMode!=='undefined'&&panelMode!=='objects')setPanelMode('objects');toggleEd();}catch(e){}}return r;}; // wejście w edycję torów zamyka prawy panel Edytora (po ✕ zostaje zamknięty)
 window.__railEdit=function(po){if(po&&po.action&&po.action.type==='rail'){KM.pa=null;kBind();}kRailEdit(true);};
 // panel kolei widoczny tylko w czasie edycji torów (w grze — wcale)
 var _trnUI2=trnUI;trnUI=function(){_trnUI2();if(TRN.ui)TRN.ui.style.display=TRN.edit?'block':'none';};
 // „Edycja (1)” w panelu = zakończ edycję; przycisk zajezdni na pustym polu nie istnieje (zajezdnia 1 = asset)
 var _trnEdit0=trnEdit;
 // 🧹 Nowy świat: zostaje sama zajezdnia (asset) z krótkim torem
-function kWipe(){if(!confirm('Wyczyścić wszystkie tory tej zajezdni? Zostanie sama zajezdnia z krótkim torem.'))return;kPush();var net=kDefaultNet(KM.pa);kRestore(JSON.stringify(net));kAll(true);trnMsg('🧹 Tory wyczyszczone.');}
+function kWipe(){if(!confirm(KM.mini?'Wyczyścić wszystkie tory? Zostanie sama ciuchcia z krótkim torem.':'Wyczyścić wszystkie tory tej zajezdni? Zostanie sama zajezdnia z krótkim torem.'))return;kPush();var net=kDefaultNet(KM.pa);kRestore(JSON.stringify(net));kAll(true);trnMsg('🧹 Tory wyczyszczone.');}
 // ⛰ teren: tor leży na wygładzonym terenie, kropki dokładają wysokość ponad teren (nasyp)
 // ⛰ TEREN USTĘPUJE TOROM: tory zawsze na poziomie zajezdni (+ wysokość kropek); góry przy torze robią wąwóz, doliny dostają nasyp
 var KM_TRAW=tbTerrH; // teren bez wąwozów (z niego bierzemy poziom zajezdni)
@@ -6336,17 +6415,17 @@ function kCarveBuild(){var pts=[],y0=kY0();
   KM.tris.forEach(function(t){var g=triGeo(t);if(!g)return;[g.l1,g.l2].forEach(function(P){for(var i=0;i<P.length;i+=3)pts.push({x:P[i].x,z:P[i].z,y:P[i].y,t:false,f:P[i].y-KM_TRAW(P[i].x,P[i].z)});});});
   if(!pts.length){KCV.on=false;return;}var mnx=1e9,mxx=-1e9,mnz=1e9,mxz=-1e9;pts.forEach(function(q){mnx=Math.min(mnx,q.x);mxx=Math.max(mxx,q.x);mnz=Math.min(mnz,q.z);mxz=Math.max(mxz,q.z);});
   KM.deps.forEach(function(d){[DEP_BACK-6,DEP_EXIT+6].forEach(function(z){var p=depPt(d,z);mnx=Math.min(mnx,p.x);mxx=Math.max(mxx,p.x);mnz=Math.min(mnz,p.z);mxz=Math.max(mxz,p.z);});});
-  var M=46,c=2;KCV.x0=mnx-M;KCV.z0=mnz-M;KCV.nx=Math.min(400,Math.ceil((mxx-mnx+2*M)/c)+1);KCV.nz=Math.min(400,Math.ceil((mxz-mnz+2*M)/c)+1);KCV.c=c;
+  var M=46,c=kq(2,1);KCV.x0=mnx-M;KCV.z0=mnz-M;KCV.nx=Math.min(400,Math.ceil((mxx-mnx+2*M)/c)+1);KCV.nz=Math.min(400,Math.ceil((mxz-mnz+2*M)/c)+1);KCV.c=c;
   var N=KCV.nx*KCV.nz,CUT=new Float32Array(N),TUN=new Float32Array(N),FIL=new Float32Array(N);for(var i=0;i<N;i++){CUT[i]=1e9;TUN[i]=1e9;FIL[i]=-1e9;}
   function each(px,pz,r,fn){var i0=Math.max(0,Math.floor((px-r-KCV.x0)/c)),i1=Math.min(KCV.nx-1,Math.ceil((px+r-KCV.x0)/c)),j0=Math.max(0,Math.floor((pz-r-KCV.z0)/c)),j1=Math.min(KCV.nz-1,Math.ceil((pz+r-KCV.z0)/c));
     for(var j=j0;j<=j1;j++)for(var ii=i0;ii<=i1;ii++){var d=Math.hypot(KCV.x0+ii*c-px,KCV.z0+j*c-pz);if(d<=r)fn(j*KCV.nx+ii,d);}}
   pts.forEach(function(q){
-    if(q.t)each(q.x,q.z,6,function(k,d){var v=q.y-0.08+Math.max(0,d-2.9)*4;if(v<TUN[k])TUN[k]=v;}); // tunel: płaska podłoga, strome ściany
-    else each(q.x,q.z,40,function(k,d){var v=q.y-0.08+Math.max(0,d-3.6)*0.75;if(v<CUT[k])CUT[k]=v;}); // wąwóz 1 : 1,3
-    if(q.f>0.15&&!q.t){if(q.f<=7)each(q.x,q.z,2.1+q.f*1.5+1,function(k,d){var v=q.y-0.1-Math.max(0,d-2.1)/1.5;if(v>FIL[k])FIL[k]=v;}); // nasyp
-      else each(q.x,q.z,2.6,function(k,d){var v=d<=2.3?q.y-0.3:-1e9;if(v>FIL[k])FIL[k]=v;});}}); // pomost wiaduktu
-  KM.deps.forEach(function(d){for(var z=DEP_BACK-4;z<=DEP_EXIT+4;z+=2){for(var x=-6;x<=6;x+=3){var p=depPt(d,z),px=p.x+Math.cos(d.ry)*x,pz=p.z-Math.sin(d.ry)*x;each(px,pz,30,function(k,dd){var v=y0+Math.max(0,dd-3)*0.75;if(v<CUT[k])CUT[k]=v;});}}}); // plac pod zajezdnią
-  KM.stops.forEach(function(st){var g=stopGeo(st);if(g)each(g.x,g.z,40,function(k,d){var v=y0+Math.max(0,d-6)*0.75;if(v<CUT[k])CUT[k]=v;});});
+    if(q.t)each(q.x,q.z,6,function(k,d){var v=q.y-0.08+Math.max(0,d-kq(2.9,1.6))*4;if(v<TUN[k])TUN[k]=v;}); // tunel: płaska podłoga, strome ściany
+    else each(q.x,q.z,40,function(k,d){var v=q.y-0.08+Math.max(0,d-kq(3.6,3.0))*kq(0.75,0.4);if(v<CUT[k])CUT[k]=v;}); // wąwóz 1 : 1,3
+    if(q.f>0.15&&!q.t){if(q.f<=kq(7,1e9))each(q.x,q.z,kq(2.1+q.f*1.5+1,41),function(k,d){var v=q.y-0.1-Math.max(0,d-kq(2.1,1.0))/kq(1.5,1.0);if(v>FIL[k])FIL[k]=v;}); // nasyp
+      else each(q.x,q.z,kq(2.6,1.4),function(k,d){var v=d<=kq(2.3,1.1)?q.y-0.3:-1e9;if(v>FIL[k])FIL[k]=v;});}}); // pomost wiaduktu
+  KM.deps.forEach(function(d){for(var z=DEP_BACK-4;z<=DEP_EXIT+4;z+=2){for(var x=-kq(6,2);x<=kq(6,2);x+=kq(3,2)){var p=depPt(d,z),px=p.x+Math.cos(d.ry)*x,pz=p.z-Math.sin(d.ry)*x;each(px,pz,30,function(k,dd){var v=y0+Math.max(0,dd-3)*kq(0.75,0.4);if(v<CUT[k])CUT[k]=v;});}}}); // plac pod zajezdnią
+  KM.stops.forEach(function(st){var g=stopGeo(st);if(g)each(g.x,g.z,40,function(k,d){var v=y0+Math.max(0,d-kq(6,3))*kq(0.75,0.4);if(v<CUT[k])CUT[k]=v;});});
   KCV.cut=CUT;KCV.tun=TUN;KCV.fil=FIL;KCV.on=true;}
 function kGrid(A,x,z,empty){var c=KCV.c,fx=(x-KCV.x0)/c,fz=(z-KCV.z0)/c;if(fx<0||fz<0||fx>=KCV.nx-1||fz>=KCV.nz-1)return empty;var i=Math.floor(fx),j=Math.floor(fz),tx=fx-i,tz=fz-j,n=KCV.nx;
   var a=A[j*n+i],b=A[j*n+i+1],cc=A[(j+1)*n+i],d=A[(j+1)*n+i+1];if(Math.abs(a)>1e8||Math.abs(b)>1e8||Math.abs(cc)>1e8||Math.abs(d)>1e8){var m=empty>0?Math.min(a,b,cc,d):Math.max(a,b,cc,d);return Math.abs(m)>1e8?empty:m;}
@@ -6358,24 +6437,55 @@ tbTerrH=function(x,z){var h=KM_TRAW(x,z);if(!KCV.on)return h;
 var _tbTerrApplyK=tbTerrApply;tbTerrApply=function(){KM_MESH=true;try{_tbTerrApplyK();}finally{KM_MESH=false;}};
 function kCarveRefresh(){var on=typeof TBTER!=='undefined'&&tbTerrAny(),sig=kSnap()+'|'+(on?TBTER.on+'/'+TBTER.seed+'/'+TBTER.h+'/'+TBTER.size+'/'+TBTER.oct+'/'+TBTER.flat+'/'+TBTER._sv+'/'+TBTER.sm+TBTER.sv:'off');if(sig===KCV.sig)return;KCV.sig=sig;kCarveBuild();if(on)TBTER._dirty=true;}
 // nasyp: od toru w dół do terenu (tam, gdzie dolina albo kropka podniesiona); powyżej 7 m — wiadukt na filarach
-function kEmbank(G,P){var KM2=kMats(),runs=[],cur=null;P.forEach(function(q){q._f=q.y-KM_TRAW(q.x,q.z);if(q._f>0.15){if(!cur){cur=[];runs.push(cur);}cur.push(q);}else cur=null;});
+function kEmbank(G,P){if(KM.mini)return; /* 🎠 mała kolej: nasyp rysuje kFilMesh z siatki chodzenia */var LIM=kq(7,1e9),SL=kq(1.5,1.0),KM2=kMats(),runs=[],cur=null;P.forEach(function(q){q._f=q.y-KM_TRAW(q.x,q.z);if(q._f>0.15){if(!cur){cur=[];runs.push(cur);}cur.push(q);}else cur=null;});
   runs.forEach(function(R){if(R.length<2)return;var pos=[],idx=[];
-    for(var i=0;i<R.length;i++){var a=R[Math.max(0,i-1)],b=R[Math.min(R.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,f=Math.min(R[i]._f,7),y=R[i].y-Math.max(0,R[i]._f-7)*0,top=2.1,bot=top+f*1.5;
-      var lx=R[i].x-nx*bot,lz=R[i].z-nz*bot,rx=R[i].x+nx*bot,rz=R[i].z+nz*bot,yb=R[i]._f>7?R[i].y-7:null;
-      pos.push(lx,(yb!==null?yb:KM_TRAW(lx,lz))-0.2,lz, R[i].x-nx*top,R[i].y,R[i].z-nz*top, R[i].x+nx*top,R[i].y,R[i].z+nz*top, rx,(yb!==null?yb:KM_TRAW(rx,rz))-0.2,rz);
+    for(var i=0;i<R.length;i++){var a=R[Math.max(0,i-1)],b=R[Math.min(R.length-1,i+1)],dx=b.x-a.x,dz=b.z-a.z,L=Math.hypot(dx,dz)||1,nx=dz/L,nz=-dx/L,f=Math.min(R[i]._f,LIM),y=R[i].y-Math.max(0,R[i]._f-LIM)*0,top=kq(2.1,1.0),bot=top+f*SL;
+      var lx=R[i].x-nx*bot,lz=R[i].z-nz*bot,rx=R[i].x+nx*bot,rz=R[i].z+nz*bot,yb=R[i]._f>LIM?R[i].y-LIM:null;
+      if(KM.mini){var FL=kFoot(R[i],-nx,-nz,top),FR=kFoot(R[i],nx,nz,top);pos.push(R[i].x-nx*FL.d,FL.y,R[i].z-nz*FL.d, R[i].x-nx*top,R[i].y,R[i].z-nz*top, R[i].x+nx*top,R[i].y,R[i].z+nz*top, R[i].x+nx*FR.d,FR.y,R[i].z+nz*FR.d);} // 🎠 zbocze = dokładnie to, po czym się chodzi; kończy się pod widocznym terenem
+      else pos.push(lx,(yb!==null?yb:KM_TRAW(lx,lz))-0.2,lz, R[i].x-nx*top,R[i].y,R[i].z-nz*top, R[i].x+nx*top,R[i].y,R[i].z+nz*top, rx,(yb!==null?yb:KM_TRAW(rx,rz))-0.2,rz);
       if(i){var k=i*4,p=k-4;idx.push(p,k,p+1,p+1,k,k+1, p+1,k+1,p+2,p+2,k+1,k+2, p+2,k+2,p+3,p+3,k+2,k+3);}}
-    var hi=R.some(function(q){return q._f>7;});
-    if(!hi||R.some(function(q){return q._f<=7;})){var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();var m=new THREE.Mesh(g,KM2.grass);m.receiveShadow=true;m.castShadow=true;G.add(m);}
-    var acc=0;for(var j=1;j<R.length;j++){acc+=Math.hypot(R[j].x-R[j-1].x,R[j].z-R[j-1].z);if(R[j]._f>7&&acc>12){acc=0;var bb=KM_TRAW(R[j].x,R[j].z),hh=R[j].y-0.35-bb,pl=new THREE.Mesh(new THREE.BoxGeometry(1.6,hh,1.6),KM2.conc);pl.position.set(R[j].x,bb+hh/2,R[j].z);pl.castShadow=true;G.add(pl);}}
-    if(hi)G.add(kRib(R.map(function(q){return {x:q.x,z:q.z,y:q._f>7?q.y:-50};}),2.3,-0.3,KM2.conc));});}
-var _trnBT0=trnBuildTrack;trnBuildTrack=function(){_trnBT0();if(!TRN.trackG)return;var y0=kY0();TRN.trackG.children.forEach(function(o){if(o.userData&&o.userData._dep){o.position.y=y0;}});wCols.forEach(function(w){if(w._trn)w.y=y0;});kCarveRefresh();
+    var hi=R.some(function(q){return q._f>LIM;});
+    if(!hi||R.some(function(q){return q._f<=LIM;})){var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();var m=new THREE.Mesh(g,KM2.grass);m.receiveShadow=true;m.castShadow=true;G.add(m);}
+    var acc=0;for(var j=1;j<R.length;j++){acc+=Math.hypot(R[j].x-R[j-1].x,R[j].z-R[j-1].z);if(R[j]._f>LIM&&acc>12){acc=0;var bb=KM_TRAW(R[j].x,R[j].z),hh=R[j].y-0.35-bb,pl=new THREE.Mesh(new THREE.BoxGeometry(kq(1.6,0.8),hh,kq(1.6,0.8)),KM2.conc);pl.position.set(R[j].x,bb+hh/2,R[j].z);pl.castShadow=true;G.add(pl);}}
+    if(hi)G.add(kRib(R.map(function(q){return {x:q.x,z:q.z,y:q._f>LIM?q.y:-50};}),kq(2.3,1.1),-0.3,KM2.conc));});}
+function kMeshH(x,z){var o=KM_MESH;KM_MESH=true;try{return tbTerrH(x,z);}finally{KM_MESH=o;}} // teren tak, jak go widać (z wąwozami, bez nasypu)
+function kFoot(q,dx,dz,top){for(var d=top;d<top+40;d+=0.5){var sy=q.y-0.1-(d-top),t=kMeshH(q.x+dx*d,q.z+dz*d);if(sy<=t-0.15)return {d:d,y:sy};}return {d:top+40,y:q.y-40.1};}
+// 🎠 nasyp małej kolei = ta sama siatka, po której się chodzi (1 m) → wygląd i nogi zawsze się zgadzają, także na ciasnych łukach i między torami
+function kFilMesh(G){var A=KCV.fil;if(!KCV.on||!A)return;var nx=KCV.nx,nz=KCV.nz,c=KCV.c,x0=KCV.x0,z0=KCV.z0,N=nx*nz,T=new Float32Array(N),M=new Int32Array(N),pos=[],idx=[];
+  for(var k=0;k<N;k++){M[k]=-1;T[k]=A[k]>-1e8?kMeshH(x0+(k%nx)*c,z0+Math.floor(k/nx)*c):1e9;}
+  function up(k){return A[k]>-1e8&&A[k]>T[k]+0.02;}
+  function V(i,j){var k=j*nx+i;if(M[k]>=0)return M[k];var t=T[k]<1e8?T[k]:kMeshH(x0+i*c,z0+j*c);M[k]=pos.length/3;pos.push(x0+i*c,up(k)?A[k]:t-0.08,z0+j*c);return M[k];}
+  for(var j=0;j<nz-1;j++)for(var i=0;i<nx-1;i++){var k=j*nx+i;if(!(up(k)||up(k+1)||up(k+nx)||up(k+nx+1)))continue;var v0=V(i,j),v1=V(i+1,j),v2=V(i,j+1),v3=V(i+1,j+1);idx.push(v0,v2,v1,v1,v2,v3);}
+  if(!idx.length)return;var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();var m=new THREE.Mesh(g,kMats().grass);m.receiveShadow=true;m.castShadow=true;G.add(m);}
+var _trnBT0=trnBuildTrack;trnBuildTrack=function(){if(KM.mini){KM.geo={};try{kCarveRefresh();}catch(e){}} // wąwozy i nasyp policzone przed rysowaniem
+  _trnBT0();if(KM.mini&&TRN.trackG)kFilMesh(TRN.trackG);if(!TRN.trackG)return;if(KM.mini)KM.tris.forEach(function(t){var tg=triGeo(t);if(tg){kEmbank(TRN.trackG,tg.l1);kEmbank(TRN.trackG,tg.l2);}}); // 🎠 nasyp także pod rozjazdem
+var y0=kY0();TRN.trackG.children.forEach(function(o){if(o.userData&&o.userData._dep){o.position.y=y0;}});wCols.forEach(function(w){if(w._trn)w.y=y0;});kCarveRefresh();
   // budynek zajezdni 1 doczepiony do assetu: klik w zajezdnię w edytorze ją zaznacza, przesuwanie assetu przesuwa budynek
   if(KM.dep0M&&KM.dep0M.parent)KM.dep0M.parent.remove(KM.dep0M);KM.dep0M=null;var pa=KM.pa,d0=KM.deps[0];if(!pa||!pa.gr||!d0)return;
   var m=TRN.trackG.children.filter(function(o){return o.userData&&o.userData._dep&&!o.userData._stop&&Math.hypot(o.position.x-d0.x,o.position.z-d0.z)<0.5;})[0];if(!m)return;
   TRN.trackG.remove(m);m.position.set(0,kY0()-pa.gr.position.y,0);m.rotation.set(0,0,0);pa.gr.add(m);KM.dep0M=m;};
 var _depModel0=depModel;depModel=function(f){var g=_depModel0(f);g.userData._dep=1;return g;};
 var _stopModel0=stopModel;stopModel=function(){var g=_stopModel0();g.userData._dep=1;g.userData._stop=1;return g;};
-setInterval(function(){try{kBind();}catch(e){}},300);
+
+// ---------- 🎠 MAŁA KOLEJ: kropka z przodu i z tyłu, złączenie końców w koło ----------
+function kMiniBack(){if(!KM.mini)return;var d=KM.deps[0];if(!d||KM.lines.some(function(L){return L.start.t==='depB';}))return;var bp=depPt(d,DEP_BACK-15);
+  KM.lines.push({id:kId(),start:{t:'depB',id:d.id},dots:[],end:{t:'free',x:bp.x,z:bp.z,h:0}});}
+var _kDefNet0=kDefaultNet;kDefaultNet=function(pa){var n=_kDefNet0(pa);if(KM.mini){var d=n.deps[0],bp=depPt(d,DEP_BACK-15);n.lines.push({id:n.nid++,start:{t:'depB',id:d.id},dots:[],end:{t:'free',x:bp.x,z:bp.z,h:0}});}return n;};
+function kPrevKnot(L,stack){var D=L.dots;if(D.length){var d=D[D.length-1];if(d.k){var hl=d.k==='stop'?kq(18,8):JD+6,v=kDir(d.yaw);return {x:d.x+v.x*hl,z:d.z+v.z*hl};}return {x:d.x,z:d.z};}
+  var st=L.start;if(st.t==='dep'||st.t==='depB'){var dd=kDep(st.id);return dd?depPt(dd,st.t==='dep'?DEP_EXIT:DEP_BACK):null;}
+  if(st.t==='tri'){var tg=triGeo(kTri(st.id),stack||[]);return tg?tg.A:null;}return null;}
+function kJoinTry(L,p){KM.joinTo=null;var best=null,bd=kq(5,12);/* 🎠 zielone połączenie widać już z daleka (12 m) — po puszczeniu koniec sam dociąga */KM.lines.forEach(function(O){if(O===L||O.end.t!=='free')return;var d=Math.hypot(O.end.x-p.x,O.end.z-p.z);if(d<bd){bd=d;best=O;}});
+  if(!best)return false;KM.joinTo=best;KM.link=null;kPreview([[{x:p.x,z:p.z},{x:best.end.x,z:best.end.z}]],0x3fb950);var rg=new THREE.Mesh(new THREE.TorusGeometry(2.4,0.22,8,32),new THREE.MeshBasicMaterial({color:0x3fb950}));rg.rotation.x=Math.PI/2;rg.position.set(best.end.x,0.4,best.end.z);KM.pv.add(rg);trnMsg('🔗 Puść — końce torów połączą się (pociąg pojedzie w kółko).');return true;}
+function kUnjoinAt(p){for(var i=0;i<KM.lines.length;i++){var L=KM.lines[i];if(L.end.t!=='join'||Math.hypot(L.end.x-p.x,L.end.z-p.z)>4)continue;
+    kPush();var O=kLine(L.end.l),P={x:L.end.x,z:L.end.z};
+    function off(Ln){var q=kPrevKnot(Ln)||P,dl=Math.hypot(q.x-P.x,q.z-P.z)||1,k=Math.min(0.45,4/dl);return {t:'free',x:P.x+(q.x-P.x)*k,z:P.z+(q.z-P.z)*k,h:0};}
+    var eL=off(L),eO=O?off(O):null;L.end=eL;if(O&&O.end.t==='join')O.end=eO;kAll();trnMsg('✂ Koło rozcięte — znów są dwie kropki.');return true;}
+  return false;}
+var _kTrainHome0=kTrainHome;kTrainHome=function(){if(_kTrainHome0())return true;var d=KM.deps[0];if(!d)return false; // przód i tył połączone: pociąg staje na początku przedniego toru
+  var A=KM.lines.filter(function(L){return L.start.t==='dep'&&L.start.id===d.id;})[0];if(!A)return false;var e=NET.edges.filter(function(x){return x.line===A.id;})[0];if(!e)return false;
+  TRN.fe=e.id;TRN.fd=1;TRN.fs=Math.min(e.len-0.5,DEP_EXIT-DEP_BACK-2);TRN.hist=[];TRN.v=0;return true;};
+if(typeof animCh==='function'){var _animChT=animCh;animCh=function(dt){if(TRN.drive){isMov=false;isRun=false;}return _animChT(dt);};}
+setInterval(function(){try{kBind();if(KM.pa&&KM.drv==='auto'&&!TRN._autoGo&&!TRN.edit&&!TRN.drive&&TRN.cars.length&&eGet(TRN.fe)){TRN._autoGo=1;setTimeout(function(){if(!TRN.drive){TRN.auto=true;TRN.dir=1;TRN.wait=0;TRN.rev=false;}},1500);}}catch(e){}},300); // 🤖 „Jeździ sam”: w grze pociąg rusza sam
 
 // ---------- 🌐 KOLEJ I KOLEJKA LINOWA W MULTIPLAYERZE ----------
 // Jeden pociąg dla wszystkich. Liczy go „właściciel”: maszynista, a gdy nikt nie prowadzi — gospodarz.
@@ -6398,7 +6508,7 @@ function trnFlash(t){TRN._fl={t:t,at:performance.now()};try{var ac=wpnAC();wpnTo
 function trnQuiet(fn){var a=wpnTone,b=trnMsg;wpnTone=function(){};trnMsg=function(){};try{fn();}finally{wpnTone=a;trnMsg=b;}} // polecenie od innego gracza — bez dźwięku u mnie
 function trnYield(){ // dwóch maszynistów naraz: kabina zostaje dla jednego, drugi wysiada obok lokomotywy
   TRN.drive=false;TRN.exitReq=false;if(TRN.keep){WSP=TRN.keep.w;RSP=TRN.keep.r;JF=TRN.keep.j;TRN.keep=null;}
-  var c=TRN.cars[0];if(c){var v=new THREE.Vector3(-2.4,0,TRN_LOCO/2-2.0);c.localToWorld(v);charX=v.x;charZ=v.z;charY=c.position.y;velY=0;if(charGroup)charGroup.position.set(charX,charY,charZ);}
+  var c=TRN.cars[0];if(c){var v=new THREE.Vector3(kq(-2.4,-1.3),0,kq(TRN_LOCO/2-2.0,-TRN_LOCO/2+0.75));c.localToWorld(v);charX=v.x;charZ=v.z;charY=c.position.y;velY=0;if(charGroup)charGroup.position.set(charX,charY,charZ);}
   trnUI();trnFlash('🚂 Pociąg prowadzi już '+trnRemoteName()+'.');}
 function trnLamps(){var run=TRN.auto||Math.abs(TRN.v)>0.3;kPosts().forEach(function(p){var L=p.post.userData.lamps;if(L._run===run)return;L._run=run;
   L.g.forEach(function(m){m.material=run?L.gOn:L.G0;});L.r.forEach(function(m){m.material=run?L.R0:L.rOn;});});}
@@ -6411,7 +6521,7 @@ function trnFollowTick(dt){dt=Math.min(dt,0.05);trnCam(dt);if(!KM.deps.length||!
   if(!eGet(TRN.fe))return;
   var c0=TRN.corr*Math.min(1,dt*4);TRN.corr-=c0;var ds=TRN.v*dt+c0;
   if(Math.abs(ds)>1e-5&&!nAdvance(ds))TRN.v=0;nPruneHist(trnTrainLen());
-  trnPlace();TRN.cars.forEach(function(c){var w=TRN.v*dt/0.46;c.traverse(function(m){if(m.userData._wheel)m.rotation.x+=w;});});
+  trnPlace();TRN.cars.forEach(function(c){var w=TRN.v*dt/kq(0.46,0.2);c.traverse(function(m){if(m.userData._wheel)m.rotation.x+=w;});});
   TRN.delta=TRN.cars.map(function(c,i){return {px:prev[i].x,pz:prev[i].z,dy:c.rotation.y-prev[i].yaw};}); // gracz na wagonie jedzie razem z nim
   if(Math.abs(TRN.v)>0.5&&(!TRN.snd||performance.now()-TRN.snd>Math.max(220,9000/Math.abs(TRN.v)))){TRN.snd=performance.now();try{var ac=wpnAC();wpnTone(ac,ac.currentTime,0.12,'triangle',90,60,0.035,ac.destination);wpnTone(ac,ac.currentTime+0.09,0.12,'triangle',95,60,0.03,ac.destination);}catch(e){}}
   TRN.ahead=null;trnLamps();trnPromptTick();}
@@ -6471,8 +6581,74 @@ function railRidePlace(g,rt){
   if(rt[0]==='c'){var L=KOL.lines[rt[1]],cb=L&&L.cabs[rt[2]];if(!cb)return false;var v=new THREE.Vector3(0,-4.43,0.3);cb.localToWorld(v);g.position.copy(v);return true;}
   return false;}
 
-var _trnUpd=update;update=function(dt){trnCarry();trnPin();_trnUpd(dt);trnTick(dt);trnPin();trnFloor();};
+var _trnUpd=update;update=function(dt){trnCarry();trnPin();_trnUpd(dt);trnTick(dt);trnPin();trnFloor();trnFpsLift();};
+// 🎠 ciuchcia z oczu maszynisty (Tab): kamera wyżej, żeby kocioł i komin nie zasłaniały toru; własna postać schowana
+function trnFpsLift(){var on=TRN.drive&&KM.mini&&typeof camStyle!=='undefined'&&camStyle==='fps';if(on){cam.position.y+=0.8;cam.updateMatrixWorld();if(charGroup&&charGroup.visible){charGroup.visible=false;TRN._hidCh=1;}}else if(TRN._hidCh){TRN._hidCh=0;if(charGroup)charGroup.visible=true;}}
 // ===================== 🚂 KONIEC KOLEI =====================
+var _trnUIMini=trnUI;trnUI=function(){_trnUIMini();if(KM.mini&&TRN.ui){var h=TRN.ui.innerHTML,n=kMiniTxt(h);if(n!==h)TRN.ui.innerHTML=n;var db=TRN.ui.querySelector('[data-k="dep"]');if(db)db.remove();}};
+
+// ---------- 🚂 PANEL KOLEI w stylu Tabby (jak ⛰ Teren i 🖌 Malowanie): wiersze narzędzi, podpowiedź, suwaki ----------
+(function(){var st=document.createElement('style');st.textContent=
+ '#trn-pop{position:fixed;top:56px;left:12px;z-index:40;width:300px;max-height:calc(100vh - 70px);overflow:auto;background:rgba(14,17,23,0.97);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:12px 14px 14px;font-family:sans-serif;color:#e6edf3;box-shadow:0 12px 36px rgba(0,0,0,.5)}'+
+ '#trn-pop .hd{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:bold;margin-bottom:8px}'+
+ '#trn-pop .x{background:none;border:none;color:#aaa;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}#trn-pop .x:hover{color:#fff}'+
+ '#trn-pop .tr{display:flex;width:100%;align-items:center;gap:8px;font:bold 13px sans-serif;text-align:left;padding:7px 10px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);color:#c9d1d9;cursor:pointer;margin:0 0 6px;user-select:none}'+
+ '#trn-pop .tr:hover{border-color:rgba(240,136,62,0.55)}#trn-pop .tr.sel{background:rgba(240,136,62,0.25);border-color:#f0883e;color:#fff}'+
+ '#trn-pop .tr small{margin-left:auto;font-weight:400;color:#9aa4b2;font-size:11px}#trn-pop .tr.sel small{color:#f3d3b8}'+
+ '#trn-pop .pt{font-size:11.5px;color:#f3d3b8;line-height:1.5;margin-top:4px;padding:7px 9px;border-radius:7px;background:rgba(240,136,62,0.1)}'+
+ '#trn-pop .pt #trn-msg{color:#f2c200;font-weight:bold;margin-bottom:3px}#trn-pop .pt #trn-msg:empty{display:none}'+
+ '#trn-pop .rw{margin:10px 0 4px}#trn-pop .rw label{display:flex;justify-content:space-between;font-size:12px;color:#c9d1d9}#trn-pop .rw b{color:#f0883e}'+
+ '#trn-pop input[type=range]{width:100%;accent-color:#f0883e;margin:3px 0 0}'+
+ '#trn-pop .bt{display:flex;gap:6px;margin-top:10px}#trn-pop .bt button{flex:1;padding:7px 4px;border:none;border-radius:7px;background:rgba(240,136,62,0.2);color:#f6c39b;font-size:12px;font-weight:bold;cursor:pointer}'+
+ '#trn-pop .bt button:hover{background:rgba(240,136,62,0.35)}#trn-pop .bt button.on{background:#f0883e;color:#1a1000}#trn-pop .bt button.wp{color:#ff8a80;background:rgba(229,72,77,0.15)}#trn-pop .bt button.wp:hover{background:rgba(229,72,77,0.3)}'+
+ '#trn-pop .nt{font-size:11.5px;color:#9aa4b2;line-height:1.45;margin-top:9px}';
+ document.head.appendChild(st);})();
+function kRotateRail(ry){var pa=KM.pa,d=KM.deps[0];if(!pa||!d)return;var dl=ry-d.ry;if(Math.abs(dl)<1e-6)return;var c=Math.cos(dl),sn=Math.sin(dl),cx=d.x,cz=d.z;
+  function rp(o){if(!o||o.x===undefined)return;var dx=o.x-cx,dz=o.z-cz;o.x=cx+dx*c+dz*sn;o.z=cz-dx*sn+dz*c;} // obrót jak rotation.y w three.js
+  KM.lines.forEach(function(L){L.dots.forEach(function(q){rp(q);if(q.yaw!==undefined)q.yaw+=dl;});if(L.end.t==='free'||L.end.t==='join')rp(L.end);if(L.end.last)rp(L.end.last);});
+  KM.stops.forEach(function(st){rp(st);if(st.yaw!==undefined)st.yaw+=dl;});KM.deps.forEach(function(q,i){if(i){rp(q);q.ry+=dl;}});
+  d.ry=ry;pa.gr.rotation.y=ry;pa.rotY=ry;KM.sig=kPaSig(pa);kAll(true);}
+var _kUndoR=kUndo;kUndo=function(){_kUndoR();var pa=KM.pa,d=KM.deps[0];if(pa&&pa.gr&&d&&Math.abs((pa.gr.rotation.y||0)-d.ry)>1e-6){pa.gr.rotation.y=d.ry;pa.rotY=d.ry;KM.sig=kPaSig(pa);trnUI();}}; // cofnięcie obrotu obraca też asset
+// 🎠 latarnia zwrotnicy małej kolei: mniejsza, PRZED zwrotnicą i po stronie, gdzie nie odchodzi żadna odnoga (nie stoi na torze)
+function kMiniSwPos(g,n,sw){var lx=Math.cos(sw.th),lz=-Math.sin(sw.th),fx=Math.sin(sw.th),fz=Math.cos(sw.th);
+  function lat(end){var e=end.e,d=Math.min(10,e.len*0.9),p=eAt(e,end.side==='a'?d:e.len-d);return (p.x-n.x)*lx+(p.z-n.z)*lz;}
+  var a=lat(sw.L),b=lat(sw.R),side=Math.abs(a)>Math.abs(b)?-Math.sign(a||1):-Math.sign(b||1);
+  var E=nEnds(n)[0],py=E?(eAt(E.e,E.side==='a'?0:E.e.len).y||0):0;
+  g.position.set(n.x-fx*2.5+lx*side*1.5,py,n.z-fz*2.5+lz*side*1.5);g.scale.setScalar(0.55);}
+function kTip(m){var mini=KM.mini;return ({
+  dots:'Klik w tor = nowa kropka. Kropki ciągnij myszą — tor się wygina. Fioletowy koniec ciągnij, żeby wydłużyć tor'+(mini?'; podciągnij jeden koniec do drugiego, a tory połączą się w koło (dwuklik w zielone kółko = rozetnij).':'; podjedź nim do innego toru, a połączy się trójkątem.'),
+  jun:'Najedź myszką obok toru — po tej stronie zobaczysz trójkąt. Klik = rozjazd z nową odnogą (z fioletowym końcem do ciągnięcia).',
+  stop:'Kliknij obok toru, po tej stronie, gdzie ma stać peron'+(mini?' — może być nawet na łuku':'')+'. W jeździe próbnej pociąg stanie tu na 8 s.',
+  tun:'Kliknij w tor — kawałek między dwiema sąsiednimi kropkami schowa się w tunelu. Drugi klik w to samo miejsce = usuń tunel.',
+  del:'Kliknij to, co chcesz usunąć: kropkę, przystanek, rozjazd albo odnogę. Pomyłka? ↶ Cofnij (Z).',
+  dep:'Fioletowe zajezdnie pokazują wolne końce toru — kliknij w jedną, a stanie tam zajezdnia.'})[m]||'Wybierz narzędzie z listy.';}
+var _trnUIOld=trnUI;
+trnUI=function(){if(!TRN.ui){_trnUIOld();if(!TRN.ui)return;
+    TRN.ui.addEventListener('click',function(e){var dq=e.target.closest&&e.target.closest('[data-q^="drv-"]');if(dq){e.stopPropagation();KM.drv=dq.getAttribute('data-q')==='drv-auto'?'auto':'sam';TRN._autoGo=0;if(KM.drv==='sam'&&!TRN.drive){TRN.auto=false;TRN.stopReq=true;}kSave();trnUI();return;}
+      var q=e.target.closest&&e.target.closest('[data-q="close"]');if(!q)return;e.stopPropagation();if(KM.pa&&typeof kRailEdit==='function')kRailEdit(false);else trnEdit(false);},true); // capture: panel łapie klik w fazie capture (stopPropagation)
+    TRN.ui.addEventListener('input',function(e){var q=e.target.getAttribute&&e.target.getAttribute('data-q'),v=+e.target.value;
+      if(q==='r'){if(!KM._rot){KM._rot=1;kPush();}var lr=TRN.ui.querySelector('#trn-rv');if(lr)lr.textContent=v+'°';if(!KM._rotF){KM._rotF=requestAnimationFrame(function(){KM._rotF=0;var el=TRN.ui.querySelector('[data-q="r"]');kRotateRail((el?+el.value:v)*Math.PI/180);});}return;}
+      var lb=TRN.ui.querySelector(q==='w'?'#trn-wv':'#trn-hv');if(lb)lb.textContent=q==='w'?v:v+' m';});
+    TRN.ui.addEventListener('change',function(e){var q=e.target.getAttribute&&e.target.getAttribute('data-q'),v=+e.target.value;
+      if(q==='r'){KM._rot=0;kRotateRail(v*Math.PI/180);trnUI();return;}
+      if(q==='w'){TRN.nW=Math.max(0,Math.min(kq(7,5),v));trnBuildTrain();kAll(true);}
+      else if(q==='h'){var o=kSelObj();if(o){kPush();o.h=Math.max(0,Math.min(12,v));kAll();}}});}
+  var d=TRN.ui;if(KM._rot&&TRN.edit)return; // w trakcie obracania nie przerysowuj panelu (suwak trzymany myszą)
+  d.id='trn-pop';d.style.cssText='display:'+(TRN.edit?'block':'none');if(!TRN.edit)return;
+  var M=TRN.mode,mini=KM.mini;
+  function row(k,ic,name,sub,x){return '<button class="tr'+(M===k?' sel':'')+'" '+(x?'data-x="'+k+'"':'data-k="'+k+'"')+'><span>'+ic+'</span>'+name+'<small>'+sub+'</small></button>';}
+  var o=kSelObj(),len=Math.round(NET.edges.reduce(function(a,e){return a+e.len;},0));
+  d.innerHTML='<div class="hd"><span>🚂 '+(mini?'Kolej':'Kolej — zajezdnia')+'</span><button class="x" data-q="close" title="Zakończ edycję torów">✕</button></div>'+
+    (mini?'':row('dep','🏠','Zajezdnia','na końcu toru'))+row('dots','🟠','Kropki','wyginaj, ciągnij końce')+row('jun','🔀','Rozjazd','odnoga w bok')+
+    row('stop','🚏','Przystanek','peron przy torze')+(mini?'':row('tun','🚇','Tunel','tor pod ziemią'))+row('del','🗑','Usuń','kliknij, co usunąć',1)+
+    '<div class="pt"><div id="trn-msg"></div>'+kTip(M)+'</div>'+
+    (o?'<div class="rw"><label><span>⛰ Wysokość zaznaczonej kropki</span><b id="trn-hv">'+(o.h||0)+' m</b></label><input type="range" min="0" max="12" step="1" value="'+(o.h||0)+'" data-q="h"></div>':'')+
+    '<div class="rw"><label><span>🎮 Pociąg w grze</span></label><div class="bt" style="margin-top:5px"><button data-q="drv-auto" class="'+(KM.drv==='auto'?'on':'')+'">🤖 Jeździ sam</button><button data-q="drv-sam" class="'+(KM.drv!=='auto'?'on':'')+'">🧑 Prowadzi gracz</button></div></div>'+
+    (function(){var d0=KM.deps[0],deg=d0?Math.round((((d0.ry*180/Math.PI)%360)+540)%360-180):0;return '<div class="rw"><label><span>↻ Obrót kolei</span><b id="trn-rv">'+deg+'°</b></label><input type="range" min="-180" max="180" step="1" value="'+deg+'" data-q="r"></div>';})()+
+    '<div class="rw"><label><span>🚃 Wagony</span><b id="trn-wv">'+TRN.nW+'</b></label><input type="range" min="0" max="'+kq(7,5)+'" step="1" value="'+TRN.nW+'" data-q="w"></div>'+
+    '<div class="bt"><button data-k="undo">↶ Cofnij (Z)</button><button data-k="auto" class="'+(TRN.auto?'on':'')+'">'+(TRN.auto?'⏸ Stop':'▶ Jazda próbna')+'</button><button data-x="wipe" class="wp">🧹 Wyczyść</button></div>'+
+    '<div class="nt">Tory '+len+' m • 🔀 '+KM.tris.length+' • 🚏 '+KM.stops.length+'<br>Mapa: lewy przycisk przesuwa, prawy obraca, kółko — wyżej / niżej.<br>'+(KM.drv==='auto'?'W grze pociąg rusza sam i jeździ, stając na przystankach. Wskocz na wagon — E na wagonie albo przy słupku = stop / start.':'W grze: E przy '+(mini?'ciuchci':'lokomotywie')+', W/S jazda, A/D zwrotnice.')+'</div>';
+  if(TRN._msg){var mm=d.querySelector('#trn-msg');if(mm)mm.textContent=kMiniTxt(TRN._msg.t);}};
 //@@WEAPON_CORE_END
 
 var OCOL=['#58a6ff','#3fb950','#f85149','#d29922','#bc8cff','#f778ba'];
@@ -6605,7 +6781,7 @@ function update(dt){
     var bestIdx=-1,bestDist=INTERACT_DIST;
     for(var pi=0;pi<placedObjs.length;pi++){
       var po=placedObjs[pi];
-      if(!po.action||/^(gate|enemy|objective|demolish|player)$/.test(po.action.type)||!po.gr.visible)continue;
+      if(!po.action||/^(gate|enemy|objective|demolish|player|rail)$/.test(po.action.type)||!po.gr.visible)continue;
       var dx=charX-po.gr.position.x,dz=charZ-po.gr.position.z,dist=Math.sqrt(dx*dx+dz*dz);
       if(dist<bestDist){bestDist=dist;bestIdx=pi;}
     }
@@ -6723,8 +6899,8 @@ function showActParams(type,existing){
     ap.innerHTML='<label style="font-size:11px;color:#888">Moc:</label><input id="act-lint" placeholder="1.5" value="'+(existing&&existing.intensity?existing.intensity:'1.5')+'" style="width:50px"><label style="font-size:11px;color:#888">Zasieg:</label><input id="act-ldist" placeholder="12" value="'+(existing&&existing.distance?existing.distance:'12')+'" style="width:50px">';
   }else if(type==='rail'){
     ap.innerHTML='<button id="act-rail-edit" style="width:100%;padding:8px;font-weight:bold;background:#1f6feb;color:#fff;border:0;border-radius:7px;cursor:pointer">🚂 Edytuj tory</button>'+
-      '<div style="font-size:10.5px;color:#888;margin-top:4px;width:100%">Zajezdnia 1 z pociągiem. Edytuj tory: kropki, rozjazdy, przystanki, tunele, nasypy, kolejne zajezdnie na końcach torów. W grze: E przy lokomotywie, W/S jazda, A/D zwrotnice.</div>';
-    setTimeout(function(){var b=document.getElementById('act-rail-edit');if(b)b.onclick=function(){if(editIdx<0)return;var po=placedObjs[editIdx],old=po.action&&po.action.type==='rail'?po.action:null;po.action={type:'rail'};if(old&&old.net)po.action.net=old.net;if(typeof updateEditUI==='function')updateEditUI();window.__railEdit(po);};},0);
+      '<div style="font-size:10.5px;color:#888;margin-top:4px;width:100%">'+(existing&&existing.mini?'🎠 Mała kolej: ciuchcia z wagonami-platformami. Edytuj tory (albo klik w pociąg / tor): kropki, rozjazdy, przystanki, obrót, łączenie końców w koło. W grze jeździ sama albo prowadzi gracz (E przy ciuchci, W/S, A/D zwrotnice).':'Zajezdnia 1 z pociągiem. Edytuj tory: kropki, rozjazdy, przystanki, tunele, nasypy, kolejne zajezdnie na końcach torów. W grze: E przy lokomotywie, W/S jazda, A/D zwrotnice.')+'</div>';
+    setTimeout(function(){var b=document.getElementById('act-rail-edit');if(b)b.onclick=function(){if(editIdx<0)return;var po=placedObjs[editIdx],old=po.action&&po.action.type==='rail'?po.action:null;po.action={type:'rail'};if(old&&old.mini)po.action.mini=true;if(old&&old.net)po.action.net=old.net;if(typeof updateEditUI==='function')updateEditUI();window.__railEdit(po);};},0);
   }else if(type==='cstation'||type==='cpole'||type==='ctop'){
     var E2=existing||{},L2='style="font-size:11px;color:#888"';
     ap.innerHTML=(type==='cpole'?'<label '+L2+'>Wysokość słupa:</label><input id="act-kh" value="'+(E2.h||14)+'" style="width:44px"> <span '+L2+'>m (6–40)</span>':
@@ -8640,6 +8816,11 @@ function init(){
         var hits=rayc.intersectObjects(meshes,false);
         if(hits.length>0&&hits[0].distance<closestDist){closestDist=hits[0].distance;closest=idx;}
       });
+      // 🚂 klik w pociąg (ciuchcię, wagon) albo w tor = od razu edycja torów tej kolei (kamera w górę, widać kropki)
+      if(typeof TRN!=='undefined'&&KM.pa){var rm=[];TRN.cars.forEach(function(c){c.traverse(function(m){if(m.isMesh)rm.push(m);});});
+        if(TRN.trackG)TRN.trackG.traverse(function(m){if(m.isMesh)rm.push(m);});
+        var rh=rayc.intersectObjects(rm,false);
+        if(rh.length>0&&rh[0].distance<closestDist){var ri=placedObjs.indexOf(KM.pa);if(ri>=0){deselectObj();window.__railEdit(KM.pa);return;}}}
       if(closest>=0){selectObj(closest);}else{deselectObj();}
       return;
     }
@@ -9376,7 +9557,7 @@ function init(){
       var ei=document.getElementById('act-lint'),ed=document.getElementById('act-ldist');
       action.intensity=ei?parseFloat(ei.value)||1.5:1.5;
       action.distance=ed?parseFloat(ed.value)||12:12;
-    }else if(type==='rail'){var oldr=placedObjs[editIdx].action;if(oldr&&oldr.type==='rail'&&oldr.net)action.net=oldr.net;
+    }else if(type==='rail'){var oldr=placedObjs[editIdx].action;if(oldr&&oldr.type==='rail'&&oldr.mini)action.mini=true;if(oldr&&oldr.type==='rail'&&oldr.net)action.net=oldr.net;
     }else if(type==='cpole'){var eh=document.getElementById('act-kh'),hv=eh?parseFloat(String(eh.value).replace(',','.')):14;action.h=Math.max(6,Math.min(40,isNaN(hv)?14:hv));
     }else if(type==='cstation'){var esp=document.getElementById('act-ksp'),sv=esp?parseFloat(String(esp.value).replace(',','.')):7;action.speed=Math.max(2,Math.min(15,isNaN(sv)?7:sv));
     }else if(type==='physics'){
@@ -9891,7 +10072,7 @@ function checkInteract(){
   if(drnFlying()||DRN.stage==='toBase'){nearIdx=-1;var ipx=document.getElementById('interact-prompt');if(ipx)ipx.style.display='none';return;}
   var oldNear=nearIdx;nearIdx=-1;
   for(var i=0;i<placedActions.length;i++){
-    var pa=placedActions[i];if(!pa.gr.visible||/^(gate|enemy|objective|demolish|player)$/.test(pa.action.type))continue;
+    var pa=placedActions[i];if(!pa.gr.visible||/^(gate|enemy|objective|demolish|player|rail)$/.test(pa.action.type))continue;
     var dx=charX-pa.gr.position.x,dz=charZ-pa.gr.position.z,dd=Math.sqrt(dx*dx+dz*dz);
     if(dd<INTERACT_DIST&&(nearIdx<0||dd<nearD)){nearIdx=i;var nearD=dd;} // najbliższy, nie pierwszy z listy
   }

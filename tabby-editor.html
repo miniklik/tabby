@@ -4,7 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Tabby Editor</title>
+<script>if(/[?&]graj=/.test(location.search))document.documentElement.className+=" tb-guest";</script>
 <style>
+.tb-guest body>*:not(#tb-guest):not(#tb-guest-frame){visibility:hidden!important}
+html.tb-guest body::after{content:'🎮  Wczytuję grę…';position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#1b2540,#070a12 70%);color:#9aa4b2;font:15px sans-serif}
+#tb-guest-frame{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:100000;background:#000}
+#tb-guest{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:radial-gradient(ellipse at 50% 40%,#1b2540,#070a12 70%);color:#e6edf3;font:15px/1.5 sans-serif;text-align:center;padding:20px}
+#tb-guest .gk{font:bold 34px monospace;letter-spacing:6px;color:#ffd24a}#tb-guest .gs{color:#9aa4b2;font-size:14px;max-width:420px}
+#tb-guest a{display:inline-block;margin-top:6px;padding:10px 18px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#e6edf3;text-decoration:none;font-weight:bold}
+#sh-box input.sh-in{width:100%;padding:7px 9px;border-radius:8px;border:1px solid #3a4250;background:rgba(13,17,23,.75);color:#fff;font-size:13px;margin-bottom:8px}
+#sh-box .sh-m{flex:1;min-width:0;padding:8px 6px;border-radius:8px;font-size:12.5px;font-weight:bold;cursor:pointer;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);color:#c9d1d9}
+#sh-box .sh-m.on{background:#a371f7;border-color:#a371f7;color:#14082b}
+#sh-out{display:none;margin-top:10px;padding:10px;border-radius:10px;background:rgba(163,113,247,.10);border:1px solid rgba(163,113,247,.35);text-align:center}
+#sh-out .k{font:bold 26px monospace;letter-spacing:5px;color:#ffd24a;user-select:all}
+#sh-out .l{font-size:11px;color:#9aa4b2;word-break:break-all;margin:4px 0 8px;user-select:all}
+#sh-out button{padding:6px 10px;border-radius:8px;border:0;font-size:12px;font-weight:bold;cursor:pointer;margin:2px}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:sans-serif}
 canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
@@ -346,11 +360,17 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 .tb-plist button{display:flex;justify-content:space-between;align-items:center;text-align:left;background:rgba(88,166,255,.1);color:#e6edf3;font-weight:600;border:1px solid rgba(88,166,255,.25)}
 .tb-plist button:hover{background:rgba(88,166,255,.2)}
 .tb-plist small{color:#9aa;font-weight:400;font-size:11.5px}
+.tb-plist .old{opacity:.75}
+#tb-start{background:rgba(10,14,30,.22);-webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1)}
+#tb-start .box{background:rgba(24,30,40,.55);-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15);border:1px solid rgba(255,255,255,.2);width:min(460px,calc(100vw - 32px))}
+#tb-start .wide{flex-basis:100%;background:transparent;border:1px solid rgba(255,255,255,.22);color:#c9d1d9}
+#tb-start-msg{display:none;margin:-6px 0 12px;font-size:12.5px;font-weight:bold;color:#ffb86b}
+#tb-start .fs{font-size:11.5px;color:#9aa4b2;margin:12px 0 0}
 </style>
 <div class="tb-modal" id="tb-pname" role="dialog" aria-modal="true" aria-labelledby="tb-pname-t">
   <div class="box">
     <h3 id="tb-pname-t">Zapisz projekt</h3>
-    <p>Nadaj nazwę swojemu projektowi. Pod tą nazwą znajdziesz go w „Otwórz projekt”.</p>
+    <p>Nadaj nazwę swojemu projektowi. Tabby założy dla niego folder i pod tą nazwą znajdziesz go w „Otwórz projekt”.</p>
     <input type="text" id="tb-pname-in" maxlength="60" autocomplete="off" value="moj-projekt">
     <div class="row"><button class="pri" id="tb-pname-ok">💾 Zapisz</button><button class="sec" id="tb-pname-no">Anuluj</button></div>
   </div>
@@ -362,6 +382,16 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
     <div class="tb-plist" id="tb-plist-items"></div>
     <div class="row"><button class="sec" id="tb-plist-file">📁 Inny plik z dysku…</button><button class="sec" id="tb-plist-no">Anuluj</button></div>
     <input type="file" id="tb-plist-input" accept=".tabby,.json" style="display:none">
+  </div>
+</div>
+<div class="tb-modal" id="tb-start" role="dialog" aria-modal="true" aria-labelledby="tb-start-t">
+  <div class="box">
+    <h3 id="tb-start-t">Nowy projekt</h3>
+    <p>Nazwij swój projekt. Tabby założy dla niego folder w „Tabby – moje projekty”: będzie tam Twój świat, kopie zapasowe i kod udostępnionej gry.</p>
+    <input type="text" id="tb-start-in" maxlength="60" autocomplete="off" placeholder="np. Zbieracz">
+    <div id="tb-start-msg"></div>
+    <div class="row"><button class="pri" id="tb-start-ok">💾 Zapisz projekt</button><button class="sec" id="tb-start-open">📂 Otwórz projekt</button><button class="sec wide" id="tb-start-test">🧪 Na razie testuję</button></div>
+    <p class="fs" id="tb-start-fs"></p>
   </div>
 </div>
 <div class="tb-modal" id="tb-restore" role="dialog" aria-modal="true" aria-labelledby="tb-restore-t">
@@ -703,6 +733,17 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
         <div id="proj-msg" style="font-size:11px;font-weight:bold;text-align:center;margin-top:8px;display:none"></div>
         <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Projekt to Twoja praca w edytorze (plik <b>.tabby</b>). Chrome i Edge zapisują go prosto do folderu <b>„Tabby – moje projekty”</b>. Inne przeglądarki pobierają plik do „Pobranych”. Edytor robi też autozapis co 30 s.</div>
       </div>
+      <div class="ep-lbl">Udostępnij grę</div>
+      <div id="sh-box" style="border:2px solid rgba(163,113,247,0.4);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(163,113,247,0.05)">
+        <div style="font-size:11px;color:#9aa4b2;margin-bottom:3px">Nazwa gry</div><input class="sh-in" id="sh-n" maxlength="40" placeholder="np. Zbieracz">
+        <div style="font-size:11px;color:#9aa4b2;margin-bottom:3px">Zrobił/a</div><input class="sh-in" id="sh-a" maxlength="30" placeholder="Twoje imię lub ksywka">
+        <div style="display:flex;gap:6px;margin-bottom:10px"><button type="button" class="sh-m" data-m="sam">🧍 Każdy sam</button><button type="button" class="sh-m" data-m="razem">👥 Razem</button></div>
+        <button class="ep-exp" id="sh-go" style="background:#8957e5;margin-bottom:0">🌍 Udostępnij grę</button>
+        <div id="sh-msg" style="font-size:11px;font-weight:bold;text-align:center;margin-top:8px;display:none"></div>
+        <div id="sh-out"><div style="font-size:11px;color:#c9d1d9">Kod gry</div><div class="k" id="sh-k"></div><div class="l" id="sh-l"></div>
+          <button type="button" id="sh-copy" style="background:#ffd24a;color:#1d1600">📋 Kopiuj link</button><button type="button" id="sh-play" style="background:#3fb950;color:#04130a">▶ Zagraj</button><button type="button" id="sh-del" style="background:rgba(248,81,73,.15);color:#f85149">🗑 Usuń</button></div>
+        <div style="color:#777;font-size:10.5px;line-height:1.5;margin-top:8px">Gra trafia do internetu bez zapisywania pliku. Dostajesz <b>kod</b>, a gracze wpisują go na stronie startowej Tabby w <b>🎮 Nasze gry</b>. Mogą w nią tylko grać. Tabby nie ma przycisku, który otworzy ją u nich do edycji. Gdy coś poprawisz, kliknij jeszcze raz, a kod zostanie ten sam.</div>
+      </div>
       <div class="ep-lbl">Tabby-pokój</div>
       <div style="border:2px solid rgba(63,185,80,0.35);border-radius:12px;padding:14px;margin-bottom:14px;background:rgba(63,185,80,0.04)">
         <button class="ep-exp" id="room-open" style="background:#238636;margin-bottom:0">🏠 Tabby-pokój</button>
@@ -930,7 +971,9 @@ function tbPlayerInject(opts){ // kod graczy wstawiany do zapisanej gry: miejsca
     '},0);'].join('\n')+'\n';
   return o;
 }
-function tbRelayGet(){try{return (localStorage.getItem('tabby-relay')||'').trim();}catch(e){return '';}}
+function tbRelayGet(){if(window.TB_GUEST)return TB_CENTRALA;try{return (localStorage.getItem('tabby-relay')||'').trim();}catch(e){return '';}}
+var TB_CENTRALA='tabby-mp.zagubioneserca.workers.dev'; // 🛰 centrala Tabby (gry z kodem, pokoje)
+function tbCentrala(){var u=(window.TB_GUEST?'':(function(){try{return (localStorage.getItem('tabby-relay')||'').trim();}catch(e){return '';}})())||TB_CENTRALA;u=u.replace(/\/+$/,'');if(!/^https?:\/\//.test(u))u='https://'+u.replace(/^wss?:\/\//,'');return u;}
 var TB_MP=false,TB_MP_SET=false,TB_PVP=false; // TB_PVP: ⚔ walka między graczami (inaczej współpraca)
 // // TB_MP_SET: czy przy tym zapisie wybrano już tryb (program zawsze pyta)
 function tbMpSync(){
@@ -7034,7 +7077,7 @@ function showActParams(type,existing){
   }
 }
 
-function animate(now){requestAnimationFrame(animate);var dt=Math.min(clock.getDelta(),0.05);update(dt);if(!edDriveTarget)drvTick(dt);dnUpdate(dt);tbTerrTick();renderer.render(scene,cam);}
+function animate(now){if(window.TB_GUEST_STOP)return;requestAnimationFrame(animate);var dt=Math.min(clock.getDelta(),0.05);update(dt);if(!edDriveTarget)drvTick(dt);dnUpdate(dt);tbTerrTick();renderer.render(scene,cam);}
 
 function initTouch(){
   document.body.classList.add('touch-active');isMobile=true;pLock=true;camPitch=1.0;CDIST=14;
@@ -8093,7 +8136,7 @@ function doExportHTML(opts){
   inject+='// === KONIEC ===\n\n';
   // Embed editor data for re-import
   var editorData=tabbyCollectProject();
-  var editorJson=JSON.stringify(editorData);
+  var editorJson=opts.guest?JSON.stringify({gra:opts.guest}):JSON.stringify(editorData); // 🌍 gra z kodu: bez planszy do edycji
   var base=document.getElementById('clean-base').value.replace('/*@@DRIVE_'+'CORE@@*/',function(){return getDriveCore();}).replace('/*@@WEAPON_'+'CORE@@*/',function(){return getWeaponCore();});
   base=tbMpBase(base); // 🌐 multiplayer: włączony albo całkiem usunięty
   // Insert editor-data script tag before </body> in the base
@@ -8107,6 +8150,7 @@ function doExportHTML(opts){
   var bodyClose=out.lastIndexOf('</body>');
   if(bodyClose>0){out=out.slice(0,bodyClose)+edTag+out.slice(bodyClose);}
   if(opts.name)out=tabbyTitle(out,opts.name);
+  if(opts.banner){var bc=out.lastIndexOf('</body>');if(bc>0)out=out.slice(0,bc)+opts.banner+out.slice(bc);}
   if(opts.returnHtml)return {html:out};
   var blob=new Blob([out],{type:'text/html'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=opts.name?tabbyFileName(opts.name)+'.html':'game.html';a.click();
@@ -8692,26 +8736,54 @@ function tbProjMsg(t,ok){var m=document.getElementById('proj-msg');if(!m)return;
 function tbProjLabel(){var el=document.getElementById('proj-name');if(el)el.textContent=tabbyProjName||'bez nazwy';document.title=(tabbyProjName?tabbyProjName+' — ':'')+'Tabby Editor';}
 function tbProjJson(){var d=tabbyCollectProject();d.format='tabby-project';d.version=1;d.name=tabbyProjName;return d;}
 function tbAutosave(clean){
+  if(window.TB_GUEST)return; // 🌍 tryb gracza (gra z kodu) — nic nie zapisujemy
   try{var d=tbProjJson(),j=JSON.stringify(d.placed.length?d:{});
     if(!clean&&j===tbLastAutoJson)return;
     tbLastAutoJson=j;
     localStorage.setItem('tabby-autosave',JSON.stringify({t:Date.now(),name:tabbyProjName,clean:!!clean,data:j}));
   }catch(e){}
 }
+// 📁 każdy projekt ma swój folder: Tabby – moje projekty / Nazwa / (Nazwa.tabby, kopie/, udostepnienie.json)
+var TBPJ={dir:null,name:''},TBBK={sig:'',N:10,every:5*60e3};
+async function tbPDir(name,create){var root=await tbProjDir(true);if(!root)return null;return await root.getDirectoryHandle(tabbyFileName(name),{create:!!create});}
+async function tbWriteFile(dir,fname,text){var fh=await dir.getFileHandle(fname,{create:true});var w=await fh.createWritable();await w.write(text);await w.close();}
+function tbPjSet(dir){TBPJ.dir=dir||null;TBPJ.name=dir?tabbyProjName:'';try{var d=tbProjJson();TBBK.sig=JSON.stringify(d);}catch(e){}}
 async function tbSaveProject(askName){
   if(!tabbyProjName||askName){tbAskName();return;}
   var d=tbProjJson();d.saved=new Date().toISOString();
   var json=JSON.stringify(d,null,1),fname=tabbyFileName(tabbyProjName)+'.tabby';
   var done=false;
   if(tbFsOk()){
-    try{var dir=await tbProjDir(true);var fh=await dir.getFileHandle(fname,{create:true});var w=await fh.createWritable();await w.write(json);await w.close();
-      done=true;tbProjMsg('✓ Zapisano „'+tabbyProjName+'” w folderze '+TB_FOLDER);}
-    catch(e){if(e&&e.name==='AbortError'){tbProjMsg('Zapis anulowany',false);return;}console.warn('Tabby: zapis do folderu nieudany, pobieram plik',e);}
+    try{var dir=await tbPDir(tabbyProjName,true);await tbWriteFile(dir,fname,json);tbPjSet(dir);
+      done=true;tbProjMsg('✓ Zapisano „'+tabbyProjName+'” — folder '+TB_FOLDER+' / '+tabbyFileName(tabbyProjName));tbShareToDir();}
+    catch(e){if(e&&e.name==='AbortError'){tbProjMsg('Zapis anulowany',false);return false;}console.warn('Tabby: zapis do folderu nieudany, pobieram plik',e);}
   }
   if(!done){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=fname;a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
     tbProjMsg('✓ Pobrano '+fname+' — przenieś go do swojego folderu z projektami');}
   tbAutosave(true);
+  return true;
 }
+// 🗂 kopia zapasowa co 5 min (tylko gdy coś się zmieniło): Nazwa / kopie / Nazwa 2026-10-27 11-50.tabby — trzymamy 10 ostatnich
+async function tbBackup(){
+  if(window.TB_GUEST||!tabbyProjName||!TBPJ.dir||TBPJ.name!==tabbyProjName)return;
+  var d=tbProjJson(),j=JSON.stringify(d);if(!d.placed.length||j===TBBK.sig)return;
+  try{if((await TBPJ.dir.queryPermission({mode:'readwrite'}))!=='granted')return;
+    var k=await TBPJ.dir.getDirectoryHandle('kopie',{create:true}),t=new Date(),p=function(n){return (n<10?'0':'')+n;};
+    d.saved=t.toISOString();d.kopia=1;
+    await tbWriteFile(k,tabbyFileName(tabbyProjName)+' '+t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate())+' '+p(t.getHours())+'-'+p(t.getMinutes())+'.tabby',JSON.stringify(d,null,1));
+    TBBK.sig=j;
+    var names=[];for await (var ent of k.values()){if(ent.kind==='file'&&/\.tabby$/i.test(ent.name))names.push(ent.name);}
+    names.sort();while(names.length>TBBK.N){await k.removeEntry(names.shift());}
+  }catch(e){console.warn('Tabby: kopia zapasowa nieudana',e);}
+}
+// 🌍 kod i klucz udostępnionej gry trzymamy też w folderze projektu (nie w pliku .tabby — wysłany komuś projekt nie da mu klucza)
+async function tbShareToDir(){if(!TBPJ.dir||TBPJ.name!==tabbyProjName)return;var st=tbShareStore(),kod=(st.proj||{})[tbShareProjKey()],it=kod&&(st.keys||{})[kod];
+  try{if(it)await tbWriteFile(TBPJ.dir,'udostepnienie.json',JSON.stringify({kod:kod,k:it.k,n:it.n,a:it.a,m:it.m,t:it.t},null,1));
+    else{try{await TBPJ.dir.removeEntry('udostepnienie.json');}catch(e){}}}catch(e){console.warn('Tabby: udostepnienie.json',e);}}
+async function tbShareFromDir(dir){if(!dir)return;try{var f=await (await dir.getFileHandle('udostepnienie.json')).getFile(),o=JSON.parse(await f.text());
+  if(!o||!/^[A-Z0-9]{6}$/.test(o.kod)||!o.k)return;var st=tbShareStore();st.proj=st.proj||{};st.keys=st.keys||{};
+  st.keys[o.kod]={k:o.k,n:o.n,a:o.a,m:o.m,t:o.t};st.proj[tbShareProjKey()]=o.kod;tbShareSave(st);}catch(e){}
+  if(typeof tbShareUI==='function'){var n=document.getElementById('sh-n');if(n)n._ed=0;tbShareUI();}}
 function tbAskName(){
   var m=document.getElementById('tb-pname'),i=document.getElementById('tb-pname-in');
   i.value=tabbyProjName||'moj-projekt';m.classList.add('show');if(document.pointerLockElement)document.exitPointerLock();setTimeout(function(){i.focus();i.select();},30);
@@ -8730,7 +8802,7 @@ async function tbOpenProject(){
   if(document.pointerLockElement)document.exitPointerLock();
   items.innerHTML='';
   if(!tbFsOk()){document.getElementById('tb-plist-input').click();return;}
-  // okno pokazuje się zawsze — z przyciskiem „Inny plik z dysku…” (np. projekt pobrany z internetu)
+  // okno pokazuje się zawsze — z przyciskiem „Inny plik z dysku…” (np. projekt pobrany z internetu albo kopia zapasowa)
   var saved=null;try{saved=await tbKvGet('projDir');}catch(e){}
   function noFolder(msg){info.textContent=msg;var b=document.createElement('button');b.innerHTML='<span>📂 Wskaż folder „'+TB_FOLDER+'”…</span>';
     b.onclick=async function(){try{var d=await tbProjDir(true);if(d)tbOpenProject();}catch(e){}};items.appendChild(b);list.classList.add('show');}
@@ -8738,18 +8810,35 @@ async function tbOpenProject(){
   var dir=null;try{dir=await tbProjDir(true);}catch(e){}
   if(!dir){noFolder('Brak dostępu do folderu „'+TB_FOLDER+'”. Plik spoza folderu otworzysz przyciskiem „📁 Inny plik z dysku…” na dole.');return;}
   var rows=[];
-  for await (var ent of dir.values()){if(ent.kind==='file'&&/\.tabby$/i.test(ent.name)){var f=await ent.getFile();rows.push({h:ent,name:ent.name.replace(/\.tabby$/i,''),t:f.lastModified});}}
+  for await (var ent of dir.values()){
+    if(ent.kind==='directory'){ // 📁 projekt w swoim folderze
+      var best=null;for await (var e2 of ent.values()){if(e2.kind==='file'&&/\.tabby$/i.test(e2.name)){var f2=await e2.getFile();if(!best||e2.name===ent.name+'.tabby'||f2.lastModified>best.t&&best.h.name!==ent.name+'.tabby')best={h:e2,t:f2.lastModified};}}
+      if(best)rows.push({h:best.h,dir:ent,name:ent.name.replace(/-/g,' '),t:best.t});}
+    else if(ent.kind==='file'&&/\.tabby$/i.test(ent.name)){var f=await ent.getFile();rows.push({h:ent,dir:null,name:ent.name.replace(/\.tabby$/i,''),t:f.lastModified,old:1});}}
   rows.sort(function(a,b){return b.t-a.t;});
-  info.textContent=(rows.length?'Projekty z folderu „'+TB_FOLDER+'”:':'Folder „'+TB_FOLDER+'” jest jeszcze pusty.')+' Inne pliki (np. pobrane) — „📁 Inny plik z dysku…” na dole.';
+  info.textContent=(rows.length?'Projekty z folderu „'+TB_FOLDER+'”:':'Folder „'+TB_FOLDER+'” jest jeszcze pusty.')+' Kopię zapasową albo pobrany plik otworzysz przyciskiem „📁 Inny plik z dysku…” na dole.';
   rows.forEach(function(r){
-    var b=document.createElement('button');var d=new Date(r.t);
-    b.innerHTML='<span></span><small>'+d.toLocaleDateString('pl-PL')+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+'</small>';
+    var b=document.createElement('button');var d=new Date(r.t);if(r.old)b.className='old';
+    b.innerHTML='<span></span><small>'+(r.old?'stary zapis · ':'📁 ')+d.toLocaleDateString('pl-PL')+' '+d.toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+'</small>';
     b.firstChild.textContent=r.name;
-    b.onclick=async function(){var f=await r.h.getFile();var t=await f.text();if(tbLoadProjectText(t,r.name))list.classList.remove('show');};
+    b.onclick=async function(){var f=await r.h.getFile();var t=await f.text();if(tbLoadProjectText(t,r.name)){list.classList.remove('show');tbPjSet(r.dir);await tbShareFromDir(r.dir);
+      if(!r.dir&&tabbyProjName)tbProjMsg('Otwarto stary zapis — przy następnym zapisie (Ctrl+S) Tabby przeniesie go do własnego folderu');}};
     items.appendChild(b);
   });
   list.classList.add('show');
 }
+// === 🆕 OKNO STARTOWE: najpierw projekt (folder) albo „Na razie testuję” — zapisać można też później w Opcjach ===
+function tbStartAsk(){var m=document.getElementById('tb-start');if(!m||window.TB_GUEST)return;
+  var i=document.getElementById('tb-start-in'),msg=document.getElementById('tb-start-msg');i.value='';msg.style.display='none';
+  document.getElementById('tb-start-fs').textContent=tbFsOk()?'Folder wybierasz tylko raz — potem Tabby zapisuje tam sam. Zapisać możesz też w każdej chwili w Opcjach (Ctrl+S).':'Ta przeglądarka nie zapisuje do folderów (to potrafią Chrome i Edge) — projekt pobierze się jako plik .tabby.';
+  if(document.pointerLockElement)document.exitPointerLock();m.classList.add('show');setTimeout(function(){i.focus();},40);}
+async function tbStartOk(){var m=document.getElementById('tb-start'),i=document.getElementById('tb-start-in'),msg=document.getElementById('tb-start-msg'),v=i.value.trim();
+  function say(t){msg.textContent=t;msg.style.display='block';}
+  if(!v){say('Wpisz nazwę projektu');i.focus();return;}
+  if(tbFsOk()){var root=null;try{root=await tbProjDir(true);}catch(e){if(e&&e.name==='AbortError'){say('Wybierz folder, w którym Tabby ma trzymać projekty');return;}}
+    if(root){var ex=null;try{ex=await root.getDirectoryHandle(tabbyFileName(v));}catch(e){}
+      if(ex){say('Projekt „'+v+'” już jest — otwórz go przez 📂 Otwórz projekt albo wpisz inną nazwę.');i.focus();i.select();return;}}}
+  tabbyProjName=v;tbProjLabel();var ok=await tbSaveProject();if(ok===false){say('Zapis anulowany');return;}m.classList.remove('show');}
 // === 🏠 TABBY-POKÓJ: wyjście do pokoju i powrót w tej samej karcie (window.name działa też z plików na dysku) ===
 function tbGoRoom(){
   if(edDriveTarget){tbProjMsg('Najpierw wysiądź z pojazdu (E)',false);return;}
@@ -8807,6 +8896,99 @@ function tbInitProject(fromMenu){
     }catch(e){}
   }
   tbLastAutoJson=JSON.stringify(tbProjJson().placed.length?tbProjJson():{});
+  // 🆕 okno startowe (nie po powrocie z pokoju, nie dla gracza z kodem, nie gdy projekt ma już nazwę)
+  $('tb-start-ok').addEventListener('click',function(e){e.stopPropagation();tbStartOk();});
+  $('tb-start-open').addEventListener('click',function(e){e.stopPropagation();$('tb-start').classList.remove('show');tbOpenProject();});
+  $('tb-start-test').addEventListener('click',function(e){e.stopPropagation();$('tb-start').classList.remove('show');});
+  (function(m){m.addEventListener('keydown',function(e){e.stopPropagation();if(e.key==='Escape')m.classList.remove('show');if(e.key==='Enter'&&e.target.id==='tb-start-in')tbStartOk();});
+    ['keyup','mousedown','click'].forEach(function(t){m.addEventListener(t,function(e){e.stopPropagation();});});})($('tb-start'));
+  var rs=$('tb-restore');
+  if(rs.classList.contains('show')){var ro=$('tb-restore-ok').onclick,rn=$('tb-restore-no').onclick;
+    $('tb-restore-ok').onclick=function(){ro();if(!tabbyProjName)tbStartAsk();};$('tb-restore-no').onclick=function(){rn();tbStartAsk();};}
+  else if(!window.TB_GUEST&&!window.TB_FROM_ROOM&&!tabbyProjName)tbStartAsk();
+  setInterval(tbBackup,TBBK.every);
+}
+
+// === 🌍 UDOSTĘPNIJ GRĘ: plansza idzie do centrali, twórca dostaje kod; gracze grają z kodu (zawsze na oficjalnym silniku) ===
+function tbShareStore(){try{return JSON.parse(localStorage.getItem('tabby-gry')||'{}')||{};}catch(e){return {};}}
+function tbShareSave(o){try{localStorage.setItem('tabby-gry',JSON.stringify(o));}catch(e){}}
+function tbShareKey(){var A='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=crypto.getRandomValues(new Uint8Array(32)),s='';for(var i=0;i<32;i++)s+=A[r[i]%A.length];return s;}
+function tbShareLink(kod){var b=/^https?:$/.test(location.protocol)?location.href.split('#')[0].split('?')[0].replace(/[^\/]*$/,''):'https://miniklik.github.io/tabby/';return b+'?gra='+kod;}
+function tbShareMsg(t,ok){var m=document.getElementById('sh-msg');if(!m)return;m.textContent=t;m.style.color=ok===false?'#f85149':'#3fb950';m.style.display=t?'block':'none';}
+function tbShareProjKey(){return tabbyProjName||'(bez nazwy)';}
+var TBSH={m:'sam',busy:false,del:0};
+function tbShareUI(){var st=tbShareStore(),kod=(st.proj||{})[tbShareProjKey()],it=kod&&(st.keys||{})[kod];
+  var n=document.getElementById('sh-n'),a=document.getElementById('sh-a');
+  if(it){if(!n._ed)n.value=it.n||'';TBSH.m=it.m||TBSH.m;}else if(!n._ed)n.value=tabbyProjName||'';
+  if(!a._ed)a.value=st.autor||'';
+  document.querySelectorAll('#sh-box .sh-m').forEach(function(b){b.classList.toggle('on',b.dataset.m===TBSH.m);});
+  document.getElementById('sh-go').textContent=it?'🔄 Zaktualizuj grę (kod '+kod+')':'🌍 Udostępnij grę';
+  var out=document.getElementById('sh-out');out.style.display=it?'block':'none';
+  if(it){document.getElementById('sh-k').textContent=kod;document.getElementById('sh-l').textContent=tbShareLink(kod);}
+  TBSH.del=0;document.getElementById('sh-del').textContent='🗑 Usuń';}
+async function tbShareGo(){
+  if(TBSH.busy)return;
+  if(placedObjs.length===0){tbShareMsg('Postaw najpierw jakieś obiekty',false);return;}
+  if(edDriveTarget){tbShareMsg('Najpierw wysiądź z pojazdu (E)',false);return;}
+  if(typeof DRN!=='undefined'&&DRN.stage!=='none'){tbShareMsg('Najpierw odłóż drona',false);return;}
+  var n=document.getElementById('sh-n').value.trim(),a=document.getElementById('sh-a').value.trim();
+  if(!n){tbShareMsg('Wpisz nazwę gry',false);document.getElementById('sh-n').focus();return;}
+  if(!a){tbShareMsg('Wpisz, kto zrobił grę',false);document.getElementById('sh-a').focus();return;}
+  drvRestoreAll();
+  var d=JSON.stringify({v:1,p:tbProjJson(),spawn:{x:+charX.toFixed(2),z:+charZ.toFixed(2),yaw:+camYaw.toFixed(3),ang:+charAng.toFixed(3)}});
+  if(d.length>4e6){tbShareMsg('Gra jest za duża do udostępnienia ('+(d.length/1e6).toFixed(1)+' MB, limit 4 MB)',false);return;}
+  var st=tbShareStore();st.proj=st.proj||{};st.keys=st.keys||{};st.autor=a;
+  var pk=tbShareProjKey(),kod=st.proj[pk],it=kod&&st.keys[kod],btn=document.getElementById('sh-go'),C=tbCentrala();
+  TBSH.busy=true;btn.disabled=true;btn.textContent='Wysyłam…';tbShareMsg('');
+  try{var o=null;
+    if(it){var r=await fetch(C+'/gra/'+kod,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'put',k:it.k,n:n,a:a,m:TBSH.m,d:d})});o=await r.json();
+      if(!o.ok&&r.status===404){delete st.keys[kod];delete st.proj[pk];it=null;o=null;}} // gra usunięta z centrali — nowy kod
+    if(!it){var k=tbShareKey(),r2=await fetch(C+'/gra',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({k:k,n:n,a:a,m:TBSH.m,d:d})});o=await r2.json();
+      if(o.ok&&o.kod){kod=o.kod;st.keys[kod]={k:k};st.proj[pk]=kod;}}
+    if(!o||!o.ok){tbShareMsg('Nie udało się: '+((o&&o.err)||'centrala nie odpowiada'),false);return;}
+    st.keys[kod].n=n;st.keys[kod].a=a;st.keys[kod].m=TBSH.m;st.keys[kod].t=Date.now();tbShareSave(st);tbShareToDir();
+    tbShareMsg(it?'✓ Gra zaktualizowana — kod bez zmian':'✓ Gra udostępniona! Podaj graczom kod albo link.');
+  }catch(e){tbShareMsg('Brak połączenia z centralą — sprawdź internet',false);}
+  finally{TBSH.busy=false;btn.disabled=false;document.getElementById('sh-n')._ed=0;tbShareUI();}
+}
+async function tbShareDel(){var st=tbShareStore(),pk=tbShareProjKey(),kod=(st.proj||{})[pk],it=kod&&st.keys[kod];if(!it)return;
+  var b=document.getElementById('sh-del');if(!TBSH.del){TBSH.del=1;b.textContent='Na pewno usunąć?';setTimeout(function(){if(TBSH.del){TBSH.del=0;b.textContent='🗑 Usuń';}},4000);return;}
+  try{var r=await fetch(tbCentrala()+'/gra/'+kod,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'del',k:it.k})}),o=await r.json();
+    if(!o.ok&&r.status!==404){tbShareMsg('Nie udało się usunąć: '+(o.err||''),false);return;}
+    delete st.keys[kod];delete st.proj[pk];tbShareSave(st);tbShareToDir();tbShareMsg('Gra '+kod+' usunięta z internetu');tbShareUI();}
+  catch(e){tbShareMsg('Brak połączenia z centralą',false);}}
+function tbShareInit(){var box=document.getElementById('sh-box');if(!box)return;
+  ['keydown','keyup','keypress'].forEach(function(t){box.addEventListener(t,function(e){e.stopPropagation();if(t==='keydown'&&e.key==='Enter'&&e.target.tagName==='INPUT')tbShareGo();});});
+  ['sh-n','sh-a'].forEach(function(id){document.getElementById(id).addEventListener('input',function(){this._ed=1;});});
+  box.querySelectorAll('.sh-m').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();TBSH.m=b.dataset.m;box.querySelectorAll('.sh-m').forEach(function(x){x.classList.toggle('on',x===b);});});});
+  document.getElementById('sh-go').addEventListener('click',function(e){e.stopPropagation();tbShareGo();});
+  document.getElementById('sh-del').addEventListener('click',function(e){e.stopPropagation();tbShareDel();});
+  document.getElementById('sh-play').addEventListener('click',function(e){e.stopPropagation();window.open(tbShareLink(document.getElementById('sh-k').textContent),'_blank');});
+  document.getElementById('sh-copy').addEventListener('click',function(e){e.stopPropagation();var l=tbShareLink(document.getElementById('sh-k').textContent),b=this;
+    function ok(){b.textContent='✓ Skopiowane';setTimeout(function(){b.textContent='📋 Kopiuj link';},1600);}
+    if(navigator.clipboard)navigator.clipboard.writeText(l).then(ok,function(){});else{var t=document.createElement('textarea');t.value=l;document.body.appendChild(t);t.select();try{document.execCommand('copy');ok();}catch(x){}t.remove();}});
+  tbShareUI();setInterval(function(){var pk=tbShareProjKey();if(pk!==TBSH.pk){TBSH.pk=pk;document.getElementById('sh-n')._ed=0;tbShareUI();}},1000);}
+function tbEsc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+async function tbGuestPlay(kod){ // 🎮 gracz: pobierz grę po kodzie, zbuduj ją oficjalnym silnikiem i uruchom w tej karcie
+  var ov=document.createElement('div');ov.id='tb-guest';document.body.appendChild(ov);
+  ov.innerHTML='<div style="font-size:42px">🎮</div><div class="gk">'+kod+'</div><div class="gs">Wczytuję grę…</div>';
+  function fail(t){ov.innerHTML='<div style="font-size:42px">😿</div><div class="gk">'+kod+'</div><div class="gs">'+t+'</div><a href="index.html">← Tabby</a>';}
+  var o;try{var r=await fetch(tbCentrala()+'/gra/'+kod+'?play=1');o=await r.json();}catch(e){fail('Nie mogę połączyć się z Tabby — sprawdź internet i spróbuj jeszcze raz.');return;}
+  if(!o||!o.ok){fail(o&&o.none?'Nie ma gry o takim kodzie. Sprawdź, czy dobrze go przepisałeś.':'Coś poszło nie tak: '+tbEsc((o&&o.err)||''));return;}
+  ov.innerHTML='<div style="font-size:42px">🎮</div><div style="font-size:26px;font-weight:bold">'+tbEsc(o.n)+'</div><div class="gs">zrobił/a <b style="color:#ffd24a">'+tbEsc(o.a||'?')+'</b> · '+(o.m==='razem'?'👥 razem':'🧍 każdy sam')+'</div><div class="gs">Buduję świat…</div>';
+  await new Promise(function(res){setTimeout(res,60);});
+  try{var D=JSON.parse(o.d);tabbyLoadEditorData(D.p);
+    TB_MP=o.m==='razem';
+    var sp=D.spawn,r2=doExportHTML({returnHtml:true,quiet:true,name:o.n+' · '+kod,guest:kod,spawn:(tbSyncSpawns().length||!sp)?null:sp,
+      banner:'<div id="tb-gra-info" style="position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9999;pointer-events:none;background:rgba(8,10,14,.78);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:7px 16px;color:#fff;font:13px sans-serif;transition:opacity 1s">🎮 <b>'+tbEsc(o.n)+'</b> · zrobił/a <b style="color:#ffd24a">'+tbEsc(o.a||'?')+'</b> · kod <b style="font-family:monospace;letter-spacing:2px">'+kod+'</b></div>'+
+        '<scr'+'ipt>setTimeout(function(){var e=document.getElementById("tb-gra-info");if(e){e.style.opacity=0;setTimeout(function(){e.remove();},1200);}},7000);<\/scr'+'ipt>'});
+    if(!r2||!r2.html)throw new Error('pusta gra');
+    // gra w ramce na całą kartę; edytor pod spodem przestaje rysować (F5 = wczytaj grę z kodu od nowa)
+    window.TB_GUEST_STOP=1;try{renderer.domElement.remove();renderer.dispose();renderer.forceContextLoss();}catch(e){}
+    var fr=document.createElement('iframe');fr.id='tb-guest-frame';fr.setAttribute('allow','fullscreen; pointer-lock; autoplay; gamepad');fr.setAttribute('allowfullscreen','');
+    fr.srcdoc=r2.html;document.body.appendChild(fr);document.title=o.n+' — Tabby';
+    fr.addEventListener('load',function(){ov.remove();try{fr.focus();fr.contentWindow.focus();}catch(e){}});
+  }catch(e){console.warn('Tabby: gra z kodu',e);fail('Nie udało się zbudować tej gry. Możliwe, że zrobiono ją w nowszej wersji Tabby.');}
 }
 // === WCZYTYWANIE SCENY (editor-data) — wspólne dla "Wczytaj scenę" i menu Tabby ===
 function tabbyLoadEditorData(ed){
@@ -9853,14 +10035,18 @@ function init(){
   if(typeof window.name==='string'&&window.name.indexOf('TABBY_BACK:')===0){
     var bk=null;try{bk=JSON.parse(window.name.slice(11));}catch(ex){}
     window.name='';
-    if(bk&&bk.proj&&bk.proj.placed){tbFromMenu=true;try{tbBackFromRoom(bk);}catch(ex){console.warn('Tabby: nie udało się wrócić z pokoju',ex);}}
+    if(bk&&bk.proj&&bk.proj.placed){tbFromMenu=true;window.TB_FROM_ROOM=1;try{tbBackFromRoom(bk);}catch(ex){console.warn('Tabby: nie udało się wrócić z pokoju',ex);}}
   }
   if(typeof window.name==='string'&&window.name.indexOf('TABBY_SCENE:')===0){
     var pend=window.name.slice(12);window.name='';tbFromMenu=true;
     try{tabbyLoadEditorData(JSON.parse(pend));}catch(ex){console.warn('Tabby: nie udało się wczytać sceny z menu',ex);}
   }
+  var tbGq=(location.search.match(/[?&]graj=([A-Za-z0-9]{6})/)||[])[1];
+  if(tbGq){tbFromMenu=true;window.TB_GUEST=1;}
   tbInitProject(tbFromMenu);
+  tbShareInit();
   animate();
+  if(tbGq)tbGuestPlay(tbGq.toUpperCase());
 }
 
 // === ⛰ TEREN — panel w edytorze ===

@@ -61,6 +61,35 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
 #about .outro p{margin:0 auto 12px;max-width:32em;font-size:17px;line-height:1.6}
 #about .outro p:last-child{margin-bottom:0}
 #about .outro .go{color:var(--glow);font-family:var(--display);font-size:19px}
+/* ---------- okno "Nasze gry": kod gry → graj ---------- */
+#games{position:fixed;inset:0;z-index:5;display:none;align-items:center;justify-content:center;padding:20px;
+  background:rgba(9,11,32,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#games.show{display:flex}
+#games .card{width:min(440px,100%);max-height:100%;overflow-y:auto;padding:26px 26px 22px;border:1px solid var(--line-hi);border-radius:24px;
+  background:rgba(14,18,50,.78);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,.45)}
+#games .back{font:inherit;font-size:15px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer}
+#games .back:hover{border-color:var(--line-hi)}
+#games h2{margin:18px 0 4px;font-family:var(--display);font-weight:600;font-size:40px;line-height:1;color:var(--moon)}
+#games .lead{margin:0 0 20px;color:var(--muted);font-size:16px}
+#games .row{display:flex;gap:10px}
+#g-code{flex:1;min-width:0;padding:12px 10px;border-radius:16px;border:1px solid var(--line-hi);background:rgba(6,8,26,.6);color:var(--moon);
+  font:600 28px/1 ui-monospace,Consolas,monospace;letter-spacing:7px;text-align:center;text-transform:uppercase}
+#g-code::placeholder{color:rgba(255,243,212,.25)}
+#g-code:focus{outline:3px solid var(--glow);outline-offset:2px}
+#g-play{flex:none;padding:0 22px;border:0;border-radius:16px;background:var(--glow);color:#2a1606;font:600 20px var(--display);cursor:pointer}
+#g-play:disabled{opacity:.35;cursor:default}
+#g-play:focus-visible,#games .back:focus-visible{outline:3px solid var(--moon);outline-offset:3px}
+#g-info{min-height:52px;margin:14px 0 4px;font-size:15.5px;line-height:1.45;color:var(--muted)}
+#g-info b{color:var(--moon);font-family:var(--display);font-weight:500;font-size:20px}
+#g-info .by{color:var(--glow)}
+#games h3{margin:18px 0 10px;font-family:var(--display);font-weight:500;font-size:20px;color:var(--moon)}
+#g-list{display:grid;gap:8px}
+#g-list button{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:11px 14px;font:inherit;color:inherit;text-align:left;
+  background:rgba(18,22,62,.6);border:1px solid var(--line);border-radius:14px;cursor:pointer}
+#g-list button:hover{border-color:var(--line-hi)}
+#g-list code{font-family:ui-monospace,Consolas,monospace;color:var(--glow);letter-spacing:2px}
+#games .note{font-size:14px;color:var(--muted)}
+
 /* ---------- telefon / pion ---------- */
 @media (max-aspect-ratio:1/1),(max-width:720px){
   .home{top:auto;bottom:max(24px,env(safe-area-inset-bottom));transform:none;left:20px;right:20px;width:auto}
@@ -86,6 +115,10 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
       <svg viewBox="0 0 48 48" fill="none" stroke="#f0a35e" stroke-width="2.2" stroke-linejoin="round"><rect x="7" y="9" width="15" height="13" rx="3"/><rect x="26" y="9" width="15" height="13" rx="3"/><rect x="7" y="26" width="15" height="13" rx="3"/><rect x="26" y="26" width="15" height="13" rx="3" fill="#f0a35e" fill-opacity=".25"/></svg>
       <div><b>Wybierz scenę</b><span>Gotowe światy do dalszej pracy</span></div>
     </button>
+    <button class="choice" id="btn-games">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#ffd24a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 15h20a9 9 0 0 1 8.6 11.6l-2.2 7.2a4.5 4.5 0 0 1-7.6 1.7L29 32H19l-3.8 3.5a4.5 4.5 0 0 1-7.6-1.7l-2.2-7.2A9 9 0 0 1 14 15Z"/><path d="M15 21v6M12 24h6"/><circle cx="31" cy="22" r="1.3" fill="#ffd24a"/><circle cx="35" cy="26" r="1.3" fill="#ffd24a"/></svg>
+      <div><b>Nasze gry</b><span>Wpisz kod i graj</span></div>
+    </button>
     <button class="choice" id="btn-about">
       <svg viewBox="0 0 48 48" fill="none" stroke="#b8b2cf" stroke-width="2.2" stroke-linecap="round"><circle cx="24" cy="24" r="16"/><path d="M24 22v10"/><circle cx="24" cy="16.5" r="1.2" fill="#b8b2cf"/></svg>
       <div><b>O programie</b><span>Czym jest Tabby i jak działa</span></div>
@@ -95,6 +128,17 @@ body{background:linear-gradient(#0a0f2a 0%,#1d1a44 60%,#5a3a4a 100%);color:var(-
 
 
 
+
+<section id="games" aria-label="Nasze gry" aria-hidden="true">
+  <div class="card">
+    <button class="back" id="btn-games-back">← Menu</button>
+    <h2>Nasze gry</h2>
+    <p class="lead">Gry zrobione w Tabby. Wpisz kod, który dostałeś od twórcy.</p>
+    <div class="row"><input id="g-code" maxlength="6" placeholder="KOD" autocomplete="off" spellcheck="false" aria-label="Kod gry"><button id="g-play" disabled>▶ Graj</button></div>
+    <div id="g-info" aria-live="polite"></div>
+    <div id="g-pol"></div>
+  </div>
+</section>
 
 <section id="about" aria-label="O programie" aria-hidden="true">
   <div class="wrap">
@@ -159,6 +203,36 @@ function closeAbout(){about.classList.remove('show');about.setAttribute('aria-hi
 document.getElementById('btn-about').onclick=openAbout;
 document.getElementById('btn-about-back').onclick=closeAbout;
 addEventListener('keydown',function(e){if(e.key==='Escape'&&about.classList.contains('show'))closeAbout();});
+
+// ================= 🎮 NASZE GRY: kod gry → edytor w trybie gracza (tabby-editor.html?graj=KOD) =================
+var CENTRALA='https://tabby-mp.zagubioneserca.workers.dev';
+var POLECANE=[]; // gry polecane przez Tabby, np. {kod:'K7M2QX',n:'Zbieracz',a:'Piotr'}
+var games=document.getElementById('games'),gCode=document.getElementById('g-code'),gPlay=document.getElementById('g-play'),gInfo=document.getElementById('g-info'),gSeq=0;
+function esc(t){return String(t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function openGames(kod){games.classList.add('show');games.removeAttribute('aria-hidden');home.setAttribute('aria-hidden','true');
+  if(kod){gCode.value=kod;gCheck();}setTimeout(function(){(kod?gPlay:gCode).focus();},30);}
+function closeGames(){games.classList.remove('show');games.setAttribute('aria-hidden','true');home.removeAttribute('aria-hidden');document.getElementById('btn-games').focus();}
+function gCheck(){var k=gCode.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(gCode.value!==k)gCode.value=k;gPlay.disabled=true;
+  if(k.length<6){gSeq++;gInfo.textContent='';return;}
+  var my=++gSeq;gInfo.textContent='Szukam gry…';
+  fetch(CENTRALA+'/gra/'+k+'?meta=1').then(function(r){return r.json();}).then(function(o){if(my!==gSeq)return;
+    if(!o||!o.ok){gInfo.textContent='Nie ma gry o takim kodzie. Sprawdź, czy dobrze go przepisałeś.';return;}
+    gInfo.innerHTML='<b>'+esc(o.n)+'</b><br>zrobił/a <span class="by">'+esc(o.a||'?')+'</span> · '+(o.m==='razem'?'👥 gracie razem':'🧍 każdy gra sam')+(o.g?' · zagrano '+o.g+'×':'');
+    gPlay.disabled=false;})
+  .catch(function(){if(my===gSeq)gInfo.textContent='Nie mogę połączyć się z Tabby. Sprawdź internet.';});}
+function gGo(){if(gPlay.disabled)return;location.href=EDITOR+'?graj='+gCode.value;}
+gCode.addEventListener('input',gCheck);
+gCode.addEventListener('keydown',function(e){if(e.key==='Enter')gGo();});
+gPlay.onclick=gGo;
+document.getElementById('btn-games').onclick=function(){openGames();};
+document.getElementById('btn-games-back').onclick=closeGames;
+games.addEventListener('mousedown',function(e){if(e.target===games)closeGames();});
+addEventListener('keydown',function(e){if(e.key==='Escape'&&games.classList.contains('show'))closeGames();});
+document.getElementById('g-pol').innerHTML='<h3>Polecane</h3>'+(POLECANE.length?'<div id="g-list">'+POLECANE.map(function(g){return '<button data-k="'+esc(g.kod)+'"><span>'+esc(g.n)+(g.a?' <span class="note">· '+esc(g.a)+'</span>':'')+'</span><code>'+esc(g.kod)+'</code></button>';}).join('')+'</div>':'<p class="note">Wkrótce pojawią się tu gry polecane przez Tabby.</p>');
+Array.prototype.forEach.call(document.querySelectorAll('#g-list button'),function(b){b.onclick=function(){gCode.value=b.dataset.k;gCheck();gPlay.focus();};});
+// link z kodem: …/tabby/?gra=KOD otwiera od razu okno z tą grą
+var gq=(location.search.match(/[?&]gra=([A-Za-z0-9]{6})/)||[])[1];if(gq)openGames(gq.toUpperCase());
 
 if(!window.THREE)return; // bez Three.js menu działa, tylko bez nocnej sceny
 

@@ -128,10 +128,10 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
 </style>
 </head>
 <body>
-<div id="start-info">Click to start</div>
+<div id="start-info">🖱 Kliknij, żeby grać · PPM na obiekcie — edycja</div>
 <div id="cam-flash"></div>
 
-<div id="info">WASD = move | Shift = run | Space = jump | Tab = camera | E = akcja | 1 = edytor | 2 = obiekty</div>
+<div id="info">WASD = move | Shift = run | Space = jump | Tab = camera | E = akcja | Esc + PPM = edycja | 2 = obiekty</div>
 <div id="touch-controls">
   <div class="tc-btn" id="tc-l-fwd">&#9650;</div>
   <div class="tc-btn" id="tc-l-back">&#9660;</div>
@@ -425,12 +425,12 @@ canvas#gc{display:block;width:100%;height:100%;cursor:pointer}
   <button class="snap-btn" data-snap="0.5">0.5</button>
   <button class="snap-btn" data-snap="0">OFF</button>
 </div>
-<button id="sel-btn">&#9998; Edytor (1)</button>
+<button id="sel-btn" title="Esc — pauza, potem prawy przycisk myszy na obiekcie = edycja tego obiektu (działa też klawisz 1)">&#9998; Esc + PPM</button>
 <button id="ed-btn">&#129513; Obiekty (2)</button>
 <div id="crosshair">+</div>
 <div id="interact-prompt">Nacisnij E</div>
 <div id="text-popup"><span id="tp-text"></span><span class="tp-close">Nacisnij E aby zamknac</span></div>
-<div id="sel-hint">ZAZNACZ OBIEKT</div>
+<div id="sel-hint">ZAZNACZ OBIEKT — klik albo PPM</div>
 <div id="paste-hint">WKLEJANIE - klikaj na ziemie | Esc = koniec</div>
 <div id="move-hint">PRZESUWANIE - kliknij nowe miejsce | Esc = cofnij</div>
 <div id="ed-panel">
@@ -913,7 +913,7 @@ function tbPlUI(){ // lista graczy w Opcjach
     if(typeof removeCollision==='function')removeCollision(po);scene.remove(po.gr);placedObjs.splice(idx,1);if(editIdx===idx){editIdx=-1;}else if(editIdx>idx)editIdx--;refreshUI();tbSpawnDraw(true);if(typeof updateEditUI==='function')updateEditUI();};});
   L.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var p=TB_SPAWNS[+b.dataset.go];charX=p.x+Math.sin(p.yaw)*1.6;charZ=p.z+Math.cos(p.yaw)*1.6;charY=p.y||0;camYaw=p.yaw;charAng=p.yaw;if(charGroup){charGroup.position.set(charX,charY,charZ);charGroup.rotation.y=charAng;}};});
   L.querySelectorAll('[data-ed]').forEach(function(b){b.onclick=function(e){e.stopPropagation();var po=TB_SPAWNS[+b.dataset.ed].po,idx=placedObjs.indexOf(po);if(idx<0)return;
-    if(typeof selectObj==='function'){try{editIdx=idx;updateEditUI();}catch(x){}}if(typeof showMsg==='function')showMsg('✎ Otwórz Edytor (1) — ustawienia gracza '+(+b.dataset.ed+1));};});
+    if(typeof selectObj==='function'){try{editIdx=idx;updateEditUI();}catch(x){}}if(typeof showMsg==='function')showMsg('✎ Esc + PPM na postaci — ustawienia gracza '+(+b.dataset.ed+1));};});
 }
 function tbPlEditUI(po){ // panel ustawień klikniętego gracza w Edytorze
   var box=document.getElementById('eb-pl');if(!box)return;var on=po&&po.action&&po.action.type==='player';box.style.display=on?'block':'none';if(!on)return;
@@ -9157,10 +9157,18 @@ function init(){
     if(!pLock&&!edOpen)renderer.domElement.requestPointerLock();
   });
   renderer.domElement.addEventListener('contextmenu',function(e){e.preventDefault();});
+  // ✎ Esc + PPM: w pauzie prawy przycisk na obiekcie = zaznacz go i otwórz panel edycji (na pustym miejscu = tryb zaznaczania, jak klawisz 1)
+  renderer.domElement.addEventListener('mousedown',function(e){
+    if(e.button!==2||pLock||window.TB_GUEST)return;
+    if((typeof TRN!=='undefined'&&TRN.edit)||(typeof ZIP!=='undefined'&&ZIP.edit)||(typeof tbBrushMode==='function'&&tbBrushMode())||moveMode||pasteMode||edPlacing||edDriveTarget||(typeof drnFlying==='function'&&drnFlying()))return; // tam PPM obraca widok
+    e.preventDefault();
+    if(!selMode)toggleSelMode();
+    renderer.domElement.dispatchEvent(new MouseEvent('click',{clientX:e.clientX,clientY:e.clientY,button:0,bubbles:true,cancelable:true}));
+  });
   document.addEventListener('pointerlockchange',function(){
     pLock=!!document.pointerLockElement;var si=document.getElementById('start-info');
     if(pLock){si.style.display='none';renderer.domElement.style.cursor='none';}
-    else{si.textContent='Click to continue';si.style.display=edOpen?'none':'block';renderer.domElement.style.cursor='pointer';}
+    else{si.textContent='⏸ Pauza · LPM — graj dalej · PPM na obiekcie — edycja';si.style.display=edOpen?'none':'block';renderer.domElement.style.cursor='pointer';}
   });
   document.addEventListener('mousemove',function(e){if(!pLock)return;var ws=wpnSens();camYaw-=e.movementX*CSENS*ws;
     camPitch+=e.movementY*CSENS*ws;camPitch=Math.max(camStyle==='fps'?-1.0:(wpnReady()||(typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?-0.75:CMINP),Math.min(camStyle==='fps'?1.0:((typeof DRK!=='undefined'&&DRK.on&&DRK.aimT>0.3)?1.3:wpnReady()?0.9:CMAXP),camPitch));});
